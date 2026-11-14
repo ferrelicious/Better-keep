@@ -1,9 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { Bell, Calendar as CalendarIcon, Check, Clock, Lock, Plus, Search, StickyNote, Users, X } from 'lucide-react';
+import {
+  Bell,
+  Calendar as CalendarIcon,
+  Check,
+  Clock,
+  Lock,
+  MessageCircle,
+  Plus,
+  Search,
+  StickyNote,
+  Users,
+  X,
+} from 'lucide-react';
 import { CategoryTabs } from './components/CategoryTabs';
 import { EmailImportModal } from './components/EmailImportModal';
 import { HouseholdCalendar, HouseholdEvent } from './components/HouseholdCalendar';
+import { HouseholdChat, HouseholdMessage } from './components/HouseholdChat';
 import { HouseholdModal } from './components/HouseholdModal';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
@@ -100,11 +113,29 @@ async function scheduleCalendarEventNotifications(ev: HouseholdEvent, immediateF
   }
 }
 
+async function notifyIncomingChatMessage(msg: HouseholdMessage) {
+  try {
+    await ensureNotificationPermissions();
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: eventNotificationId(msg.id, 3),
+          title: `Nytt meddelande från ${msg.sender_email.split('@')[0]}`,
+          body: msg.body,
+          schedule: { at: new Date(Date.now() + 500) },
+        },
+      ],
+    });
+  } catch {
+    // Fallback on web preview
+  }
+}
+
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
-  const [activeTab, setActiveTab] = useState<'notes' | 'calendar'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'calendar' | 'chat'>('notes');
   const [theme, setTheme] = useState<ThemeMode>(() => getSavedTheme());
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('Alla');
   const [onlyReminders, setOnlyReminders] = useState(false);
@@ -123,12 +154,24 @@ export default function App() {
   const [household, setHousehold] = useState<HouseholdInfo | null>(null);
   const [sharedNoteIds, setSharedNoteIds] = useState<Set<string>>(new Set());
   const [householdEvents, setHouseholdEvents] = useState<HouseholdEvent[]>([]);
+  const [householdMessages, setHouseholdMessages] = useState<HouseholdMessage[]>([]);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
 
   const [deletedUndo, setDeletedUndo] = useState<Note | null>(null);
   const [dueBannerNote, setDueBannerNote] = useState<Note | null>(null);
   const [calendarBanner, setCalendarBanner] = useState<HouseholdEvent | null>(null);
+  const [chatBanner, setChatBanner] = useState<HouseholdMessage | null>(null);
   const notifiedIdsRef = useRef<Set<string>>(new Set());
   const undoTimerRef = useRef<number | null>(null);
+  const activeTabRef = useRef<'notes' | 'calendar' | 'chat'>('notes');
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+    if (activeTab === 'chat') {
+      setUnreadChatCount(0);
+      setChatBanner(null);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -161,53 +204,72 @@ export default function App() {
     }
   }, []);
 
-  const syncFromCloud = useCallback(async (email: string) => {
-    try {
-      const [hh, cloudRecords] = await Promise.all([
-        getUserHousehold(email),
-        fetchCloudNotes(),
-      ]);
-      setHousehold(hh);
-      if (hh?.id) {
-        await fetchHouseholdEvents(hh.id);
-      } else {
-        setHouseholdEvents([]);
-      }
-
-      const sharedIds = new Set<string>();
-      const mergedMap = new Map<string, Note>();
-
-      const localNotes = await loadAllNotes();
-      for (const ln of localNotes) {
-        mergedMap.set(ln.id, ln);
-      }
-
-      for (const rec of cloudRecords) {
-        if (rec.household_id) sharedIds.add(rec.id);
-        const existing = mergedMap.get(rec.id);
-        const cloudTime = new Date(rec.data.updatedAt || rec.updated_at).getTime();
-        const localTime = existing ? new Date(existing.updatedAt).getTime() : 0;
-
-        if (!existing || cloudTime >= localTime) {
-          mergedMap.set(rec.id, rec.data);
-          await saveNoteToStorage(rec.data);
-          await syncNoteReminderNotification(rec.data);
-        }
-      }
-
-      for (const ln of localNotes) {
-        if (!cloudRecords.some((r) => r.id === ln.id)) {
-          await upsertCloudNote(ln, email, hh?.id ?? null);
-          if (hh?.id) sharedIds.add(ln.id);
-        }
-      }
-
-      setSharedNoteIds(sharedIds);
-      setNotes(Array.from(mergedMap.values()));
-    } catch {
-      // Offline fallback
+  const fetchHouseholdMessages = useCallback(async (householdId: string) => {
+    const { data, error } = await supabase
+      .from('household_messages')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('created_at', { ascending: true })
+      .limit(200);
+    if (!error && data) {
+      setHouseholdMessages(data as HouseholdMessage[]);
     }
-  }, [fetchHouseholdEvents]);
+  }, []);
+
+  const syncFromCloud = useCallback(
+    async (email: string) => {
+      try {
+        const [hh, cloudRecords] = await Promise.all([
+          getUserHousehold(email),
+          fetchCloudNotes(),
+        ]);
+        setHousehold(hh);
+        if (hh?.id) {
+          await Promise.all([
+            fetchHouseholdEvents(hh.id),
+            fetchHouseholdMessages(hh.id),
+          ]);
+        } else {
+          setHouseholdEvents([]);
+          setHouseholdMessages([]);
+        }
+
+        const sharedIds = new Set<string>();
+        const mergedMap = new Map<string, Note>();
+
+        const localNotes = await loadAllNotes();
+        for (const ln of localNotes) {
+          mergedMap.set(ln.id, ln);
+        }
+
+        for (const rec of cloudRecords) {
+          if (rec.household_id) sharedIds.add(rec.id);
+          const existing = mergedMap.get(rec.id);
+          const cloudTime = new Date(rec.data.updatedAt || rec.updated_at).getTime();
+          const localTime = existing ? new Date(existing.updatedAt).getTime() : 0;
+
+          if (!existing || cloudTime >= localTime) {
+            mergedMap.set(rec.id, rec.data);
+            await saveNoteToStorage(rec.data);
+            await syncNoteReminderNotification(rec.data);
+          }
+        }
+
+        for (const ln of localNotes) {
+          if (!cloudRecords.some((r) => r.id === ln.id)) {
+            await upsertCloudNote(ln, email, hh?.id ?? null);
+            if (hh?.id) sharedIds.add(ln.id);
+          }
+        }
+
+        setSharedNoteIds(sharedIds);
+        setNotes(Array.from(mergedMap.values()));
+      } catch {
+        // Offline fallback
+      }
+    },
+    [fetchHouseholdEvents, fetchHouseholdMessages]
+  );
 
   useEffect(() => {
     let active = true;
@@ -241,6 +303,7 @@ export default function App() {
         setHousehold(null);
         setSharedNoteIds(new Set());
         setHouseholdEvents([]);
+        setHouseholdMessages([]);
       }
     });
 
@@ -332,12 +395,34 @@ export default function App() {
       )
       .on(
         'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'household_messages' },
+        async (payload) => {
+          const msg = payload.new as HouseholdMessage;
+          if (!msg?.id) return;
+          setHouseholdMessages((prev) =>
+            prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
+          );
+          const isFromPartner = msg.sender_email.toLowerCase() !== userEmail.toLowerCase();
+          if (isFromPartner) {
+            if (activeTabRef.current !== 'chat') {
+              setUnreadChatCount((c) => c + 1);
+              setChatBanner(msg);
+            }
+            await notifyIncomingChatMessage(msg);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'household_members' },
         async () => {
           const hh = await getUserHousehold(userEmail);
           setHousehold(hh);
           if (hh?.id) {
-            await fetchHouseholdEvents(hh.id);
+            await Promise.all([
+              fetchHouseholdEvents(hh.id),
+              fetchHouseholdMessages(hh.id),
+            ]);
           }
         }
       )
@@ -346,7 +431,7 @@ export default function App() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userEmail, fetchHouseholdEvents]);
+  }, [userEmail, fetchHouseholdEvents, fetchHouseholdMessages]);
 
   useEffect(() => {
     const checkDueReminders = () => {
@@ -385,6 +470,29 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
+
+  const handleSendChatMessage = useCallback(
+    async (body: string) => {
+      if (!userEmail || !household?.id) return;
+      const { data, error } = await supabase
+        .from('household_messages')
+        .insert({
+          household_id: household.id,
+          sender_email: userEmail,
+          body,
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        const created = data as HouseholdMessage;
+        setHouseholdMessages((prev) =>
+          prev.some((m) => m.id === created.id) ? prev : [...prev, created]
+        );
+      }
+    },
+    [userEmail, household]
+  );
 
   const handleAddCalendarEvent = useCallback(
     async (draft: {
@@ -453,6 +561,27 @@ export default function App() {
       }
     },
     [userEmail, household]
+  );
+
+  const handleSaveChatAsNote = useCallback(
+    async (body: string) => {
+      const now = new Date().toISOString();
+      const newNote: Note = {
+        id: generateNoteId(),
+        title: 'Från chatten',
+        body,
+        category: 'Privat',
+        color: 'sage',
+        pinned: false,
+        reminder: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      setNotes((prev) => [newNote, ...prev]);
+      setActiveTab('notes');
+      await persistNoteEverywhere(newNote, household?.id ?? null);
+    },
+    [household, persistNoteEverywhere]
   );
 
   const handleToggleShareWithHousehold = useCallback(
@@ -782,9 +911,9 @@ export default function App() {
               <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
                 {userEmail
                   ? household
-                    ? 'Realtidssynk aktiv för delade listor, kalender & påminnelser'
+                    ? 'Realtidssynk aktiv för listor, kalender & chatt'
                     : 'Skapa ett hushåll och bjud in via e-post'
-                  : 'Logga in för att dela inköpslistor, kalender och påminnelser i realtid'}
+                  : 'Logga in för att dela listor, kalender och chatt i realtid'}
               </p>
             </div>
           </div>
@@ -797,12 +926,12 @@ export default function App() {
           </button>
         </div>
 
-        {/* Huvudväxlare: Anteckningar / Gemensam Kalender */}
-        <div className="flex items-center gap-2 bg-[#ECEFE9] dark:bg-[#212723] p-1 rounded-2xl self-start">
+        {/* Huvudväxlare: Anteckningar / Kalender / Chatt */}
+        <div className="flex items-center gap-1.5 bg-[#ECEFE9] dark:bg-[#212723] p-1 rounded-2xl self-start flex-wrap">
           <button
             type="button"
             onClick={() => setActiveTab('notes')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
               activeTab === 'notes'
                 ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
                 : 'text-[#525E56] dark:text-[#9BA79F]'
@@ -814,7 +943,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('calendar')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
               activeTab === 'calendar'
                 ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
                 : 'text-[#525E56] dark:text-[#9BA79F]'
@@ -828,7 +957,61 @@ export default function App() {
               </span>
             )}
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('chat')}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+              activeTab === 'chat'
+                ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
+                : 'text-[#525E56] dark:text-[#9BA79F]'
+            }`}
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Chatt</span>
+            {unreadChatCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono-tabular bg-[#B3261E] text-white">
+                {unreadChatCount}
+              </span>
+            )}
+          </button>
         </div>
+
+        {chatBanner && activeTab !== 'chat' && (
+          <div
+            role="status"
+            className="rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] border border-[#2E6B4E]/25 dark:border-[#8FD4AE]/25 text-[#0D3824] dark:text-[#CBEED9] p-4 flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <MessageCircle className="w-5 h-5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">
+                  Nytt meddelande från {chatBanner.sender_email.split('@')[0]}
+                </p>
+                <p className="text-xs opacity-85 truncate">{chatBanner.body}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('chat');
+                  setChatBanner(null);
+                }}
+                className="min-h-[34px] px-3 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer"
+              >
+                Öppna chatt
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatBanner(null)}
+                aria-label="Stäng"
+                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/10 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {calendarBanner && (
           <div
@@ -870,7 +1053,16 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 'calendar' ? (
+        {activeTab === 'chat' ? (
+          <HouseholdChat
+            messages={householdMessages}
+            householdName={household?.name}
+            userEmail={userEmail}
+            onSendMessage={handleSendChatMessage}
+            onSaveAsNote={handleSaveChatAsNote}
+            onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
+          />
+        ) : activeTab === 'calendar' ? (
           <HouseholdCalendar
             events={householdEvents}
             householdName={household?.name}
