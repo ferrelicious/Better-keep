@@ -1,5 +1,15 @@
 import { useMemo, useState } from 'react';
-import { Bell, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Plus, Trash2, Users } from 'lucide-react';
+import {
+  Bell,
+  Calendar as CalendarIcon,
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Plus,
+  Trash2,
+  Users,
+} from 'lucide-react';
 
 export interface HouseholdEvent {
   id: string;
@@ -41,6 +51,50 @@ function toYMD(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function getISOWeek(dateStr: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function exportToPhoneCalendar(ev: HouseholdEvent) {
+  const cleanDate = ev.event_date.replace(/-/g, '');
+  const cleanTime = (ev.event_time || '09:00').replace(':', '') + '00';
+  const startStamp = `${cleanDate}T${cleanTime}`;
+
+  const [hh, mm] = (ev.event_time || '09:00').split(':').map(Number);
+  const endHour = String((hh + 1) % 24).padStart(2, '0');
+  const endStamp = `${cleanDate}T${endHour}${String(mm).padStart(2, '0')}00`;
+
+  const icsLines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//BetterKeep//Ferrelicious//SV',
+    'BEGIN:VEVENT',
+    `UID:${ev.id}@betterkeep`,
+    `DTSTAMP:${startStamp}`,
+    `DTSTART:${startStamp}`,
+    `DTEND:${endStamp}`,
+    `SUMMARY:${ev.title}`,
+    `DESCRIPTION:${(ev.notes || '').replace(/\n/g, '\\n')} (Inlagd av ${ev.created_by})`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  const blob = new Blob([icsLines], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${ev.title.replace(/[^a-zA-Z0-9åäöÅÄÖ_-]/g, '_')}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function HouseholdCalendar({
   events,
   householdName,
@@ -62,7 +116,7 @@ export function HouseholdCalendar({
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  const calendarDays = useMemo(() => {
+  const weeks = useMemo(() => {
     const firstDay = new Date(year, month, 1);
     const startOffset = (firstDay.getDay() + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -75,7 +129,26 @@ export function HouseholdCalendar({
       const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       cells.push({ dateStr: ds, dayNum: d });
     }
-    return cells;
+    while (cells.length % 7 !== 0) {
+      cells.push({ dateStr: null, dayNum: null });
+    }
+
+    const rows: Array<{
+      weekNum: number;
+      days: Array<{ dateStr: string | null; dayNum: number | null }>;
+    }> = [];
+
+    for (let i = 0; i < cells.length; i += 7) {
+      const slice = cells.slice(i, i + 7);
+      const refDate =
+        slice.find((c) => c.dateStr)?.dateStr ||
+        `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      rows.push({
+        weekNum: getISOWeek(refDate),
+        days: slice,
+      });
+    }
+    return rows;
   }, [year, month]);
 
   const eventsByDate = useMemo(() => {
@@ -134,12 +207,13 @@ export function HouseholdCalendar({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-      <div className="lg:col-span-7 rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-5">
+      {/* Fullbredds månadskalender i Samsung / Google Kalender-stil */}
+      <div className="rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden shadow-xs">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10">
+          <div className="flex items-center gap-2.5">
             <CalendarIcon className="w-5 h-5 text-[#2E6B4E] dark:text-[#8FD4AE]" />
-            <h2 className="font-display text-base sm:text-lg font-bold">
+            <h2 className="font-display text-lg sm:text-xl font-bold">
               {MONTHS[month]} {year}
             </h2>
           </div>
@@ -151,7 +225,7 @@ export function HouseholdCalendar({
                 setViewDate(now);
                 setSelectedDate(toYMD(now));
               }}
-              className="px-2.5 py-1.5 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-xs font-medium cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-xs font-semibold cursor-pointer"
             >
               Idag
             </button>
@@ -159,7 +233,7 @@ export function HouseholdCalendar({
               type="button"
               onClick={() => setViewDate(new Date(year, month - 1, 1))}
               aria-label="Föregående månad"
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] cursor-pointer"
+              className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -167,72 +241,122 @@ export function HouseholdCalendar({
               type="button"
               onClick={() => setViewDate(new Date(year, month + 1, 1))}
               aria-label="Nästa månad"
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] cursor-pointer"
+              className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
-          {WEEKDAYS.map((wd) => (
-            <div key={wd} className="text-[11px] font-semibold text-[#525E56] dark:text-[#9BA79F] py-1">
+        {/* Veckodagsrubriker med veckonummer-kolumn */}
+        <div className="grid grid-cols-[30px_repeat(7,minmax(0,1fr))] sm:grid-cols-[38px_repeat(7,minmax(0,1fr))] bg-[#F6F7F4] dark:bg-[#141816] border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-center">
+          <div className="text-[10px] font-semibold text-[#525E56] dark:text-[#9BA79F] py-2">v.</div>
+          {WEEKDAYS.map((wd, idx) => (
+            <div
+              key={wd}
+              className={`text-[11px] font-semibold py-2 ${
+                idx >= 5
+                  ? 'text-[#B3261E] dark:text-[#F2B8B5]'
+                  : 'text-[#525E56] dark:text-[#9BA79F]'
+              }`}
+            >
               {wd}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
-          {calendarDays.map((cell, idx) => {
-            if (!cell.dateStr || !cell.dayNum) {
-              return <div key={`empty-${idx}`} className="h-11 sm:h-12" />;
-            }
-            const dayEvents = eventsByDate.get(cell.dateStr) ?? [];
-            const isSelected = cell.dateStr === selectedDate;
-            const isToday = cell.dateStr === todayStr;
+        {/* Rutnät med synliga händelseremsor inuti varje datum */}
+        <div className="divide-y divide-[#18221C]/10 dark:divide-[#E3EAE5]/10">
+          {weeks.map((week, wIdx) => (
+            <div
+              key={`week-${wIdx}`}
+              className="grid grid-cols-[30px_repeat(7,minmax(0,1fr))] sm:grid-cols-[38px_repeat(7,minmax(0,1fr))]"
+            >
+              <div className="flex items-start justify-center pt-2 text-[10px] font-mono-tabular text-[#525E56] dark:text-[#9BA79F] bg-[#F6F7F4]/60 dark:bg-[#141816]/60 border-r border-[#18221C]/10 dark:border-[#E3EAE5]/10">
+                {week.weekNum}
+              </div>
 
-            return (
-              <button
-                key={cell.dateStr}
-                type="button"
-                onClick={() => setSelectedDate(cell.dateStr!)}
-                className={`h-11 sm:h-12 rounded-xl flex flex-col items-center justify-center relative transition cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] font-bold shadow-sm'
-                    : isToday
-                      ? 'bg-[#D3EBD9]/60 dark:bg-[#1C4A34]/60 font-semibold'
-                      : 'hover:bg-[#ECEFE9] dark:hover:bg-[#212723]'
-                }`}
-              >
-                <span className="text-xs sm:text-sm font-mono-tabular">{cell.dayNum}</span>
-                {dayEvents.length > 0 && (
-                  <div className="flex items-center gap-0.5 mt-0.5">
-                    {dayEvents.slice(0, 3).map((ev) => (
-                      <span
-                        key={ev.id}
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          isSelected
-                            ? 'bg-white dark:bg-[#063822]'
-                            : 'bg-[#2E6B4E] dark:bg-[#8FD4AE]'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </button>
-            );
-          })}
+              {week.days.map((cell, dIdx) => {
+                if (!cell.dateStr || !cell.dayNum) {
+                  return (
+                    <div
+                      key={`empty-${wIdx}-${dIdx}`}
+                      className="min-h-[68px] sm:min-h-[88px] bg-[#F6F7F4]/30 dark:bg-[#111412]/30 border-r last:border-r-0 border-[#18221C]/10 dark:border-[#E3EAE5]/10"
+                    />
+                  );
+                }
+
+                const dayEvents = eventsByDate.get(cell.dateStr) ?? [];
+                const isSelected = cell.dateStr === selectedDate;
+                const isToday = cell.dateStr === todayStr;
+                const isWeekend = dIdx >= 5;
+
+                return (
+                  <button
+                    key={cell.dateStr}
+                    type="button"
+                    onClick={() => setSelectedDate(cell.dateStr!)}
+                    className={`min-h-[68px] sm:min-h-[88px] p-1 sm:p-1.5 flex flex-col items-stretch text-left border-r last:border-r-0 border-[#18221C]/10 dark:border-[#E3EAE5]/10 transition cursor-pointer overflow-hidden ${
+                      isSelected
+                        ? 'bg-[#D3EBD9]/55 dark:bg-[#1C4A34]/45 ring-2 ring-inset ring-[#2E6B4E] dark:ring-[#8FD4AE]'
+                        : 'hover:bg-[#ECEFE9]/60 dark:hover:bg-[#212723]/60'
+                    }`}
+                  >
+                    <span
+                      className={`self-center sm:self-start w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono-tabular mb-1 ${
+                        isToday
+                          ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] font-bold'
+                          : isWeekend
+                            ? 'text-[#B3261E] dark:text-[#F2B8B5] font-medium'
+                            : 'font-medium'
+                      }`}
+                    >
+                      {cell.dayNum}
+                    </span>
+
+                    <div className="flex flex-col gap-0.5 w-full overflow-hidden">
+                      {dayEvents.slice(0, 2).map((ev) => {
+                        const isMine = ev.created_by.toLowerCase() === userEmail.toLowerCase();
+                        return (
+                          <div
+                            key={ev.id}
+                            className={`px-1 py-0.5 rounded text-[9px] sm:text-[11px] font-medium truncate leading-tight ${
+                              isMine
+                                ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]'
+                                : 'bg-[#264E70] dark:bg-[#9ECAFF] text-white dark:text-[#003258]'
+                            }`}
+                          >
+                            {ev.event_time ? `${ev.event_time} ` : ''}
+                            {ev.title}
+                          </div>
+                        );
+                      })}
+                      {dayEvents.length > 2 && (
+                        <span className="text-[9px] font-semibold text-[#525E56] dark:text-[#9BA79F] px-0.5">
+                          +{dayEvents.length - 2} till
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="lg:col-span-5 flex flex-col gap-4">
+      {/* Detaljvy & ny bokning för vald dag */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         <form
           onSubmit={handleCreate}
-          className="rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3"
+          className="lg:col-span-6 rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3"
         >
           <div className="flex items-center justify-between">
             <h3 className="font-display text-sm font-bold">
-              Ny bokning · <span className="font-mono-tabular text-[#2E6B4E] dark:text-[#8FD4AE]">{selectedDate}</span>
+              Ny bokning ·{' '}
+              <span className="font-mono-tabular text-[#2E6B4E] dark:text-[#8FD4AE]">
+                {selectedDate}
+              </span>
             </h3>
             <span className="text-[11px] text-[#525E56] dark:text-[#9BA79F]">{householdName}</span>
           </div>
@@ -289,14 +413,24 @@ export function HouseholdCalendar({
           </button>
         </form>
 
-        <div className="rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3">
-          <h3 className="text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]">
-            Bokningar {selectedDate} ({selectedDayEvents.length})
-          </h3>
+        <div className="lg:col-span-6 rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]">
+              Bokningar {selectedDate} ({selectedDayEvents.length})
+            </h3>
+            <div className="flex items-center gap-2 text-[10px]">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#2E6B4E] dark:bg-[#8FD4AE]" /> Dina
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#264E70] dark:bg-[#9ECAFF]" /> Partner
+              </span>
+            </div>
+          </div>
 
           {selectedDayEvents.length === 0 ? (
             <p className="text-sm text-[#525E56] dark:text-[#9BA79F] py-2">
-              Inga bokningar inlagda denna dag.
+              Inga bokningar inlagda denna dag. Tryck på valfri dag i kalendern ovan för att boka.
             </p>
           ) : (
             <div className="flex flex-col gap-2.5">
@@ -323,14 +457,25 @@ export function HouseholdCalendar({
                       <span>Inlagd av {ev.created_by.split('@')[0]}</span>
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteEvent(ev.id)}
-                    aria-label="Ta bort bokning"
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[#525E56] hover:text-red-600 cursor-pointer shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => exportToPhoneCalendar(ev)}
+                      title="Lägg i telefonens kalender (Samsung/Google)"
+                      aria-label="Lägg i telefonens kalender"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#2E6B4E] dark:text-[#8FD4AE] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                    >
+                      <CalendarPlus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteEvent(ev.id)}
+                      aria-label="Ta bort bokning"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#525E56] hover:text-red-600 cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
