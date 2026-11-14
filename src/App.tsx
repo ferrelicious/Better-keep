@@ -659,4 +659,4 @@ export default function App() {
               <p className="text-xs font-semibold truncate">
                 {userEmail
                   ? household
-                    ? `${household.name} (${household.members.length} medlemmar
+                  ? `${household.name} (${household.members.length} medlemmar)`
