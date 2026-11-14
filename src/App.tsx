@@ -55,6 +55,7 @@ function generateNoteId(): string {
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
   const [theme, setTheme] = useState<ThemeMode>(() => getSavedTheme());
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('Alla');
   const [onlyReminders, setOnlyReminders] = useState(false);
@@ -78,6 +79,14 @@ export default function App() {
   const [dueBannerNote, setDueBannerNote] = useState<Note | null>(null);
   const notifiedIdsRef = useRef<Set<string>>(new Set());
   const undoTimerRef = useRef<number | null>(null);
+
+  // Splash screen timer on app launch
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setShowSplash(false);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Sync Tailwind dark class on <html>
   useEffect(() => {
@@ -611,6 +620,22 @@ export default function App() {
       </div>
     );
   };
+
+  if (showSplash) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F6F7F4] dark:bg-[#111412] text-[#171D19] dark:text-[#E4EBE6] px-6 transition-opacity duration-300">
+        <div className="w-16 h-16 rounded-3xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shadow-lg mb-5">
+          <Check className="w-8 h-8 stroke-[2.5]" />
+        </div>
+        <h1 className="font-display text-2xl font-bold tracking-tight">
+          BetterKeep
+        </h1>
+        <p className="text-xs font-medium text-[#525E56] dark:text-[#9BA79F] mt-1 tracking-wide">
+          by Ferrelicious
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F6F7F4] dark:bg-[#111412] text-[#171D19] dark:text-[#E4EBE6] transition-colors duration-150">
