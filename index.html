@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#F6F7F4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111412" media="(prefers-color-scheme: dark)" />
+    <title>BetterKeep — Anteckningar & Påminnelser</title>
+    <meta
+      name="description"
+      content="Modern antecknings- och påminnelseapp med Material You-känsla, offline-lagring och stöd för Android via Capacitor."
+    />
+    <meta property="og:title" content="BetterKeep — Anteckningar & Påminnelser" />
+    <meta
+      property="og:description"
+      content="Modern antecknings- och påminnelseapp med Material You-känsla, offline-lagring och stöd för Android via Capacitor."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('betterkeep_theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (saved === 'dark' || (!saved && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="antialiased selection:bg-emerald-600/20 selection:text-emerald-950 dark:selection:bg-emerald-400/25 dark:selection:text-emerald-50">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

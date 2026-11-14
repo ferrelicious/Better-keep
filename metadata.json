@@ -1,0 +1,6 @@
+{
+  "name": "BetterKeep",
+  "description": "Modern antecknings- och påminnelseapp med Material You-känsla, offline-lagring och stöd för Android via Capacitor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
