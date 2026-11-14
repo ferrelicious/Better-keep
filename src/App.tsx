@@ -1,14 +1,4 @@
-import { scheduleReminderNotification, cancelReminderNotification } from './utils/notifications';
-if (note.reminder) {
-  await scheduleReminderNotification(
-    note.id,
-    note.title,
-    note.content,
-    new Date(note.reminder)
-  );
-} else {
-  await cancelReminderNotification(note.id);
-}
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, Check, Clock, Plus, Search, X } from 'lucide-react';
 import { CategoryTabs } from './components/CategoryTabs';
