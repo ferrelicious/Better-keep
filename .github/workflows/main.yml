@@ -25,7 +25,7 @@ jobs:
 
       - name: Installera paket & bygg webbapp
         run: |
-          npm install
+          npm install --legacy-peer-deps
           npm run build
 
       - name: Skapa & synka Android-projekt (Capacitor)
