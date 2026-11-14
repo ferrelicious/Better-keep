@@ -28,12 +28,22 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
 
+      - name: Installera paket & bygg webbapp
+        run: |
+          npm install --legacy-peer-deps
+          npm install @capacitor/local-notifications --legacy-peer-deps
+          npm run build
+
       - name: Skapa & synka Android-projekt (Capacitor)
         run: |
           if [ ! -d "android" ]; then
             npx cap add android
           fi
           npx cap sync android
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q "POST_NOTIFICATIONS" "$MANIFEST"; then
+            sed -i 's|<application|<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <application|' "$MANIFEST"
+          fi
 
       - name: Bygg Android APK (för test på mobilen)
         run: |
