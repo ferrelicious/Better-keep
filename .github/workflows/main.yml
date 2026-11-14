@@ -30,7 +30,7 @@ jobs:
       - name: Installera paket & bygg webbapp
         run: |
           npm install --legacy-peer-deps
-          npm install @capacitor/local-notifications --legacy-peer-deps
+          npm install @capacitor/local-notifications @supabase/supabase-js --legacy-peer-deps
           npm run build
 
       - name: Skapa & synka Android-projekt (Capacitor)
