@@ -1,8 +1,8 @@
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Check, Clock, Plus, Search, X } from 'lucide-react';
+import { Bell, Check, Clock, Lock, Plus, Search, Users, X } from 'lucide-react';
 import { CategoryTabs } from './components/CategoryTabs';
 import { EmailImportModal } from './components/EmailImportModal';
+import { HouseholdModal } from './components/HouseholdModal';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
 import { TopBar } from './components/TopBar';
@@ -26,6 +26,15 @@ import {
   saveNoteToStorage,
   saveTheme,
 } from './services/storage';
+import {
+  CloudNoteRecord,
+  HouseholdInfo,
+  deleteCloudNote,
+  fetchCloudNotes,
+  getUserHousehold,
+  supabase,
+  upsertCloudNote,
+} from './services/supabase';
 import {
   EmailProvider,
   EmailProviderConfig,
@@ -59,6 +68,12 @@ export default function App() {
     () => getDefaultEmailConfigs()
   );
 
+  // Supabase Auth & Household state
+  const [householdModalOpen, setHouseholdModalOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [household, setHousehold] = useState<HouseholdInfo | null>(null);
+  const [sharedNoteIds, setSharedNoteIds] = useState<Set<string>>(new Set());
+
   const [deletedUndo, setDeletedUndo] = useState<Note | null>(null);
   const [dueBannerNote, setDueBannerNote] = useState<Note | null>(null);
   const notifiedIdsRef = useRef<Set<string>>(new Set());
@@ -75,7 +90,57 @@ export default function App() {
     saveTheme(theme);
   }, [theme]);
 
-  // Initial load from IndexedDB / localStorage
+  // Helper to refresh user, household and cloud notes
+  const syncFromCloud = useCallback(async (email: string) => {
+    try {
+      const [hh, cloudRecords] = await Promise.all([
+        getUserHousehold(email),
+        fetchCloudNotes(),
+      ]);
+      setHousehold(hh);
+
+      const sharedIds = new Set<string>();
+      const mergedMap = new Map<string, Note>();
+
+      // Start with local notes
+      const localNotes = await loadAllNotes();
+      for (const ln of localNotes) {
+        mergedMap.set(ln.id, ln);
+      }
+
+      // Merge cloud notes (newer wins) & schedule notifications for incoming reminders
+      for (const rec of cloudRecords) {
+        if (rec.household_id) {
+          sharedIds.add(rec.id);
+        }
+        const existing = mergedMap.get(rec.id);
+        const cloudTime = new Date(rec.data.updatedAt || rec.updated_at).getTime();
+        const localTime = existing ? new Date(existing.updatedAt).getTime() : 0;
+
+        if (!existing || cloudTime >= localTime) {
+          mergedMap.set(rec.id, rec.data);
+          await saveNoteToStorage(rec.data);
+          await syncNoteReminderNotification(rec.data);
+        }
+      }
+
+      // Push local notes that don't exist in cloud yet
+      for (const ln of localNotes) {
+        const inCloud = cloudRecords.some((r) => r.id === ln.id);
+        if (!inCloud) {
+          await upsertCloudNote(ln, email, hh?.id ?? null);
+          if (hh?.id) sharedIds.add(ln.id);
+        }
+      }
+
+      setSharedNoteIds(sharedIds);
+      setNotes(Array.from(mergedMap.values()));
+    } catch {
+      // Offline or unconfigured fallback
+    }
+  }, []);
+
+  // Initial load from IndexedDB / localStorage + Supabase session check
   useEffect(() => {
     let active = true;
     (async () => {
@@ -87,15 +152,96 @@ export default function App() {
         if (!active) return;
         setNotes(loadedNotes);
         setEmailConfigs(loadedConfigs);
+
+        const { data } = await supabase.auth.getSession();
+        const email = data.session?.user?.email ?? null;
+        if (active && email) {
+          setUserEmail(email);
+          await syncFromCloud(email);
+        }
       } finally {
         if (active) setLoading(false);
       }
     })();
 
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const email = session?.user?.email ?? null;
+      setUserEmail(email);
+      if (email) {
+        await syncFromCloud(email);
+      } else {
+        setHousehold(null);
+        setSharedNoteIds(new Set());
+      }
+    });
+
     return () => {
       active = false;
+      authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [syncFromCloud]);
+
+  // Realtime subscription for seamless household sync
+  useEffect(() => {
+    if (!userEmail) return;
+
+    const channel = supabase
+      .channel('betterkeep-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notes' },
+        async (payload) => {
+          if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as { id?: string })?.id;
+            if (deletedId) {
+              setNotes((prev) => prev.filter((n) => n.id !== deletedId));
+              setSharedNoteIds((prev) => {
+                const next = new Set(prev);
+                next.delete(deletedId);
+                return next;
+              });
+              await deleteNoteFromStorage(deletedId);
+              await cancelNoteReminderNotification(deletedId);
+            }
+          } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const rec = payload.new as CloudNoteRecord;
+            if (!rec?.data) return;
+
+            setNotes((prev) => {
+              const exists = prev.some((n) => n.id === rec.id);
+              return exists
+                ? prev.map((n) => (n.id === rec.id ? rec.data : n))
+                : [rec.data, ...prev];
+            });
+            setSharedNoteIds((prev) => {
+              const next = new Set(prev);
+              if (rec.household_id) next.add(rec.id);
+              else next.delete(rec.id);
+              return next;
+            });
+
+            await saveNoteToStorage(rec.data);
+            if (rec.data.reminder && !rec.data.reminder.completed) {
+              await ensureNotificationPermissions();
+            }
+            await syncNoteReminderNotification(rec.data);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'household_members' },
+        async () => {
+          const hh = await getUserHousehold(userEmail);
+          setHousehold(hh);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userEmail]);
 
   // Poll reminders to show in-app banner or web notification when due
   useEffect(() => {
@@ -104,8 +250,12 @@ export default function App() {
       const dueNote = notes.find((n) => {
         if (!n.reminder || n.reminder.completed) return false;
         const ts = new Date(n.reminder.at).getTime();
-        // Trigger banner if due within the last 5 minutes and not yet alerted in this session
-        return !Number.isNaN(ts) && ts <= now && now - ts < 5 * 60 * 1000 && !notifiedIdsRef.current.has(`${n.id}:${n.reminder.at}`);
+        return (
+          !Number.isNaN(ts) &&
+          ts <= now &&
+          now - ts < 5 * 60 * 1000 &&
+          !notifiedIdsRef.current.has(`${n.id}:${n.reminder.at}`)
+        );
       });
 
       if (dueNote && dueNote.reminder) {
@@ -126,11 +276,54 @@ export default function App() {
       if (e.key === 'Escape') {
         setEditorOpen(false);
         setEmailModalOpen(false);
+        setHouseholdModalOpen(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
+
+  const persistNoteEverywhere = useCallback(
+    async (note: Note, forceHouseholdId?: string | null) => {
+      await saveNoteToStorage(note);
+      if (userEmail) {
+        const hhId =
+          forceHouseholdId !== undefined
+            ? forceHouseholdId
+            : sharedNoteIds.has(note.id)
+              ? (household?.id ?? null)
+              : (household?.id ?? null);
+
+        if (hhId) {
+          setSharedNoteIds((prev) => new Set(prev).add(note.id));
+        } else {
+          setSharedNoteIds((prev) => {
+            const next = new Set(prev);
+            next.delete(note.id);
+            return next;
+          });
+        }
+        await upsertCloudNote(note, userEmail, hhId);
+      }
+    },
+    [userEmail, household, sharedNoteIds]
+  );
+
+  const handleToggleShareWithHousehold = useCallback(
+    async (note: Note) => {
+      if (!userEmail || !household) {
+        setHouseholdModalOpen(true);
+        return;
+      }
+      const currentlyShared = sharedNoteIds.has(note.id);
+      const nextHouseholdId = currentlyShared ? null : household.id;
+      const updated: Note = { ...note, updatedAt: new Date().toISOString() };
+
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
+      await persistNoteEverywhere(updated, nextHouseholdId);
+    },
+    [userEmail, household, sharedNoteIds, persistNoteEverywhere]
+  );
 
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -191,13 +384,19 @@ export default function App() {
       setEditorOpen(false);
       setEditingNote(null);
 
-      await saveNoteToStorage(updatedNote);
+      const targetHhId = existing
+        ? sharedNoteIds.has(existing.id)
+          ? (household?.id ?? null)
+          : null
+        : (household?.id ?? null);
+
+      await persistNoteEverywhere(updatedNote, targetHhId);
       if (updatedNote.reminder && !updatedNote.reminder.completed) {
         await ensureNotificationPermissions();
       }
       await syncNoteReminderNotification(updatedNote);
     },
-    [notes]
+    [notes, household, sharedNoteIds, persistNoteEverywhere]
   );
 
   const handleTogglePin = useCallback(
@@ -211,9 +410,12 @@ export default function App() {
         updatedAt: new Date().toISOString(),
       };
       setNotes((prev) => prev.map((n) => (n.id === noteId ? updated : n)));
-      await saveNoteToStorage(updated);
+      await persistNoteEverywhere(
+        updated,
+        sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
+      );
     },
-    [notes]
+    [notes, sharedNoteIds, household, persistNoteEverywhere]
   );
 
   const handleDeleteNote = useCallback(
@@ -232,8 +434,11 @@ export default function App() {
 
       await deleteNoteFromStorage(noteId);
       await cancelNoteReminderNotification(noteId);
+      if (userEmail) {
+        await deleteCloudNote(noteId);
+      }
     },
-    [notes, dueBannerNote]
+    [notes, dueBannerNote, userEmail]
   );
 
   const handleUndoDelete = useCallback(async () => {
@@ -243,9 +448,9 @@ export default function App() {
     if (undoTimerRef.current) window.clearTimeout(undoTimerRef.current);
 
     setNotes((prev) => [restored, ...prev]);
-    await saveNoteToStorage(restored);
+    await persistNoteEverywhere(restored, household?.id ?? null);
     await syncNoteReminderNotification(restored);
-  }, [deletedUndo]);
+  }, [deletedUndo, household, persistNoteEverywhere]);
 
   const handleToggleReminderComplete = useCallback(
     async (noteId: string) => {
@@ -263,10 +468,13 @@ export default function App() {
       setNotes((prev) => prev.map((n) => (n.id === noteId ? updated : n)));
       if (dueBannerNote?.id === noteId) setDueBannerNote(null);
 
-      await saveNoteToStorage(updated);
+      await persistNoteEverywhere(
+        updated,
+        sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
+      );
       await syncNoteReminderNotification(updated);
     },
-    [notes, dueBannerNote]
+    [notes, dueBannerNote, sharedNoteIds, household, persistNoteEverywhere]
   );
 
   const handleSnoozeReminder = useCallback(
@@ -287,21 +495,27 @@ export default function App() {
       setNotes((prev) => prev.map((n) => (n.id === noteId ? updated : n)));
       if (dueBannerNote?.id === noteId) setDueBannerNote(null);
 
-      await saveNoteToStorage(updated);
+      await persistNoteEverywhere(
+        updated,
+        sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
+      );
       await syncNoteReminderNotification(updated);
     },
-    [notes, dueBannerNote]
+    [notes, dueBannerNote, sharedNoteIds, household, persistNoteEverywhere]
   );
 
-  const handleImportEmailNote = useCallback(async (newNote: Note) => {
-    setNotes((prev) => [newNote, ...prev]);
-    setActiveCategory(newNote.category);
-    await saveNoteToStorage(newNote);
-    if (newNote.reminder) {
-      await ensureNotificationPermissions();
-      await syncNoteReminderNotification(newNote);
-    }
-  }, []);
+  const handleImportEmailNote = useCallback(
+    async (newNote: Note) => {
+      setNotes((prev) => [newNote, ...prev]);
+      setActiveCategory(newNote.category);
+      await persistNoteEverywhere(newNote, null);
+      if (newNote.reminder) {
+        await ensureNotificationPermissions();
+        await syncNoteReminderNotification(newNote);
+      }
+    },
+    [persistNoteEverywhere]
+  );
 
   const handleSaveEmailConfig = useCallback(async (config: EmailProviderConfig) => {
     setEmailConfigs((prev) => ({
@@ -359,6 +573,45 @@ export default function App() {
   const defaultNewCategory: NoteCategory =
     activeCategory === 'Alla' ? 'Arbete' : activeCategory;
 
+  const renderNoteWithShareBadge = (note: Note) => {
+    const isShared = sharedNoteIds.has(note.id);
+    return (
+      <div key={note.id} className="flex flex-col gap-1.5">
+        <NoteCard
+          note={note}
+          onEdit={handleEditNote}
+          onTogglePin={handleTogglePin}
+          onDelete={handleDeleteNote}
+          onToggleReminderComplete={handleToggleReminderComplete}
+          onSnoozeReminder={handleSnoozeReminder}
+        />
+        {userEmail && household && (
+          <button
+            type="button"
+            onClick={() => handleToggleShareWithHousehold(note)}
+            className={`self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+              isShared
+                ? 'bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]'
+                : 'bg-[#ECEFE9] dark:bg-[#212723] text-[#525E56] dark:text-[#9BA79F]'
+            }`}
+          >
+            {isShared ? (
+              <>
+                <Users className="w-3 h-3" />
+                <span>Delad med {household.name}</span>
+              </>
+            ) : (
+              <>
+                <Lock className="w-3 h-3" />
+                <span>Privat (tryck för att dela)</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F6F7F4] dark:bg-[#111412] text-[#171D19] dark:text-[#E4EBE6] transition-colors duration-150">
       <TopBar
@@ -371,6 +624,38 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-24 sm:py-6 flex flex-col gap-5">
+        {/* Household & Account Sync Bar */}
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 px-4 py-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold truncate">
+                {userEmail
+                  ? household
+                    ? `${household.name} (${household.members.length} medlemmar)`
+                    : `Inloggad: ${userEmail}`
+                  : 'Synka med familjen (Hushåll)'}
+              </p>
+              <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
+                {userEmail
+                  ? household
+                    ? 'Realtidssynk aktiv för delade listor & påminnelser'
+                    : 'Skapa ett hushåll och bjud in via e-post'
+                  : 'Logga in för att dela inköpslistor och påminnelser i realtid'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setHouseholdModalOpen(true)}
+            className="shrink-0 min-h-[34px] px-3.5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer"
+          >
+            {userEmail ? 'Hantera' : 'Logga in'}
+          </button>
+        </div>
+
         {/* Mobile Search Input (in scrollable flow so sticky header stays compact) */}
         <div className="md:hidden relative">
           <Search
@@ -523,17 +808,7 @@ export default function App() {
                   <span className="font-mono-tabular">{pinnedNotes.length}</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
-                  {pinnedNotes.map((note) => (
-                    <NoteCard
-                      key={note.id}
-                      note={note}
-                      onEdit={handleEditNote}
-                      onTogglePin={handleTogglePin}
-                      onDelete={handleDeleteNote}
-                      onToggleReminderComplete={handleToggleReminderComplete}
-                      onSnoozeReminder={handleSnoozeReminder}
-                    />
-                  ))}
+                  {pinnedNotes.map((note) => renderNoteWithShareBadge(note))}
                 </div>
               </section>
             )}
@@ -548,17 +823,7 @@ export default function App() {
                   </div>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
-                  {otherNotes.map((note) => (
-                    <NoteCard
-                      key={note.id}
-                      note={note}
-                      onEdit={handleEditNote}
-                      onTogglePin={handleTogglePin}
-                      onDelete={handleDeleteNote}
-                      onToggleReminderComplete={handleToggleReminderComplete}
-                      onSnoozeReminder={handleSnoozeReminder}
-                    />
-                  ))}
+                  {otherNotes.map((note) => renderNoteWithShareBadge(note))}
                 </div>
               </section>
             )}
@@ -622,6 +887,19 @@ export default function App() {
         onClose={() => setEmailModalOpen(false)}
         onImportNote={handleImportEmailNote}
         onSaveConfig={handleSaveEmailConfig}
+      />
+
+      {/* Household & Account Modal */}
+      <HouseholdModal
+        open={householdModalOpen}
+        onClose={() => setHouseholdModalOpen(false)}
+        userEmail={userEmail}
+        household={household}
+        onHouseholdUpdated={async () => {
+          if (userEmail) {
+            await syncFromCloud(userEmail);
+          }
+        }}
       />
     </div>
   );
