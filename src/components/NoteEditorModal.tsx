@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useEffect, useState } from 'react';
 import { Bell, Check, Pin, Trash2, X } from 'lucide-react';
 import {

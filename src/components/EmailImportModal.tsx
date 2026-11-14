@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useState } from 'react';
 import { CheckCircle2, FileUp, Mail, Settings2, X } from 'lucide-react';
 import {
