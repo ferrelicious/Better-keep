@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Check, Clock, Lock, Plus, Search, Users, X } from 'lucide-react';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Bell, Calendar as CalendarIcon, Check, Clock, Lock, Plus, Search, StickyNote, Users, X } from 'lucide-react';
 import { CategoryTabs } from './components/CategoryTabs';
 import { EmailImportModal } from './components/EmailImportModal';
+import { HouseholdCalendar, HouseholdEvent } from './components/HouseholdCalendar';
 import { HouseholdModal } from './components/HouseholdModal';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
@@ -52,10 +54,57 @@ function generateNoteId(): string {
   return `note-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function eventNotificationId(eventId: string, suffix = 0): number {
+  let hash = suffix;
+  for (let i = 0; i < eventId.length; i++) {
+    hash = (hash * 31 + eventId.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash % 2000000000) + 100000;
+}
+
+async function scheduleCalendarEventNotifications(ev: HouseholdEvent, immediateFromPartner = false) {
+  try {
+    await ensureNotificationPermissions();
+    if (immediateFromPartner) {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: eventNotificationId(ev.id, 1),
+            title: `Ny kalenderbokning från ${ev.created_by.split('@')[0]}`,
+            body: `${ev.title} (${ev.event_date}${ev.event_time ? ` kl. ${ev.event_time}` : ''})`,
+            schedule: { at: new Date(Date.now() + 1000) },
+          },
+        ],
+      });
+    }
+
+    if (ev.event_date && ev.event_time) {
+      const eventStart = new Date(`${ev.event_date}T${ev.event_time}:00`);
+      const beforeMs = (ev.remind_before_minutes ?? 60) * 60 * 1000;
+      const remindAt = new Date(eventStart.getTime() - beforeMs);
+      if (!Number.isNaN(remindAt.getTime()) && remindAt.getTime() > Date.now()) {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              id: eventNotificationId(ev.id, 2),
+              title: `Påminnelse: ${ev.title}`,
+              body: `Börjar kl. ${ev.event_time} (${ev.event_date})${ev.notes ? ` · ${ev.notes}` : ''}`,
+              schedule: { at: remindAt },
+            },
+          ],
+        });
+      }
+    }
+  } catch {
+    // Fallback on web preview
+  }
+}
+
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
+  const [activeTab, setActiveTab] = useState<'notes' | 'calendar'>('notes');
   const [theme, setTheme] = useState<ThemeMode>(() => getSavedTheme());
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('Alla');
   const [onlyReminders, setOnlyReminders] = useState(false);
@@ -69,26 +118,25 @@ export default function App() {
     () => getDefaultEmailConfigs()
   );
 
-  // Supabase Auth & Household state
   const [householdModalOpen, setHouseholdModalOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [household, setHousehold] = useState<HouseholdInfo | null>(null);
   const [sharedNoteIds, setSharedNoteIds] = useState<Set<string>>(new Set());
+  const [householdEvents, setHouseholdEvents] = useState<HouseholdEvent[]>([]);
 
   const [deletedUndo, setDeletedUndo] = useState<Note | null>(null);
   const [dueBannerNote, setDueBannerNote] = useState<Note | null>(null);
+  const [calendarBanner, setCalendarBanner] = useState<HouseholdEvent | null>(null);
   const notifiedIdsRef = useRef<Set<string>>(new Set());
   const undoTimerRef = useRef<number | null>(null);
 
-  // Splash screen timer on app launch
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setShowSplash(false);
-    }, 1500);
+    }, 2500);
     return () => window.clearTimeout(timer);
   }, []);
 
-  // Sync Tailwind dark class on <html>
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
@@ -99,7 +147,20 @@ export default function App() {
     saveTheme(theme);
   }, [theme]);
 
-  // Helper to refresh user, household and cloud notes
+  const fetchHouseholdEvents = useCallback(async (householdId: string) => {
+    const { data, error } = await supabase
+      .from('household_events')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('event_date', { ascending: true });
+    if (!error && data) {
+      setHouseholdEvents(data as HouseholdEvent[]);
+      for (const ev of data as HouseholdEvent[]) {
+        await scheduleCalendarEventNotifications(ev, false);
+      }
+    }
+  }, []);
+
   const syncFromCloud = useCallback(async (email: string) => {
     try {
       const [hh, cloudRecords] = await Promise.all([
@@ -107,21 +168,22 @@ export default function App() {
         fetchCloudNotes(),
       ]);
       setHousehold(hh);
+      if (hh?.id) {
+        await fetchHouseholdEvents(hh.id);
+      } else {
+        setHouseholdEvents([]);
+      }
 
       const sharedIds = new Set<string>();
       const mergedMap = new Map<string, Note>();
 
-      // Start with local notes
       const localNotes = await loadAllNotes();
       for (const ln of localNotes) {
         mergedMap.set(ln.id, ln);
       }
 
-      // Merge cloud notes (newer wins) & schedule notifications for incoming reminders
       for (const rec of cloudRecords) {
-        if (rec.household_id) {
-          sharedIds.add(rec.id);
-        }
+        if (rec.household_id) sharedIds.add(rec.id);
         const existing = mergedMap.get(rec.id);
         const cloudTime = new Date(rec.data.updatedAt || rec.updated_at).getTime();
         const localTime = existing ? new Date(existing.updatedAt).getTime() : 0;
@@ -133,10 +195,8 @@ export default function App() {
         }
       }
 
-      // Push local notes that don't exist in cloud yet
       for (const ln of localNotes) {
-        const inCloud = cloudRecords.some((r) => r.id === ln.id);
-        if (!inCloud) {
+        if (!cloudRecords.some((r) => r.id === ln.id)) {
           await upsertCloudNote(ln, email, hh?.id ?? null);
           if (hh?.id) sharedIds.add(ln.id);
         }
@@ -145,11 +205,10 @@ export default function App() {
       setSharedNoteIds(sharedIds);
       setNotes(Array.from(mergedMap.values()));
     } catch {
-      // Offline or unconfigured fallback
+      // Offline fallback
     }
-  }, []);
+  }, [fetchHouseholdEvents]);
 
-  // Initial load from IndexedDB / localStorage + Supabase session check
   useEffect(() => {
     let active = true;
     (async () => {
@@ -181,6 +240,7 @@ export default function App() {
       } else {
         setHousehold(null);
         setSharedNoteIds(new Set());
+        setHouseholdEvents([]);
       }
     });
 
@@ -190,7 +250,6 @@ export default function App() {
     };
   }, [syncFromCloud]);
 
-  // Realtime subscription for seamless household sync
   useEffect(() => {
     if (!userEmail) return;
 
@@ -239,10 +298,47 @@ export default function App() {
       )
       .on(
         'postgres_changes',
+        { event: '*', schema: 'public', table: 'household_events' },
+        async (payload) => {
+          if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as { id?: string })?.id;
+            if (deletedId) {
+              setHouseholdEvents((prev) => prev.filter((e) => e.id !== deletedId));
+              try {
+                await LocalNotifications.cancel({
+                  notifications: [
+                    { id: eventNotificationId(deletedId, 1) },
+                    { id: eventNotificationId(deletedId, 2) },
+                  ],
+                });
+              } catch {}
+            }
+          } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const ev = payload.new as HouseholdEvent;
+            if (!ev?.id) return;
+            setHouseholdEvents((prev) => {
+              const exists = prev.some((item) => item.id === ev.id);
+              return exists ? prev.map((item) => (item.id === ev.id ? ev : item)) : [...prev, ev];
+            });
+            const isFromPartner =
+              payload.eventType === 'INSERT' &&
+              ev.created_by.toLowerCase() !== userEmail.toLowerCase();
+            if (isFromPartner) {
+              setCalendarBanner(ev);
+            }
+            await scheduleCalendarEventNotifications(ev, isFromPartner);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'household_members' },
         async () => {
           const hh = await getUserHousehold(userEmail);
           setHousehold(hh);
+          if (hh?.id) {
+            await fetchHouseholdEvents(hh.id);
+          }
         }
       )
       .subscribe();
@@ -250,9 +346,8 @@ export default function App() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userEmail]);
+  }, [userEmail, fetchHouseholdEvents]);
 
-  // Poll reminders to show in-app banner or web notification when due
   useEffect(() => {
     const checkDueReminders = () => {
       const now = Date.now();
@@ -279,7 +374,6 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [notes]);
 
-  // Global Escape handler for modals
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -292,16 +386,59 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  const handleAddCalendarEvent = useCallback(
+    async (draft: {
+      title: string;
+      notes: string;
+      event_date: string;
+      event_time: string;
+      remind_before_minutes: number;
+    }) => {
+      if (!userEmail || !household?.id) return;
+      const { data, error } = await supabase
+        .from('household_events')
+        .insert({
+          household_id: household.id,
+          created_by: userEmail,
+          title: draft.title,
+          notes: draft.notes || null,
+          event_date: draft.event_date,
+          event_time: draft.event_time || null,
+          remind_before_minutes: draft.remind_before_minutes,
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        const created = data as HouseholdEvent;
+        setHouseholdEvents((prev) =>
+          prev.some((e) => e.id === created.id) ? prev : [...prev, created]
+        );
+        await scheduleCalendarEventNotifications(created, false);
+      }
+    },
+    [userEmail, household]
+  );
+
+  const handleDeleteCalendarEvent = useCallback(async (id: string) => {
+    setHouseholdEvents((prev) => prev.filter((e) => e.id !== id));
+    await supabase.from('household_events').delete().eq('id', id);
+    try {
+      await LocalNotifications.cancel({
+        notifications: [
+          { id: eventNotificationId(id, 1) },
+          { id: eventNotificationId(id, 2) },
+        ],
+      });
+    } catch {}
+  }, []);
+
   const persistNoteEverywhere = useCallback(
     async (note: Note, forceHouseholdId?: string | null) => {
       await saveNoteToStorage(note);
       if (userEmail) {
         const hhId =
-          forceHouseholdId !== undefined
-            ? forceHouseholdId
-            : sharedNoteIds.has(note.id)
-              ? (household?.id ?? null)
-              : (household?.id ?? null);
+          forceHouseholdId !== undefined ? forceHouseholdId : (household?.id ?? null);
 
         if (hhId) {
           setSharedNoteIds((prev) => new Set(prev).add(note.id));
@@ -315,7 +452,7 @@ export default function App() {
         await upsertCloudNote(note, userEmail, hhId);
       }
     },
-    [userEmail, household, sharedNoteIds]
+    [userEmail, household]
   );
 
   const handleToggleShareWithHousehold = useCallback(
@@ -324,29 +461,13 @@ export default function App() {
         setHouseholdModalOpen(true);
         return;
       }
-      const currentlyShared = sharedNoteIds.has(note.id);
-      const nextHouseholdId = currentlyShared ? null : household.id;
+      const nextHouseholdId = sharedNoteIds.has(note.id) ? null : household.id;
       const updated: Note = { ...note, updatedAt: new Date().toISOString() };
-
       setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
       await persistNoteEverywhere(updated, nextHouseholdId);
     },
     [userEmail, household, sharedNoteIds, persistNoteEverywhere]
   );
-
-  const handleToggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
-
-  const handleOpenNewNote = () => {
-    setEditingNote(null);
-    setEditorOpen(true);
-  };
-
-  const handleEditNote = (note: Note) => {
-    setEditingNote(note);
-    setEditorOpen(true);
-  };
 
   const handleSaveNote = useCallback(
     async (draft: {
@@ -534,7 +655,6 @@ export default function App() {
     await saveEmailConfig(config);
   }, []);
 
-  // Category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<FilterCategory, number> = {
       Alla: notes.length,
@@ -554,17 +674,12 @@ export default function App() {
     [notes]
   );
 
-  // Filtered & sorted notes
   const filteredNotes = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return notes
       .filter((note) => {
-        if (activeCategory !== 'Alla' && note.category !== activeCategory) {
-          return false;
-        }
-        if (onlyReminders && !note.reminder) {
-          return false;
-        }
+        if (activeCategory !== 'Alla' && note.category !== activeCategory) return false;
+        if (onlyReminders && !note.reminder) return false;
         if (!q) return true;
         return (
           note.title.toLowerCase().includes(q) ||
@@ -578,17 +693,18 @@ export default function App() {
 
   const pinnedNotes = useMemo(() => filteredNotes.filter((n) => n.pinned), [filteredNotes]);
   const otherNotes = useMemo(() => filteredNotes.filter((n) => !n.pinned), [filteredNotes]);
+  const defaultNewCategory: NoteCategory = activeCategory === 'Alla' ? 'Arbete' : activeCategory;
 
-  const defaultNewCategory: NoteCategory =
-    activeCategory === 'Alla' ? 'Arbete' : activeCategory;
-
-  const renderNoteWithShareBadge = (note: Note) => {
+  const renderNoteItem = (note: Note) => {
     const isShared = sharedNoteIds.has(note.id);
     return (
       <div key={note.id} className="flex flex-col gap-1.5">
         <NoteCard
           note={note}
-          onEdit={handleEditNote}
+          onEdit={(n) => {
+            setEditingNote(n);
+            setEditorOpen(true);
+          }}
           onTogglePin={handleTogglePin}
           onDelete={handleDeleteNote}
           onToggleReminderComplete={handleToggleReminderComplete}
@@ -623,14 +739,12 @@ export default function App() {
 
   if (showSplash) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F6F7F4] dark:bg-[#111412] text-[#171D19] dark:text-[#E4EBE6] px-6 transition-opacity duration-300">
-        <div className="w-16 h-16 rounded-3xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shadow-lg mb-5">
-          <Check className="w-8 h-8 stroke-[2.5]" />
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F6F7F4] dark:bg-[#111412] text-[#171D19] dark:text-[#E4EBE6] px-6">
+        <div className="w-20 h-20 rounded-3xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shadow-lg mb-5">
+          <Check className="w-10 h-10 stroke-[2.5]" />
         </div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">
-          BetterKeep
-        </h1>
-        <p className="text-xs font-medium text-[#525E56] dark:text-[#9BA79F] mt-1 tracking-wide">
+        <h1 className="font-display text-3xl font-bold tracking-tight">BetterKeep</h1>
+        <p className="text-sm font-medium text-[#525E56] dark:text-[#9BA79F] mt-1.5 tracking-wide">
           by Ferrelicious
         </p>
       </div>
@@ -643,13 +757,15 @@ export default function App() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         theme={theme}
-        onToggleTheme={handleToggleTheme}
-        onOpenNewNote={handleOpenNewNote}
+        onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+        onOpenNewNote={() => {
+          setEditingNote(null);
+          setEditorOpen(true);
+        }}
         onOpenEmailImport={() => setEmailModalOpen(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-24 sm:py-6 flex flex-col gap-5">
-        {/* Household & Account Sync Bar */}
         <div className="flex items-center justify-between gap-3 rounded-2xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 px-4 py-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0">
@@ -659,16 +775,16 @@ export default function App() {
               <p className="text-xs font-semibold truncate">
                 {userEmail
                   ? household
-                    ? `${household.name} (${household.members.length} medlemmar)`
-                    : `Inloggad: ${userEmail}`
+                    ? household.name + ' (' + household.members.length + ' medlemmar)'
+                    : 'Inloggad: ' + userEmail
                   : 'Synka med familjen (Hushåll)'}
               </p>
               <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
                 {userEmail
                   ? household
-                    ? 'Realtidssynk aktiv för delade listor & påminnelser'
+                    ? 'Realtidssynk aktiv för delade listor, kalender & påminnelser'
                     : 'Skapa ett hushåll och bjud in via e-post'
-                  : 'Logga in för att dela inköpslistor och påminnelser i realtid'}
+                  : 'Logga in för att dela inköpslistor, kalender och påminnelser i realtid'}
               </p>
             </div>
           </div>
@@ -681,71 +797,72 @@ export default function App() {
           </button>
         </div>
 
-        {/* Mobile Search Input (in scrollable flow so sticky header stays compact) */}
-        <div className="md:hidden relative">
-          <Search
-            className="w-4 h-4 text-[#525E56] dark:text-[#9BA79F] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Sök anteckningar eller mejl..."
-            aria-label="Sök anteckningar"
-            className="w-full h-11 pl-10 pr-10 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] border border-transparent focus:border-[#2E6B4E] dark:focus:border-[#8FD4AE] focus:bg-white dark:focus:bg-[#191D1A] focus:outline-none"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              aria-label="Rensa sökning"
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full text-[#525E56] dark:text-[#9BA79F]"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+        {/* Huvudväxlare: Anteckningar / Gemensam Kalender */}
+        <div className="flex items-center gap-2 bg-[#ECEFE9] dark:bg-[#212723] p-1 rounded-2xl self-start">
+          <button
+            type="button"
+            onClick={() => setActiveTab('notes')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+              activeTab === 'notes'
+                ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
+                : 'text-[#525E56] dark:text-[#9BA79F]'
+            }`}
+          >
+            <StickyNote className="w-4 h-4" />
+            <span>Anteckningar</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('calendar')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+              activeTab === 'calendar'
+                ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
+                : 'text-[#525E56] dark:text-[#9BA79F]'
+            }`}
+          >
+            <CalendarIcon className="w-4 h-4" />
+            <span>Kalender</span>
+            {householdEvents.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono-tabular bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]">
+                {householdEvents.length}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Due Reminder Alert Banner */}
-        {dueBannerNote && dueBannerNote.reminder && (
+        {calendarBanner && (
           <div
             role="status"
-            className="rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] border border-[#2E6B4E]/25 dark:border-[#8FD4AE]/25 text-[#0D3824] dark:text-[#CBEED9] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            className="rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] border border-[#2E6B4E]/25 dark:border-[#8FD4AE]/25 text-[#0D3824] dark:text-[#CBEED9] p-4 flex items-center justify-between gap-3"
           >
-            <div className="flex items-start sm:items-center gap-3 min-w-0">
-              <Bell className="w-5 h-5 shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
+            <div className="flex items-center gap-3 min-w-0">
+              <CalendarIcon className="w-5 h-5 shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate">
-                  Påminnelse nu: {dueBannerNote.title || 'Anteckning'}
+                  Ny bokning från {calendarBanner.created_by.split('@')[0]}: {calendarBanner.title}
                 </p>
                 <p className="text-xs opacity-85 font-mono-tabular">
-                  {formatReminderDateTime(dueBannerNote.reminder.at)} · {dueBannerNote.category}
+                  {calendarBanner.event_date}
+                  {calendarBanner.event_time ? ` kl. ${calendarBanner.event_time}` : ''}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => handleToggleReminderComplete(dueBannerNote.id)}
-                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer"
+                onClick={() => {
+                  setActiveTab('calendar');
+                  setCalendarBanner(null);
+                }}
+                className="min-h-[34px] px-3 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer"
               >
-                <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Markera klar</span>
+                Visa kalender
               </button>
               <button
                 type="button"
-                onClick={() => handleSnoozeReminder(dueBannerNote.id, '15m')}
-                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl bg-white/75 dark:bg-black/25 text-xs font-semibold cursor-pointer"
-              >
-                <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Snooza +15m</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDueBannerNote(null)}
-                aria-label="Stäng avisering"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+                onClick={() => setCalendarBanner(null)}
+                aria-label="Stäng"
+                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/10 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -753,121 +870,210 @@ export default function App() {
           </div>
         )}
 
-        {/* Category Filter Tabs */}
-        <CategoryTabs
-          activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
-          counts={categoryCounts}
-          onlyReminders={onlyReminders}
-          onToggleOnlyReminders={() => setOnlyReminders((prev) => !prev)}
-          activeRemindersCount={activeRemindersCount}
-        />
-
-        {/* Quick Capture Bar */}
-        <button
-          type="button"
-          onClick={handleOpenNewNote}
-          className="w-full max-w-2xl mx-auto text-left rounded-2xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 hover:border-[#2E6B4E]/40 dark:hover:border-[#8FD4AE]/40 px-4 sm:px-5 py-3.5 flex items-center justify-between gap-4 transition-colors duration-150 cursor-pointer"
-        >
-          <span className="text-sm text-[#525E56] dark:text-[#9BA79F]">
-            Skriv en ny anteckning eller lägg till påminnelse...
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0">
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Skapa</span>
-          </span>
-        </button>
-
-        {/* Notes Feed */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((item) => (
-              <div
-                key={item}
-                className="h-44 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] animate-pulse"
+        {activeTab === 'calendar' ? (
+          <HouseholdCalendar
+            events={householdEvents}
+            householdName={household?.name}
+            userEmail={userEmail}
+            onAddEvent={handleAddCalendarEvent}
+            onDeleteEvent={handleDeleteCalendarEvent}
+            onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
+          />
+        ) : (
+          <>
+            <div className="md:hidden relative">
+              <Search
+                className="w-4 h-4 text-[#525E56] dark:text-[#9BA79F] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                aria-hidden="true"
               />
-            ))}
-          </div>
-        ) : filteredNotes.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[#18221C]/15 dark:border-[#E3EAE5]/15 py-14 px-6 text-center flex flex-col items-center gap-3 max-w-lg mx-auto my-4">
-            <h2 className="font-display text-lg font-semibold">
-              {searchQuery || onlyReminders || activeCategory !== 'Alla'
-                ? 'Inga matchande anteckningar'
-                : 'Inga anteckningar ännu'}
-            </h2>
-            <p className="text-sm text-[#525E56] dark:text-[#9BA79F]">
-              {searchQuery || onlyReminders || activeCategory !== 'Alla'
-                ? 'Prova att ändra sökord eller välj en annan kategori.'
-                : 'Skapa din första anteckning med påminnelse eller importera ett mejl från Gmail eller Outlook.'}
-            </p>
-            <div className="flex items-center gap-2.5 pt-2 flex-wrap justify-center">
-              {(searchQuery || onlyReminders || activeCategory !== 'Alla') && (
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Sök anteckningar eller mejl..."
+                aria-label="Sök anteckningar"
+                className="w-full h-11 pl-10 pr-10 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] border border-transparent focus:border-[#2E6B4E] dark:focus:border-[#8FD4AE] focus:bg-white dark:focus:bg-[#191D1A] focus:outline-none"
+              />
+              {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setOnlyReminders(false);
-                    setActiveCategory(FILTER_TABS[0]);
-                  }}
-                  className="min-h-[40px] px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium cursor-pointer"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Rensa sökning"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full text-[#525E56] dark:text-[#9BA79F]"
                 >
-                  Visa alla
+                  <X className="w-4 h-4" />
                 </button>
               )}
-              <button
-                type="button"
-                onClick={handleOpenNewNote}
-                className="min-h-[40px] px-4 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-sm font-semibold cursor-pointer"
-              >
-                Ny anteckning
-              </button>
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-8">
-            {pinnedNotes.length > 0 && (
-              <section aria-labelledby="pinned-heading" className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]">
-                  <h2 id="pinned-heading">Fästa anteckningar</h2>
-                  <span aria-hidden="true">·</span>
-                  <span className="font-mono-tabular">{pinnedNotes.length}</span>
+
+            {dueBannerNote && dueBannerNote.reminder && (
+              <div
+                role="status"
+                className="rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] border border-[#2E6B4E]/25 dark:border-[#8FD4AE]/25 text-[#0D3824] dark:text-[#CBEED9] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              >
+                <div className="flex items-start sm:items-center gap-3 min-w-0">
+                  <Bell className="w-5 h-5 shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">
+                      Påminnelse nu: {dueBannerNote.title || 'Anteckning'}
+                    </p>
+                    <p className="text-xs opacity-85 font-mono-tabular">
+                      {formatReminderDateTime(dueBannerNote.reminder.at)} · {dueBannerNote.category}
+                    </p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
-                  {pinnedNotes.map((note) => renderNoteWithShareBadge(note))}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleReminderComplete(dueBannerNote.id)}
+                    className="inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Markera klar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSnoozeReminder(dueBannerNote.id, '15m')}
+                    className="inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl bg-white/75 dark:bg-black/25 text-xs font-semibold cursor-pointer"
+                  >
+                    <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Snooza +15m</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDueBannerNote(null)}
+                    aria-label="Stäng avisering"
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              </section>
+              </div>
             )}
 
-            {otherNotes.length > 0 && (
-              <section aria-labelledby="others-heading" className="flex flex-col gap-3">
-                {pinnedNotes.length > 0 && (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]">
-                    <h2 id="others-heading">Övriga anteckningar</h2>
-                    <span aria-hidden="true">·</span>
-                    <span className="font-mono-tabular">{otherNotes.length}</span>
-                  </div>
-                )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
-                  {otherNotes.map((note) => renderNoteWithShareBadge(note))}
+            <CategoryTabs
+              activeCategory={activeCategory}
+              onSelectCategory={setActiveCategory}
+              counts={categoryCounts}
+              onlyReminders={onlyReminders}
+              onToggleOnlyReminders={() => setOnlyReminders((prev) => !prev)}
+              activeRemindersCount={activeRemindersCount}
+            />
+
+            <button
+              type="button"
+              onClick={() => {
+                setEditingNote(null);
+                setEditorOpen(true);
+              }}
+              className="w-full max-w-2xl mx-auto text-left rounded-2xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 hover:border-[#2E6B4E]/40 dark:hover:border-[#8FD4AE]/40 px-4 sm:px-5 py-3.5 flex items-center justify-between gap-4 transition-colors duration-150 cursor-pointer"
+            >
+              <span className="text-sm text-[#525E56] dark:text-[#9BA79F]">
+                Skriv en ny anteckning eller lägg till påminnelse...
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0">
+                <Plus className="w-4 h-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Skapa</span>
+              </span>
+            </button>
+
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((item) => (
+                  <div
+                    key={item}
+                    className="h-44 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : filteredNotes.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-[#18221C]/15 dark:border-[#E3EAE5]/15 py-14 px-6 text-center flex flex-col items-center gap-3 max-w-lg mx-auto my-4">
+                <h2 className="font-display text-lg font-semibold">
+                  {searchQuery || onlyReminders || activeCategory !== 'Alla'
+                    ? 'Inga matchande anteckningar'
+                    : 'Inga anteckningar ännu'}
+                </h2>
+                <p className="text-sm text-[#525E56] dark:text-[#9BA79F]">
+                  {searchQuery || onlyReminders || activeCategory !== 'Alla'
+                    ? 'Prova att ändra sökord eller välj en annan kategori.'
+                    : 'Skapa din första anteckning med påminnelse eller importera ett mejl från Gmail eller Outlook.'}
+                </p>
+                <div className="flex items-center gap-2.5 pt-2 flex-wrap justify-center">
+                  {(searchQuery || onlyReminders || activeCategory !== 'Alla') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setOnlyReminders(false);
+                        setActiveCategory(FILTER_TABS[0]);
+                      }}
+                      className="min-h-[40px] px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium cursor-pointer"
+                    >
+                      Visa alla
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingNote(null);
+                      setEditorOpen(true);
+                    }}
+                    className="min-h-[40px] px-4 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-sm font-semibold cursor-pointer"
+                  >
+                    Ny anteckning
+                  </button>
                 </div>
-              </section>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-8">
+                {pinnedNotes.length > 0 && (
+                  <section aria-labelledby="pinned-heading" className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]">
+                      <h2 id="pinned-heading">Fästa anteckningar</h2>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-mono-tabular">{pinnedNotes.length}</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
+                      {pinnedNotes.map((note) => renderNoteItem(note))}
+                    </div>
+                  </section>
+                )}
+
+                {otherNotes.length > 0 && (
+                  <section aria-labelledby="others-heading" className="flex flex-col gap-3">
+                    {pinnedNotes.length > 0 && (
+                      <div className="flex items-center gap-2 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]">
+                        <h2 id="others-heading">Övriga anteckningar</h2>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-mono-tabular">{otherNotes.length}</span>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
+                      {otherNotes.map((note) => renderNoteItem(note))}
+                    </div>
+                  </section>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </main>
 
-      {/* Mobile Floating Action Button (Thumb Zone, compact <= 15% sticky budget) */}
-      <button
-        type="button"
-        onClick={handleOpenNewNote}
-        aria-label="Ny anteckning"
-        className="sm:hidden fixed bottom-5 right-5 z-30 inline-flex items-center justify-center gap-2 h-14 px-5 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] shadow-lg font-semibold text-sm active:scale-95 transition-transform cursor-pointer"
-      >
-        <Plus className="w-5 h-5" aria-hidden="true" />
-        <span>Ny anteckning</span>
-      </button>
+      {activeTab === 'notes' && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditingNote(null);
+            setEditorOpen(true);
+          }}
+          aria-label="Ny anteckning"
+          className="sm:hidden fixed bottom-5 right-5 z-30 inline-flex items-center justify-center gap-2 h-14 px-5 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] shadow-lg font-semibold text-sm active:scale-95 transition-transform cursor-pointer"
+        >
+          <Plus className="w-5 h-5" aria-hidden="true" />
+          <span>Ny anteckning</span>
+        </button>
+      )}
 
-      {/* Undo Delete Snackbar */}
       {deletedUndo && (
         <div
           role="status"
@@ -892,7 +1098,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Create / Edit Note Modal */}
       <NoteEditorModal
         isOpen={editorOpen}
         initialNote={editingNote}
@@ -905,7 +1110,6 @@ export default function App() {
         onDelete={handleDeleteNote}
       />
 
-      {/* Email Import & Gmail/Outlook Preparation Modal */}
       <EmailImportModal
         isOpen={emailModalOpen}
         configs={emailConfigs}
@@ -914,7 +1118,6 @@ export default function App() {
         onSaveConfig={handleSaveEmailConfig}
       />
 
-      {/* Household & Account Modal */}
       <HouseholdModal
         open={householdModalOpen}
         onClose={() => setHouseholdModalOpen(false)}
