@@ -4,9 +4,12 @@ import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import {
   Calendar as CalendarIcon,
+  Camera,
   Check,
+  CheckCheck,
   ChevronDown,
   ChevronUp,
+  FileText,
   Loader2,
   Lock,
   MapPin,
@@ -14,6 +17,7 @@ import {
   Plus,
   Search,
   ShoppingCart,
+  Sparkles,
   Star,
   Store,
   Trash2,
@@ -23,20 +27,36 @@ import {
 import {
   DEFAULT_STAPLES,
   DEFAULT_STORES,
+  NearbyPhysicalStore,
   NominatimStoreSuggestion,
   SHOPPING_DEPARTMENTS,
   STORE_CHAINS,
+  StoreChainFilterCategory,
   ShoppingDepartment,
   ShoppingItem,
   ShoppingPreset,
+  buildGoogleMapsUrl,
+  fetchNearbyPhysicalStores,
   getStoreNavigationHref,
+  haversineDistanceKm,
   haversineDistanceMeters,
   searchNominatimStores,
 } from '../services/shoppingParser';
+import { compressScreenshotImage } from '../services/mailService';
+import { scanReceiptWithAi, ReceiptScanResult } from '../utils/smartAi';
 import { resolveHouseholdSecret } from '../services/crypto';
 import { getMemberAvatarUrl, getMemberDisplayName } from '../services/profiles';
 import { HouseholdMember, getUserHousehold, supabase } from '../services/supabase';
 import { MemberAvatar } from './MemberAvatar';
+
+export interface ReceiptSavePayload {
+  storeName: string;
+  purchaseDate: string;
+  totalAmount: string;
+  attachmentImage: string;
+  rawNote: string;
+  isPrivate?: boolean;
+}
 
 export interface ShoppingWriteContext {
   householdId: string;
@@ -106,6 +126,7 @@ interface ShoppingListProps {
     context?: ShoppingWriteContext
   ) => Promise<void>;
   onDeletePreset: (id: string) => Promise<void>;
+  onSaveReceipt?: (receipt: ReceiptSavePayload) => Promise<void>;
   onOpenHouseholdModal: () => void;
 }
 
@@ -127,6 +148,7 @@ export function ShoppingList({
   onClearChecked,
   onSavePreset,
   onDeletePreset,
+  onSaveReceipt,
   onOpenHouseholdModal,
 }: ShoppingListProps) {
   const [selectedStore, setSelectedStore] = useState<string>(ALL_STORES_VALUE);
@@ -149,8 +171,15 @@ export function ShoppingList({
     setGpsMatchedStoreName(null);
   }, [navigationRequest]);
 
-  // Add custom store inline form + Nominatim search
+  // Add custom store inline form + Overpass "Närmast mig först" + Nominatim search
   const [showStoreForm, setShowStoreForm] = useState(false);
+  const [nearbyStoreFilter, setNearbyStoreFilter] =
+    useState<StoreChainFilterCategory>('Alla nära mig');
+  const [nearbyStores, setNearbyStores] = useState<NearbyPhysicalStore[]>([]);
+  const [loadingNearbyStores, setLoadingNearbyStores] = useState(false);
+  const [nearbyStoreError, setNearbyStoreError] = useState<string | null>(null);
+  const [userGpsCoords, setUserGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+
   const [searchChain, setSearchChain] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
   const [nominatimResults, setNominatimResults] = useState<NominatimStoreSuggestion[]>([]);
@@ -161,6 +190,25 @@ export function ShoppingList({
   const [newStoreLat, setNewStoreLat] = useState<number | null>(null);
   const [newStoreLng, setNewStoreLng] = useState<number | null>(null);
   const [savingStore, setSavingStore] = useState(false);
+
+  // Receipt scanning state
+  const receiptFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [receiptScanning, setReceiptScanning] = useState(false);
+  const [receiptScanError, setReceiptScanError] = useState<string | null>(null);
+  const [receiptSuccessMsg, setReceiptSuccessMsg] = useState<string | null>(null);
+  const [scannedReceipt, setScannedReceipt] = useState<{
+    storeName: string;
+    purchaseDate: string;
+    totalAmount: string;
+    purchasedItems: string[];
+    matchedItemIds: string[];
+    matchedDetails: Array<{ itemId: string; itemLabel: string; receiptLine: string }>;
+    imageDataUrl: string;
+  } | null>(null);
+  const [selectedMatchedItemIds, setSelectedMatchedItemIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [savingReceiptAction, setSavingReceiptAction] = useState(false);
 
   // Collapsible staples quick-pick
   const [staplesExpanded, setStaplesExpanded] = useState(true);
@@ -212,6 +260,88 @@ export function ShoppingList({
 
     return Array.from(map.values());
   }, [storePresets, items]);
+
+  // Load nearby physical stores via GPS + Overpass API when opening "+ Lägg till egen butik & plats"
+  useEffect(() => {
+    if (!showStoreForm) return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const fetchGpsAndNearby = async () => {
+      setLoadingNearbyStores(true);
+      setNearbyStoreError(null);
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      try {
+        if (Capacitor.isNativePlatform()) {
+          const perm = await Geolocation.checkPermissions();
+          if (perm.location === 'prompt' || perm.location === 'prompt-with-rationale') {
+            await Geolocation.requestPermissions();
+          }
+        }
+        const pos = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 60000,
+        });
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } catch {
+        if (typeof navigator !== 'undefined' && navigator.geolocation) {
+          await new Promise<void>((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+              (p) => {
+                lat = p.coords.latitude;
+                lng = p.coords.longitude;
+                resolve();
+              },
+              () => resolve(),
+              { timeout: 7000 }
+            );
+          });
+        }
+      }
+
+      if (cancelled) return;
+
+      if (lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng)) {
+        setUserGpsCoords({ lat, lng });
+        try {
+          const stores = await fetchNearbyPhysicalStores(lat, lng, controller.signal);
+          if (!cancelled) {
+            setNearbyStores(stores);
+          }
+        } catch {
+          if (!cancelled) {
+            setNearbyStoreError('Kunde inte läsa in butiker i närheten.');
+          }
+        }
+      } else {
+        if (!cancelled) {
+          setNearbyStoreError('Kunde inte läsa GPS-position. Sök manuellt på stad eller butik nedan.');
+        }
+      }
+
+      if (!cancelled) {
+        setLoadingNearbyStores(false);
+      }
+    };
+
+    fetchGpsAndNearby();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [showStoreForm]);
+
+  // Filtered physical stores based on chain pills
+  const filteredNearbyStores = useMemo(() => {
+    if (nearbyStoreFilter === 'Alla nära mig') return nearbyStores;
+    return nearbyStores.filter((s) => s.chainCategory === nearbyStoreFilter);
+  }, [nearbyStores, nearbyStoreFilter]);
 
   // Debounced OpenStreetMap Nominatim search (400 ms) inside "+ Lägg till egen butik & plats"
   useEffect(() => {
@@ -620,6 +750,138 @@ export function ShoppingList({
     }
   };
 
+  const handleSelectAndSaveStore = async (store: {
+    name: string;
+    address: string;
+    lat?: number | null;
+    lng?: number | null;
+  }) => {
+    const cleanName = store.name.trim();
+    if (!cleanName || savingStore) return;
+    setSavingStore(true);
+    setErrorMsg(null);
+    try {
+      const context = await resolveWriteContext();
+      await onSavePreset(
+        {
+          presetType: 'store',
+          label: cleanName,
+          storeName: cleanName,
+          storeAddress: (store.address || '').trim(),
+          lat: store.lat ?? null,
+          lng: store.lng ?? null,
+        },
+        context
+      );
+      userManuallyPickedStoreRef.current = true;
+      setSelectedStore(cleanName);
+      setGpsMatchedStoreName(null);
+      setNewStoreName('');
+      setNewStoreAddress('');
+      setNewStoreLat(null);
+      setNewStoreLng(null);
+      setShowStoreForm(false);
+    } catch (error) {
+      setErrorMsg(getExactErrorMessage(error));
+    } finally {
+      setSavingStore(false);
+    }
+  };
+
+  const handleReceiptScanFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    setReceiptScanning(true);
+    setReceiptScanError(null);
+    setReceiptSuccessMsg(null);
+
+    try {
+      const compressed = await compressScreenshotImage(file, 1200, 0.8);
+      const activeItems = items
+        .filter((i) => !i.checked)
+        .map((i) => ({
+          id: i.id,
+          label: i.label,
+          department: i.department,
+          store_name: i.store_name,
+        }));
+
+      const result = await scanReceiptWithAi({
+        imageBase64: compressed.base64,
+        mimeType: compressed.mimeType,
+        activeItems,
+      });
+
+      setScannedReceipt({
+        storeName: result.store_name,
+        purchaseDate: result.purchase_date,
+        totalAmount: result.total_amount,
+        purchasedItems: result.purchased_items,
+        matchedItemIds: result.matched_item_ids,
+        matchedDetails: result.matched_details,
+        imageDataUrl: compressed.dataUrl,
+      });
+      setSelectedMatchedItemIds(new Set(result.matched_item_ids));
+    } catch (err) {
+      setReceiptScanError(
+        err instanceof Error ? err.message : 'Kunde inte läsa av kvittot med AI.'
+      );
+    } finally {
+      setReceiptScanning(false);
+    }
+  };
+
+  const handleToggleReceiptItemSelect = (id: string) => {
+    setSelectedMatchedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleConfirmReceipt = async () => {
+    if (!scannedReceipt || savingReceiptAction) return;
+    setSavingReceiptAction(true);
+    setReceiptScanError(null);
+    try {
+      const itemsToToggle = items.filter(
+        (it) => selectedMatchedItemIds.has(it.id) && !it.checked
+      );
+      for (const it of itemsToToggle) {
+        await onToggleItem(it);
+      }
+
+      if (onSaveReceipt) {
+        const storeLabel =
+          scannedReceipt.storeName ||
+          (selectedStore !== ALL_STORES_VALUE ? selectedStore : 'Kvitto');
+        const matchedLabels = itemsToToggle.map((i) => i.label).join(', ');
+        await onSaveReceipt({
+          storeName: storeLabel,
+          purchaseDate:
+            scannedReceipt.purchaseDate || new Date().toISOString().slice(0, 10),
+          totalAmount: scannedReceipt.totalAmount || '',
+          attachmentImage: scannedReceipt.imageDataUrl,
+          rawNote: `Kvittoköp (${storeLabel}). Avbockade varor: ${
+            matchedLabels || 'Inga matchade varor'
+          }`,
+        });
+      }
+
+      setReceiptSuccessMsg(
+        `Kvittot sparades! ${itemsToToggle.length} vara/varor bockades av automatiskt.`
+      );
+      setScannedReceipt(null);
+    } catch (err) {
+      setReceiptScanError(getExactErrorMessage(err));
+    } finally {
+      setSavingReceiptAction(false);
+    }
+  };
+
   const handleQuickAddStaple = async (
     label: string,
     department: ShoppingDepartment
@@ -840,7 +1102,129 @@ export function ShoppingList({
             >
               <span>+ Lägg till egen butik & plats</span>
             </button>
+
+            <input
+              ref={receiptFileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleReceiptScanFile}
+            />
+            <button
+              type="button"
+              disabled={receiptScanning}
+              onClick={() => receiptFileInputRef.current?.click()}
+              className="h-11 px-3.5 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] hover:bg-[#24563E] dark:hover:bg-[#A3DFBD] text-white dark:text-[#063822] text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap transition-colors shadow-sm"
+            >
+              {receiptScanning ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4" />
+              )}
+              <span>🧾 Skanna kvitto</span>
+            </button>
           </div>
+
+          {(receiptScanning || receiptScanError || receiptSuccessMsg || scannedReceipt) && (
+            <div className="rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-3.5 sm:p-4 flex flex-col gap-3">
+              {receiptScanning && (
+                <div className="flex items-center gap-2.5 text-xs text-[#2E6B4E] dark:text-[#8FD4AE] font-medium py-2">
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  <span>Analyserar kvitto med AI och matchar mot inköpslistan...</span>
+                </div>
+              )}
+              {receiptScanError && (
+                <p className="text-xs text-red-600 dark:text-red-400 bg-red-500/10 p-2.5 rounded-xl">
+                  {receiptScanError}
+                </p>
+              )}
+              {receiptSuccessMsg && (
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 p-2.5 rounded-xl font-medium">
+                  {receiptSuccessMsg}
+                </p>
+              )}
+
+              {scannedReceipt && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-[#2E6B4E]/15 dark:bg-[#8FD4AE]/15 text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#171D19] dark:text-[#E4EBE6]">
+                          {scannedReceipt.storeName || 'Kvittoköp'} ({scannedReceipt.totalAmount || 'Okänd summa'})
+                        </p>
+                        <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F]">
+                          Datum: {scannedReceipt.purchaseDate || 'Idag'} · {scannedReceipt.purchasedItems.length} varor på kvittot
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setScannedReceipt(null)}
+                      className="text-xs text-[#525E56] hover:underline cursor-pointer"
+                    >
+                      Avbryt
+                    </button>
+                  </div>
+
+                  {scannedReceipt.matchedDetails.length > 0 ? (
+                    <div className="flex flex-col gap-1.5">
+                      <p className="text-[11px] font-semibold text-[#525E56] dark:text-[#9BA79F]">
+                        Matchade varor i din inköpslista (bockas av automatiskt):
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {scannedReceipt.matchedDetails.map((match) => {
+                          const isSelected = selectedMatchedItemIds.has(match.itemId);
+                          return (
+                            <button
+                              key={match.itemId}
+                              type="button"
+                              onClick={() => handleToggleReceiptItemSelect(match.itemId)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]'
+                                  : 'bg-white dark:bg-[#191D1A] text-[#525E56] dark:text-[#9BA79F] border border-[#18221C]/10 dark:border-[#E3EAE5]/10'
+                              }`}
+                            >
+                              <CheckCheck className="w-3.5 h-3.5" />
+                              <span>{match.itemLabel}</span>
+                              <span className="text-[10px] opacity-75 font-mono">({match.receiptLine})</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#525E56] dark:text-[#9BA79F]">
+                      Inga exakta matchningar hittades mot din aktiva inköpslista, men du kan spara kvittot i arkivet.
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setScannedReceipt(null)}
+                      className="h-9 px-3 rounded-xl text-xs font-medium text-[#525E56] hover:bg-black/5 cursor-pointer"
+                    >
+                      Stäng
+                    </button>
+                    <button
+                      type="button"
+                      disabled={savingReceiptAction}
+                      onClick={handleConfirmReceipt}
+                      className="h-9 px-4 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
+                    >
+                      {savingReceiptAction && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>Bocka av & spara kvitto</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {gpsMatchedStoreName && (
             <div className="inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9] text-xs font-medium">
@@ -904,13 +1288,11 @@ export function ShoppingList({
           )}
 
           {showStoreForm && (
-            <form
-              onSubmit={handleSaveNewStore}
-              className="rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-3.5 flex flex-col gap-3"
-            >
+            <div className="rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-3.5 sm:p-4 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6]">
-                  Sök eller lägg till butik & plats (E2E-krypterat)
+                <p className="text-xs sm:text-sm font-bold text-[#171D19] dark:text-[#E4EBE6] flex items-center gap-1.5">
+                  <Store className="w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]" aria-hidden="true" />
+                  <span>Närmast mig först — fysiska butiker & platser</span>
                 </p>
                 <button
                   type="button"
@@ -922,11 +1304,106 @@ export function ShoppingList({
                 </button>
               </div>
 
-              {/* OpenStreetMap Nominatim Automatic Store Search */}
+              {/* Chain Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                {(
+                  [
+                    'Alla nära mig',
+                    'ICA',
+                    'Willys',
+                    'Lidl',
+                    'Coop',
+                    'Hemköp',
+                    'Apotek',
+                    'Övrigt',
+                  ] as StoreChainFilterCategory[]
+                ).map((cat) => {
+                  const active = nearbyStoreFilter === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setNearbyStoreFilter(cat)}
+                      className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                        active
+                          ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] shadow-sm'
+                          : 'bg-white dark:bg-[#191D1A] text-[#525E56] dark:text-[#9BA79F] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 hover:bg-[#ECEFE9] dark:hover:bg-[#212723]'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {loadingNearbyStores && (
+                <div className="flex items-center justify-center gap-2 py-6 text-xs text-[#525E56] dark:text-[#9BA79F]">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#2E6B4E] dark:text-[#8FD4AE]" />
+                  <span>Hämtar din GPS-position och söker butiker i närheten (OpenStreetMap)...</span>
+                </div>
+              )}
+
+              {nearbyStoreError && (
+                <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-500/10 p-2.5 rounded-xl">
+                  {nearbyStoreError}
+                </p>
+              )}
+
+              {!loadingNearbyStores && filteredNearbyStores.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-[11px] font-semibold text-[#525E56] dark:text-[#9BA79F]">
+                    Hittade {filteredNearbyStores.length} butiker inom 15 km (närmast först):
+                  </p>
+                  <ul className="divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8 rounded-xl border border-[#18221C]/10 dark:border-[#E3EAE5]/10 bg-white dark:bg-[#191D1A] max-h-56 overflow-y-auto">
+                    {filteredNearbyStores.map((store, idx) => (
+                      <li key={store.id}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectAndSaveStore({
+                              name: store.name,
+                              address: store.address,
+                              lat: store.lat,
+                              lng: store.lng,
+                            })
+                          }
+                          className="w-full px-3.5 py-2.5 text-left hover:bg-[#D3EBD9]/60 dark:hover:bg-[#1C4A34]/60 transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0 font-mono-tabular">
+                                #{idx + 1}
+                              </span>
+                              <p className="text-xs font-bold text-[#171D19] dark:text-[#E4EBE6] truncate">
+                                {store.name}
+                              </p>
+                            </div>
+                            {store.address && (
+                              <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate pl-5">
+                                📍 {store.address}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs font-bold font-mono-tabular text-[#2E6B4E] dark:text-[#8FD4AE] bg-[#D3EBD9]/50 dark:bg-[#1C4A34]/50 px-2 py-1 rounded-lg">
+                              {store.formattedDistance}
+                            </span>
+                            <span className="text-[11px] font-semibold text-white bg-[#2E6B4E] dark:bg-[#8FD4AE] dark:text-[#063822] px-2.5 py-1 rounded-lg">
+                              Välj
+                            </span>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Nominatim Fallback / Manual search city */}
               <div className="rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-2.5 flex flex-col gap-2">
                 <span className="text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1.5">
                   <Search className="w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]" aria-hidden="true" />
-                  <span>Snabbsök butik i Sverige (hämtar namn, adress & GPS automatiskt)</span>
+                  <span>Eller sök butik / stad i Sverige:</span>
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <select
@@ -973,11 +1450,12 @@ export function ShoppingList({
                         <button
                           type="button"
                           onClick={() => {
-                            setNewStoreName(suggestion.name);
-                            setNewStoreAddress(suggestion.address);
-                            setNewStoreLat(suggestion.lat);
-                            setNewStoreLng(suggestion.lng);
-                            setNominatimResults([]);
+                            handleSelectAndSaveStore({
+                              name: suggestion.name,
+                              address: suggestion.address,
+                              lat: suggestion.lat,
+                              lng: suggestion.lng,
+                            });
                           }}
                           className="w-full px-3 py-2 text-left hover:bg-[#D3EBD9]/60 dark:hover:bg-[#1C4A34]/60 transition-colors flex items-start justify-between gap-2 cursor-pointer"
                         >
@@ -999,65 +1477,8 @@ export function ShoppingList({
                     ))}
                   </ul>
                 )}
-
-                {!searchingStores &&
-                  !searchStoreError &&
-                  searchLocation.trim().length >= 2 &&
-                  nominatimResults.length === 0 &&
-                  !newStoreName.trim() && (
-                    <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F]">
-                      Inga förslag hittades — du kan fylla i butiksnamn och adress manuellt nedan.
-                    </p>
-                  )}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <input
-                  type="text"
-                  value={newStoreName}
-                  onChange={(e) => setNewStoreName(e.target.value)}
-                  placeholder="Butiksnamn (t.ex. ICA Maxi Stormarknad Gnista)"
-                  aria-label="Butiksnamn"
-                  required
-                  className="h-10 px-3.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
-                />
-                <input
-                  type="text"
-                  value={newStoreAddress}
-                  onChange={(e) => setNewStoreAddress(e.target.value)}
-                  placeholder="Adress / plats (t.ex. Visthusvägen 1, Uppsala)"
-                  aria-label="Butikens adress eller plats"
-                  className="h-10 px-3.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
-                />
-              </div>
-
-              {newStoreLat !== null && newStoreLng !== null && (
-                <p className="text-[11px] text-[#2E6B4E] dark:text-[#8FD4AE] font-mono-tabular flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                  <span>
-                    GPS-koordinater sparade ({newStoreLat.toFixed(5)}, {newStoreLng.toFixed(5)}) — möjliggör automatiskt val inom 300 m
-                  </span>
-                </p>
-              )}
-
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowStoreForm(false)}
-                  className="h-9 px-3.5 rounded-xl text-xs font-medium text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 cursor-pointer"
-                >
-                  Avbryt
-                </button>
-                <button
-                  type="submit"
-                  disabled={!newStoreName.trim() || savingStore}
-                  className="h-9 px-4 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                >
-                  {savingStore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Spara butik</span>
-                </button>
-              </div>
-            </form>
+            </div>
           )}
         </div>
 

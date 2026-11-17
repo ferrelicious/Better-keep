@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { decryptText, encryptText } from './crypto';
 
-export type MailItemCategory = 'package' | 'invoice' | 'letter';
+export type MailItemCategory = 'package' | 'invoice' | 'letter' | 'receipt';
 export type MailShareFilter = 'all' | 'shared' | 'private';
 
 export interface RawMailItem {
@@ -83,8 +83,16 @@ export interface ParsedMailItemResult {
   due_date: string;
 }
 
+export interface CalendarEventSuggestion {
+  title: string;
+  event_date: string;
+  event_time?: string;
+  notes?: string;
+}
+
 export interface ParseMailResultWithItems extends ParsedMailItemResult {
   items: ParsedMailItemResult[];
+  calendar_event?: CalendarEventSuggestion | null;
 }
 
 export interface SharedContentPayload {
@@ -143,9 +151,11 @@ function normalizeRawItem(r: Partial<ParsedMailItemResult>): ParsedMailItemResul
       ? 'package'
       : catRaw === 'invoice' || catRaw === 'bill'
         ? 'invoice'
-        : catRaw === 'letter'
-          ? 'letter'
-          : 'letter';
+        : catRaw === 'receipt' || catRaw === 'kvitto'
+          ? 'receipt'
+          : catRaw === 'letter'
+            ? 'letter'
+            : 'letter';
 
   return {
     item_category: cat,
@@ -181,6 +191,7 @@ export async function parseMailWithAI(params: {
   const payload = (await res.json().catch(() => ({}))) as {
     items?: Array<Partial<ParsedMailItemResult>>;
     result?: Partial<ParsedMailItemResult>;
+    calendar_event?: CalendarEventSuggestion | null;
     error?: string;
   };
 
@@ -202,6 +213,7 @@ export async function parseMailWithAI(params: {
   return {
     ...primary,
     items,
+    calendar_event: payload.calendar_event || null,
   };
 }
 

@@ -794,3 +794,218 @@ export async function searchNominatimStores(
 
   return suggestions;
 }
+
+export type StoreChainFilterCategory =
+  | 'Alla nära mig'
+  | 'ICA'
+  | 'Willys'
+  | 'Lidl'
+  | 'Coop'
+  | 'Hemköp'
+  | 'Apotek'
+  | 'Övrigt';
+
+export interface NearbyPhysicalStore {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  distanceKm: number;
+  formattedDistance: string;
+  chainCategory: 'ICA' | 'Willys' | 'Lidl' | 'Coop' | 'Hemköp' | 'Apotek' | 'Övrigt';
+}
+
+export function haversineDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export function formatDistanceKm(km: number): string {
+  if (km < 1) {
+    return `${Math.round(km * 1000)} m`;
+  }
+  return `${km.toFixed(1).replace('.', ',')} km`;
+}
+
+export function categorizeStoreChain(
+  name: string,
+  brand?: string,
+  shopType?: string
+): 'ICA' | 'Willys' | 'Lidl' | 'Coop' | 'Hemköp' | 'Apotek' | 'Övrigt' {
+  const lower = `${name} ${brand || ''}`.toLowerCase();
+  if (lower.includes('ica')) return 'ICA';
+  if (lower.includes('willys')) return 'Willys';
+  if (lower.includes('lidl')) return 'Lidl';
+  if (lower.includes('coop')) return 'Coop';
+  if (lower.includes('hemköp') || lower.includes('hemkop')) return 'Hemköp';
+  if (
+    lower.includes('apotek') ||
+    lower.includes('kronans') ||
+    lower.includes('hjärtat') ||
+    lower.includes('doz') ||
+    shopType === 'chemist'
+  ) {
+    return 'Apotek';
+  }
+  return 'Övrigt';
+}
+
+interface OverpassRawNode {
+  type: string;
+  id: number;
+  lat: number;
+  lon: number;
+  tags?: Record<string, string>;
+}
+
+export async function fetchNearbyPhysicalStores(
+  userLat: number,
+  userLng: number,
+  signal?: AbortSignal
+): Promise<NearbyPhysicalStore[]> {
+  const storesMap = new Map<string, NearbyPhysicalStore>();
+
+  // 1. Try OpenStreetMap Overpass API within 15 km (15000 meters)
+  try {
+    const overpassQuery = `[out:json][timeout:8];node(around:15000,${userLat},${userLng})["shop"~"supermarket|convenience|department_store|chemist|hardware|doityourself"];out body 25;`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    const onExternalAbort = () => controller.abort();
+    if (signal) signal.addEventListener('abort', onExternalAbort);
+
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'BetterKeepApp/1.0',
+      },
+      body: `data=${encodeURIComponent(overpassQuery)}`,
+      signal: controller.signal,
+    }).finally(() => {
+      clearTimeout(timeoutId);
+      if (signal) signal.removeEventListener('abort', onExternalAbort);
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as { elements?: OverpassRawNode[] };
+      const elements = Array.isArray(data.elements) ? data.elements : [];
+
+      for (const el of elements) {
+        const tags = el.tags || {};
+        const rawName = (tags.name || tags.brand || '').trim();
+        if (!rawName) continue;
+
+        const road = (tags['addr:street'] || '').trim();
+        const house = (tags['addr:housenumber'] || '').trim();
+        const city = (tags['addr:city'] || tags['addr:suburb'] || '').trim();
+        const street = [road, house].filter(Boolean).join(' ');
+        const address = [street, city].filter(Boolean).join(', ');
+
+        const dist = haversineDistanceKm(userLat, userLng, el.lat, el.lon);
+        const chain = categorizeStoreChain(rawName, tags.brand, tags.shop);
+
+        const storeItem: NearbyPhysicalStore = {
+          id: `osm-${el.id}`,
+          name: rawName,
+          address,
+          lat: el.lat,
+          lng: el.lon,
+          distanceKm: dist,
+          formattedDistance: formatDistanceKm(dist),
+          chainCategory: chain,
+        };
+        storesMap.set(`${storeItem.name.toLowerCase()}_${storeItem.lat.toFixed(3)}`, storeItem);
+      }
+    }
+  } catch {
+    // Overpass failed or timed out, seamlessly proceed to Nominatim fallback below
+  }
+
+  // 2. If Overpass returned few results or failed, augment/fallback with Nominatim
+  if (storesMap.size < 6) {
+    try {
+      const chainsToQuery = ['ICA', 'Willys', 'Lidl', 'Coop', 'Hemköp', 'Apotek'];
+      const delta = 0.15; // ~15km bounding box
+      const viewbox = `${userLng - delta},${userLat + delta},${userLng + delta},${userLat - delta}`;
+
+      // Query top chains concurrently
+      await Promise.all(
+        chainsToQuery.map(async (chain) => {
+          try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=se&addressdetails=1&limit=4&viewbox=${viewbox}&q=${encodeURIComponent(
+              chain
+            )}`;
+            const res = await fetch(url, {
+              headers: {
+                Accept: 'application/json',
+                'Accept-Language': 'sv',
+                'User-Agent': 'BetterKeepApp/1.0',
+              },
+              signal,
+            });
+            if (!res.ok) return;
+            const items = (await res.json()) as NominatimRawResult[];
+            if (!Array.isArray(items)) return;
+
+            for (const item of items) {
+              const lat = Number.parseFloat(String(item.lat ?? ''));
+              const lng = Number.parseFloat(String(item.lon ?? ''));
+              if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+              const dist = haversineDistanceKm(userLat, userLng, lat, lng);
+              if (dist > 18) continue; // outside search radius
+
+              const addr = item.address ?? {};
+              const name = (item.name || addr.supermarket || addr.shop || chain).trim();
+              const road = (addr.road || addr.pedestrian || '').trim();
+              const house = (addr.house_number || '').trim();
+              const street = [road, house].filter(Boolean).join(' ');
+              const city = (addr.city || addr.town || addr.suburb || '').trim();
+              const address = [street, city].filter(Boolean).join(', ');
+
+              const key = `${name.toLowerCase()}_${lat.toFixed(3)}`;
+              if (!storesMap.has(key)) {
+                storesMap.set(key, {
+                  id: `nom-${item.place_id || `${lat}_${lng}`}`,
+                  name,
+                  address,
+                  lat,
+                  lng,
+                  distanceKm: dist,
+                  formattedDistance: formatDistanceKm(dist),
+                  chainCategory: categorizeStoreChain(name, undefined, addr.shop),
+                });
+              }
+            }
+          } catch {
+            // ignore individual query failure
+          }
+        })
+      );
+    } catch {
+      // ignore
+    }
+  }
+
+  const results = Array.from(storesMap.values());
+  // Sortera med närmast först!
+  results.sort((a, b) => a.distanceKm - b.distanceKm);
+  return results;
+}
+

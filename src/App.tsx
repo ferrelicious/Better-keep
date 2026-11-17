@@ -2791,6 +2791,24 @@ export default function App() {
             onClearChecked={handleClearCheckedShoppingItems}
             onSavePreset={handleSaveShoppingPreset}
             onDeletePreset={handleDeleteShoppingPreset}
+            onSaveReceipt={async (r) => {
+              await handleSaveMailItem({
+                item_category: 'receipt',
+                carrier: '',
+                sender: r.storeName,
+                pickup_code: '',
+                tracking_id: '',
+                pickup_location: r.storeName,
+                pickup_address: '',
+                ocr_number: '',
+                payment_recipient: '',
+                amount: r.totalAmount,
+                due_date: r.purchaseDate,
+                raw_note: r.rawNote,
+                attachment_image: r.attachmentImage,
+                is_private: r.isPrivate || false,
+              });
+            }}
             onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
           />
         ) : activeTab === 'mail' ? (
