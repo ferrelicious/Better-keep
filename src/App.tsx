@@ -7,6 +7,7 @@ import {
   Clock,
   Lock,
   MessageCircle,
+  Package,
   Plus,
   Search,
   ShoppingCart,
@@ -23,6 +24,7 @@ import {
   OutgoingChatPayload,
 } from './components/HouseholdChat';
 import { HouseholdModal } from './components/HouseholdModal';
+import { MailManager } from './components/MailManager';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -47,6 +49,15 @@ import {
   normalizeDepartment,
   parseShoppingCommand,
 } from './services/shoppingParser';
+import {
+  MailItem,
+  MailShareFilter,
+  ParsedMailDraft,
+  RawMailItem,
+  SharedContentPayload,
+  decryptMailItem,
+  encryptMailDraft,
+} from './services/mailService';
 import { UpdateCheckResult } from './services/updater';
 import {
   SnoozePreset,
@@ -118,7 +129,7 @@ export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
-  const [activeTab, setActiveTab] = useState<'notes' | 'shopping' | 'calendar' | 'chat'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'shopping' | 'mail' | 'calendar' | 'chat'>('notes');
   const [theme, setTheme] = useState<ThemeMode>(() => getSavedTheme());
   const [systemDark, setSystemDark] = useState<boolean>(() => {
     try {
@@ -149,12 +160,16 @@ export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [household, setHousehold] = useState<HouseholdInfo | null>(null);
   const [sharedNoteIds, setSharedNoteIds] = useState<Set<string>>(new Set());
-    const [householdEvents, setHouseholdEvents] = useState<HouseholdEvent[]>([]);
+  const [householdEvents, setHouseholdEvents] = useState<HouseholdEvent[]>([]);
   const [householdMessages, setHouseholdMessages] = useState<HouseholdMessage[]>([]);
   const [rawShoppingItems, setRawShoppingItems] = useState<RawShoppingItem[]>([]);
   const [rawShoppingPresets, setRawShoppingPresets] = useState<RawShoppingPreset[]>([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [shoppingPresets, setShoppingPresets] = useState<ShoppingPreset[]>([]);
+  const [rawMailItems, setRawMailItems] = useState<RawMailItem[]>([]);
+  const [mailItems, setMailItems] = useState<MailItem[]>([]);
+  const [pendingSharedContent, setPendingSharedContent] =
+    useState<SharedContentPayload | null>(null);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [passphraseVersion, setPassphraseVersion] = useState(0);
   const [latestRelease, setLatestRelease] = useState<UpdateCheckResult | null>(null);
@@ -169,9 +184,11 @@ export default function App() {
   } | null>(null);
   const notifiedIdsRef = useRef<Set<string>>(new Set());
   const undoTimerRef = useRef<number | null>(null);
-  const activeTabRef = useRef<'notes' | 'shopping' | 'calendar' | 'chat'>('notes');
+  const activeTabRef = useRef<'notes' | 'shopping' | 'mail' | 'calendar' | 'chat'>('notes');
   const householdRef = useRef<HouseholdInfo | null>(null);
   const shoppingItemsRef = useRef<ShoppingItem[]>([]);
+  const mailItemsRef = useRef<MailItem[]>([]);
+  const lastHandledShareIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     householdRef.current = household;
@@ -291,6 +308,28 @@ export default function App() {
     return Array.from(set);
   }, [shoppingPresets, shoppingItems]);
 
+  useEffect(() => {
+    mailItemsRef.current = mailItems;
+  }, [mailItems]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const decrypted = await Promise.all(
+        rawMailItems.map((raw) => decryptMailItem(raw, encryptionSecret))
+      );
+      if (active) setMailItems(decrypted);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [rawMailItems, encryptionSecret]);
+
+  const activeMailCount = useMemo(
+    () => mailItems.filter((m) => !m.completed).length,
+    [mailItems]
+  );
+
   const uncheckedShoppingCount = useMemo(
     () => shoppingItems.filter((item) => !item.checked).length,
     [shoppingItems]
@@ -298,6 +337,49 @@ export default function App() {
 
   useEffect(() => {
     ensureHighPriorityNotificationChannel();
+  }, []);
+
+  // Listen for Android Share Target payloads (app-shared-content CustomEvent + cold-start bridge)
+  useEffect(() => {
+    const acceptSharedPayload = (payload: SharedContentPayload | null | undefined) => {
+      if (!payload || (payload.type !== 'image' && payload.type !== 'text')) return;
+      const dedupeKey =
+        payload.shareId !== undefined
+          ? String(payload.shareId)
+          : `${payload.type}:${(payload.base64 || payload.text || '').slice(0, 48)}`;
+      if (lastHandledShareIdRef.current === dedupeKey) return;
+      lastHandledShareIdRef.current = dedupeKey;
+
+      setShowSplash(false);
+      setActiveTab('mail');
+      setPendingSharedContent(payload);
+    };
+
+    const onSharedEvent = (ev: Event) => {
+      const customEv = ev as CustomEvent<SharedContentPayload>;
+      acceptSharedPayload(customEv.detail);
+    };
+
+    window.addEventListener('app-shared-content', onSharedEvent);
+
+    try {
+      const nativeBridge = (
+        window as unknown as {
+          BetterKeepNativeShare?: { consumePendingShare?: () => string | null };
+        }
+      ).BetterKeepNativeShare;
+      const pendingJson = nativeBridge?.consumePendingShare?.();
+      if (pendingJson) {
+        const parsed = JSON.parse(pendingJson) as SharedContentPayload;
+        acceptSharedPayload(parsed);
+      }
+    } catch {
+      // Ignore malformed native share payload
+    }
+
+    return () => {
+      window.removeEventListener('app-shared-content', onSharedEvent);
+    };
   }, []);
 
   useEffect(() => {
@@ -392,6 +474,24 @@ export default function App() {
     }
   }, []);
 
+  const fetchHouseholdMailItems = useCallback(
+    async (householdId: string, currentUserEmail?: string | null) => {
+      const { data, error } = await supabase
+        .from('household_mail_items')
+        .select('*')
+        .eq('household_id', householdId)
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        const myEmail = (currentUserEmail ?? '').toLowerCase();
+        const visible = (data as RawMailItem[]).filter(
+          (item) => !item.is_private || item.created_by.toLowerCase() === myEmail
+        );
+        setRawMailItems(visible);
+      }
+    },
+    []
+  );
+
   const syncFromCloud = useCallback(
     async (email: string) => {
       try {
@@ -406,6 +506,7 @@ export default function App() {
             fetchHouseholdMessages(hh.id),
             fetchHouseholdShoppingItems(hh.id),
             fetchHouseholdShoppingPresets(hh.id),
+            fetchHouseholdMailItems(hh.id, email),
           ]);
         } else {
           setHouseholdEvents([]);
@@ -414,6 +515,8 @@ export default function App() {
           setRawShoppingPresets([]);
           setShoppingItems([]);
           setShoppingPresets([]);
+          setRawMailItems([]);
+          setMailItems([]);
         }
 
         const sharedIds = new Set<string>();
@@ -462,6 +565,7 @@ export default function App() {
       fetchHouseholdMessages,
       fetchHouseholdShoppingItems,
       fetchHouseholdShoppingPresets,
+      fetchHouseholdMailItems,
     ]
   );
 
@@ -502,6 +606,8 @@ export default function App() {
         setRawShoppingPresets([]);
         setShoppingItems([]);
         setShoppingPresets([]);
+        setRawMailItems([]);
+        setMailItems([]);
       }
     });
 
@@ -700,6 +806,29 @@ export default function App() {
       )
       .on(
         'postgres_changes',
+        { event: '*', schema: 'public', table: 'household_mail_items' },
+        (payload) => {
+          const currentHhId = householdRef.current?.id;
+          if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as { id?: string })?.id;
+            if (deletedId) {
+              setRawMailItems((prev) => prev.filter((item) => item.id !== deletedId));
+            }
+          } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const item = payload.new as RawMailItem;
+            if (!item?.id) return;
+            if (currentHhId && item.household_id !== currentHhId) return;
+            const isMine = item.created_by.toLowerCase() === userEmail.toLowerCase();
+            if (item.is_private && !isMine) return;
+            setRawMailItems((prev) => {
+              const exists = prev.some((i) => i.id === item.id);
+              return exists ? prev.map((i) => (i.id === item.id ? item : i)) : [item, ...prev];
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'household_members' },
         async () => {
           const hh = await getUserHousehold(userEmail);
@@ -710,6 +839,7 @@ export default function App() {
               fetchHouseholdMessages(hh.id),
               fetchHouseholdShoppingItems(hh.id),
               fetchHouseholdShoppingPresets(hh.id),
+              fetchHouseholdMailItems(hh.id, userEmail),
             ]);
           }
         }
@@ -725,6 +855,7 @@ export default function App() {
     fetchHouseholdMessages,
     fetchHouseholdShoppingItems,
     fetchHouseholdShoppingPresets,
+    fetchHouseholdMailItems,
   ]);
 
   useEffect(() => {
@@ -1121,8 +1252,8 @@ export default function App() {
       event_time: string;
       remind_before_minutes: number;
       is_private: boolean;
-    }) => {
-      if (!userEmail || !household?.id) return;
+    }): Promise<HouseholdEvent | null> => {
+      if (!userEmail || !household?.id) return null;
       const { data, error } = await supabase
         .from('household_events')
         .insert({
@@ -1144,9 +1275,157 @@ export default function App() {
           prev.some((e) => e.id === created.id) ? prev : [...prev, created]
         );
         await scheduleCalendarEventNotifications(created, false);
+        return created;
       }
+      return null;
     },
     [userEmail, household]
+  );
+
+  const handleSaveMailItem = useCallback(
+    async (draft: ParsedMailDraft) => {
+      if (!userEmail || !household?.id) return;
+      const secret = resolveHouseholdSecret(household);
+      const encrypted = await encryptMailDraft(draft, secret);
+
+      let calendarEventId: string | null = null;
+      if (draft.due_date) {
+        const senderLabel = draft.sender.trim() || draft.carrier.trim() || 'Post';
+        const title =
+          draft.item_category === 'package'
+            ? `📦 Sista hämtningsdag: ${senderLabel}`
+            : draft.item_category === 'invoice'
+              ? `💳 Förfallodatum räkning: ${senderLabel}${draft.amount.trim() ? ` (${draft.amount.trim()})` : ''}`
+              : `✉️ Viktigt brev: ${senderLabel}`;
+        const safeNoteParts = [
+          draft.carrier.trim(),
+          draft.pickup_location.trim(),
+          'Se krypterad detaljvy under fliken Post',
+        ].filter(Boolean);
+
+        const createdEv = await handleAddCalendarEvent({
+          title,
+          notes: safeNoteParts.join(' · '),
+          event_date: draft.due_date,
+          event_time: '09:00',
+          remind_before_minutes: 60,
+          is_private: draft.is_private,
+        });
+        calendarEventId = createdEv?.id ?? null;
+      }
+
+      const payloadToInsert: Record<string, unknown> = {
+        household_id: household.id,
+        created_by: userEmail,
+        ...encrypted,
+        completed: false,
+      };
+      if (calendarEventId) {
+        payloadToInsert.calendar_event_id = calendarEventId;
+      }
+
+      let { data, error } = await supabase
+        .from('household_mail_items')
+        .insert(payloadToInsert)
+        .select()
+        .single();
+
+      if (error && /calendar_event_id/i.test(error.message)) {
+        delete payloadToInsert.calendar_event_id;
+        const retry = await supabase
+          .from('household_mail_items')
+          .insert(payloadToInsert)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
+
+      if (error) throw error;
+      if (data) {
+        const created = data as RawMailItem;
+        setRawMailItems((prev) =>
+          prev.some((m) => m.id === created.id) ? prev : [created, ...prev]
+        );
+      }
+    },
+    [userEmail, household, handleAddCalendarEvent]
+  );
+
+  const handleToggleMailCompleted = useCallback(
+    async (item: MailItem) => {
+      if (!userEmail || !household?.id) return;
+      const nextCompleted = !item.completed;
+
+      setMailItems((prev) =>
+        prev.map((m) => (m.id === item.id ? { ...m, completed: nextCompleted } : m))
+      );
+      setRawMailItems((prev) =>
+        prev.map((m) => (m.id === item.id ? { ...m, completed: nextCompleted } : m))
+      );
+
+      const { error } = await supabase
+        .from('household_mail_items')
+        .update({ completed: nextCompleted })
+        .eq('id', item.id);
+
+      if (error) {
+        setMailItems((prev) =>
+          prev.map((m) =>
+            m.id === item.id ? { ...m, completed: item.completed } : m
+          )
+        );
+        setRawMailItems((prev) =>
+          prev.map((m) =>
+            m.id === item.id ? { ...m, completed: item.completed } : m
+          )
+        );
+        return;
+      }
+
+      if (nextCompleted && !item.is_private) {
+        const actorName = userEmail.split('@')[0];
+        const senderText = item.sender || item.carrier || 'Post';
+        const actionLabel =
+          item.item_category === 'package'
+            ? 'Paket hämtat'
+            : item.item_category === 'invoice'
+              ? 'Räkning betald'
+              : 'Post hanterad';
+        await handleSendChatMessage({
+          text: `✅ ${actionLabel}: ${senderText} (Utfört av ${actorName})`,
+        });
+      }
+    },
+    [userEmail, household, handleSendChatMessage]
+  );
+
+  const handleDeleteMailItem = useCallback(async (id: string) => {
+    setMailItems((prev) => prev.filter((item) => item.id !== id));
+    setRawMailItems((prev) => prev.filter((item) => item.id !== id));
+    await supabase.from('household_mail_items').delete().eq('id', id);
+  }, []);
+
+  const handleClearArchivedMail = useCallback(
+    async (filter: MailShareFilter) => {
+      const toClearIds = mailItemsRef.current
+        .filter((item) => {
+          if (!item.completed) return false;
+          if (filter === 'private') return item.is_private;
+          if (filter === 'shared') return !item.is_private;
+          return true;
+        })
+        .map((item) => item.id);
+
+      if (toClearIds.length === 0) return;
+
+      const idSet = new Set(toClearIds);
+      setMailItems((prev) => prev.filter((item) => !idSet.has(item.id)));
+      setRawMailItems((prev) => prev.filter((item) => !idSet.has(item.id)));
+
+      await supabase.from('household_mail_items').delete().in('id', toClearIds);
+    },
+    []
   );
 
   const handleDeleteCalendarEvent = useCallback(async (id: string) => {
@@ -1599,6 +1878,23 @@ export default function App() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('mail')}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
+              activeTab === 'mail'
+                ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
+                : 'text-[#525E56] dark:text-[#9BA79F]'
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            <span>Post</span>
+            {activeMailCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono-tabular bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]">
+                {activeMailCount}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('calendar')}
             className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
               activeTab === 'calendar'
@@ -1777,6 +2073,19 @@ export default function App() {
             onClearChecked={handleClearCheckedShoppingItems}
             onSavePreset={handleSaveShoppingPreset}
             onDeletePreset={handleDeleteShoppingPreset}
+            onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
+          />
+        ) : activeTab === 'mail' ? (
+          <MailManager
+            items={mailItems}
+            householdName={household?.name}
+            userEmail={userEmail}
+            pendingSharedContent={pendingSharedContent}
+            onConsumeSharedContent={() => setPendingSharedContent(null)}
+            onSaveMailItem={handleSaveMailItem}
+            onToggleCompleted={handleToggleMailCompleted}
+            onDeleteItem={handleDeleteMailItem}
+            onClearArchived={handleClearArchivedMail}
             onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
           />
         ) : activeTab === 'calendar' ? (

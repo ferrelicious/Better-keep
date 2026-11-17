@@ -11529,6 +11529,30 @@ var createLucideIcon = (iconName, iconNode) => {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Archive = createLucideIcon("archive", [
+	["rect", {
+		width: "20",
+		height: "5",
+		x: "2",
+		y: "3",
+		rx: "1",
+		key: "1wp1u1"
+	}],
+	["path", {
+		d: "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8",
+		key: "1s80jp"
+	}],
+	["path", {
+		d: "M10 12h4",
+		key: "a56b0p"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var BellRing = createLucideIcon("bell-ring", [
 	["path", {
 		d: "M10.268 21a2 2 0 0 0 3.464 0",
@@ -11620,6 +11644,21 @@ var Calendar = createLucideIcon("calendar", [
 		key: "8toen8"
 	}]
 ]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Camera = createLucideIcon("camera", [["path", {
+	d: "M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z",
+	key: "18u6gg"
+}], ["circle", {
+	cx: "12",
+	cy: "13",
+	r: "3",
+	key: "1vg3eu"
+}]]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -11745,6 +11784,26 @@ var Copy = createLucideIcon("copy", [["rect", {
 }], ["path", {
 	d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
 	key: "zix9uf"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var CreditCard = createLucideIcon("credit-card", [["rect", {
+	width: "20",
+	height: "14",
+	x: "2",
+	y: "5",
+	rx: "2",
+	key: "ynyp8z"
+}], ["line", {
+	x1: "2",
+	x2: "22",
+	y1: "10",
+	y2: "10",
+	key: "1b3vmo"
 }]]);
 /**
 * @license lucide-react v0.546.0 - ISC
@@ -12112,6 +12171,30 @@ var Moon = createLucideIcon("moon", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Package = createLucideIcon("package", [
+	["path", {
+		d: "M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z",
+		key: "1a0edw"
+	}],
+	["path", {
+		d: "M12 22V12",
+		key: "d0xqtd"
+	}],
+	["polyline", {
+		points: "3.29 7 12 12 20.71 7",
+		key: "ousv84"
+	}],
+	["path", {
+		d: "m7.5 4.27 9 5.15",
+		key: "1c824w"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Paperclip = createLucideIcon("paperclip", [["path", {
 	d: "m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551",
 	key: "1miecu"
@@ -12442,6 +12525,26 @@ var Trash2 = createLucideIcon("trash-2", [
 	["path", {
 		d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
 		key: "e791ji"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Upload = createLucideIcon("upload", [
+	["path", {
+		d: "M12 3v12",
+		key: "1x0j5s"
+	}],
+	["path", {
+		d: "m17 8-5-5-5 5",
+		key: "7q97r8"
+	}],
+	["path", {
+		d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4",
+		key: "ih7n3h"
 	}]
 ]);
 /**
@@ -37141,7 +37244,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	});
 };
 // node_modules/@capacitor/filesystem/dist/esm/index.js
-var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-fPr28Fxf.js").then((m) => new m.FilesystemWeb()), []) });
+var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-DhsJ6y_Y.js").then((m) => new m.FilesystemWeb()), []) });
 f();
 // node_modules/@capacitor-community/file-opener/dist/esm/index.js
 var FileOpener = registerPlugin("FileOpener");
@@ -37152,7 +37255,8 @@ var CURRENT_APP_VERSION = {
 	version: "1.0.0",
 	type: "module",
 	scripts: {
-		"dev": "vite --port=3000 --host=0.0.0.0",
+		"dev": "tsx server.ts",
+		"start": "node server.ts",
 		"build": "vite build",
 		"preview": "vite preview",
 		"clean": "rm -rf dist server.js",
@@ -37167,9 +37271,10 @@ var CURRENT_APP_VERSION = {
 		"@capacitor/core": "^8.6.2",
 		"@capacitor/filesystem": "^8.1.5",
 		"@capacitor/local-notifications": "^8.3.1",
-		"@google/genai": "^2.4.0",
+		"@google/genai": "^3.4.0",
 		"@supabase/supabase-js": "^2.45.0",
 		"@tailwindcss/vite": "^4.3.3",
+		"@types/express": "^5.0.6",
 		"@vitejs/plugin-react": "^6.1.1",
 		"dotenv": "^17.2.3",
 		"express": "^4.21.2",
@@ -37177,6 +37282,7 @@ var CURRENT_APP_VERSION = {
 		"motion": "^12.23.24",
 		"react": "^19.0.1",
 		"react-dom": "^19.0.1",
+		"tsx": "^4.23.15",
 		"vite": "^8.3.0"
 	},
 	devDependencies: {
@@ -37703,6 +37809,1186 @@ function HouseholdModal({ open, onClose, userEmail, household, onHouseholdUpdate
 		})
 	});
 }
+// src/services/mailService.ts
+var DEFAULT_NATIVE_API_BASE = "https://ais-pre-foseevlikbd26otglcr2vv-521875751697.europe-west2.run.app";
+function getMailParseEndpoint() {
+	if (Capacitor.isNativePlatform()) return `${DEFAULT_NATIVE_API_BASE.replace(/\/+$/, "")}/api/mail/parse`;
+	return "/api/mail/parse";
+}
+async function parseMailWithAI(params) {
+	const endpoint = getMailParseEndpoint();
+	const res = await fetch(endpoint, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			text: params.text || "",
+			imageBase64: params.imageBase64 || "",
+			mimeType: params.mimeType || "image/jpeg"
+		})
+	});
+	const payload = await res.json().catch(() => ({}));
+	if (!res.ok || !payload.result) throw new Error(payload.error || "AI-tolkningen misslyckades. Försök igen eller fyll i manuellt.");
+	const r = payload.result;
+	return {
+		item_category: r.item_category === "package" || r.item_category === "invoice" || r.item_category === "letter" ? r.item_category : "letter",
+		carrier: (r.carrier ?? "").trim(),
+		sender: (r.sender ?? "").trim(),
+		pickup_code: (r.pickup_code ?? "").trim(),
+		tracking_id: (r.tracking_id ?? "").trim(),
+		pickup_location: (r.pickup_location ?? "").trim(),
+		pickup_address: (r.pickup_address ?? "").trim(),
+		ocr_number: (r.ocr_number ?? "").trim(),
+		payment_recipient: (r.payment_recipient ?? "").trim(),
+		amount: (r.amount ?? "").trim(),
+		due_date: (r.due_date ?? "").trim()
+	};
+}
+async function imageFileToBase64(file) {
+	const readAsDataUrl = () => new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(String(reader.result || ""));
+		reader.onerror = () => reject(/* @__PURE__ */ new Error("Kunde inte läsa bildfilen."));
+		reader.readAsDataURL(file);
+	});
+	const dataUrl = await readAsDataUrl();
+	if (file.size <= 18e5) return {
+		base64: dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl,
+		mimeType: file.type || "image/jpeg"
+	};
+	return new Promise((resolve) => {
+		const img = new Image();
+		img.onload = () => {
+			const maxDim = 1600;
+			let { width, height } = img;
+			if (width > maxDim || height > maxDim) {
+				if (width >= height) {
+					height = Math.round(height * maxDim / width);
+					width = maxDim;
+				} else {
+					width = Math.round(width * maxDim / height);
+					height = maxDim;
+				}
+			}
+			const canvas = document.createElement("canvas");
+			canvas.width = width;
+			canvas.height = height;
+			const ctx = canvas.getContext("2d");
+			if (!ctx) {
+				resolve({
+					base64: dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl,
+					mimeType: file.type || "image/jpeg"
+				});
+				return;
+			}
+			ctx.drawImage(img, 0, 0, width, height);
+			const compressed = canvas.toDataURL("image/jpeg", .88);
+			resolve({
+				base64: compressed.includes(",") ? compressed.split(",")[1] : compressed,
+				mimeType: "image/jpeg"
+			});
+		};
+		img.onerror = () => {
+			resolve({
+				base64: dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl,
+				mimeType: file.type || "image/jpeg"
+			});
+		};
+		img.src = dataUrl;
+	});
+}
+async function safeDecryptMailField(value, isEncrypted, secret) {
+	if (!value) return "";
+	if (isEncrypted === false) return value;
+	if (!secret) return isEncrypted ? "Låst" : value;
+	try {
+		return await decryptText(value, secret);
+	} catch {
+		return value;
+	}
+}
+async function decryptMailItem(raw, secret) {
+	const [sender, pickup_code, tracking_id, pickup_location, pickup_address, ocr_number, payment_recipient, amount, raw_note] = await Promise.all([
+		safeDecryptMailField(raw.sender, raw.is_encrypted, secret),
+		safeDecryptMailField(raw.pickup_code, raw.is_encrypted, secret),
+		safeDecryptMailField(raw.tracking_id, raw.is_encrypted, secret),
+		safeDecryptMailField(raw.pickup_location, raw.is_encrypted, secret),
+		safeDecryptMailField(raw.pickup_address, raw.is_encrypted, secret),
+		safeDecryptMailField(raw.ocr_number, raw.is_encrypted, secret),
+		safeDecryptMailField(raw.payment_recipient, raw.is_encrypted, secret),
+		safeDecryptMailField(raw.amount, raw.is_encrypted, secret),
+		safeDecryptMailField(raw.raw_note, raw.is_encrypted, secret)
+	]);
+	return {
+		id: raw.id,
+		household_id: raw.household_id,
+		created_by: raw.created_by,
+		item_category: raw.item_category || "letter",
+		carrier: (raw.carrier ?? "").trim(),
+		sender,
+		pickup_code,
+		tracking_id,
+		pickup_location,
+		pickup_address,
+		ocr_number,
+		payment_recipient,
+		amount,
+		due_date: (raw.due_date ?? "").trim(),
+		raw_note,
+		is_private: Boolean(raw.is_private),
+		completed: Boolean(raw.completed),
+		is_encrypted: raw.is_encrypted,
+		calendar_event_id: raw.calendar_event_id ?? null,
+		created_at: raw.created_at
+	};
+}
+async function encryptMailDraft(draft, secret) {
+	const [sender, pickup_code, tracking_id, pickup_location, pickup_address, ocr_number, payment_recipient, amount, raw_note] = await Promise.all([
+		encryptText(draft.sender.trim(), secret),
+		encryptText(draft.pickup_code.trim(), secret),
+		encryptText(draft.tracking_id.trim(), secret),
+		encryptText(draft.pickup_location.trim(), secret),
+		encryptText(draft.pickup_address.trim(), secret),
+		encryptText(draft.ocr_number.trim(), secret),
+		encryptText(draft.payment_recipient.trim(), secret),
+		encryptText(draft.amount.trim(), secret),
+		encryptText(draft.raw_note.trim(), secret)
+	]);
+	return {
+		item_category: draft.item_category,
+		carrier: draft.carrier.trim(),
+		sender,
+		pickup_code,
+		tracking_id,
+		pickup_location,
+		pickup_address,
+		ocr_number,
+		payment_recipient,
+		amount,
+		due_date: draft.due_date.trim() || null,
+		raw_note,
+		is_private: draft.is_private,
+		is_encrypted: true
+	};
+}
+// src/components/MailManager.tsx
+var EMPTY_DRAFT = {
+	item_category: "package",
+	carrier: "",
+	sender: "",
+	pickup_code: "",
+	tracking_id: "",
+	pickup_location: "",
+	pickup_address: "",
+	ocr_number: "",
+	payment_recipient: "",
+	amount: "",
+	due_date: "",
+	raw_note: "",
+	is_private: false
+};
+function getDueUrgency(dueDate) {
+	if (!dueDate) return "none";
+	const today = /* @__PURE__ */ new Date();
+	today.setHours(0, 0, 0, 0);
+	const due = /* @__PURE__ */ new Date(`${dueDate}T00:00:00`);
+	if (Number.isNaN(due.getTime())) return "none";
+	const diffDays = Math.round((due.getTime() - today.getTime()) / 864e5);
+	if (diffDays < 0) return "overdue";
+	if (diffDays <= 2) return "soon";
+	return "normal";
+}
+function MailManager({ items, householdName, userEmail, pendingSharedContent, onConsumeSharedContent, onSaveMailItem, onToggleCompleted, onDeleteItem, onClearArchived, onOpenHouseholdModal }) {
+	const [shareFilter, setShareFilter] = (0, import_react.useState)("all");
+	const [pastedText, setPastedText] = (0, import_react.useState)("");
+	const [isPrivate, setIsPrivate] = (0, import_react.useState)(false);
+	const [previewImageUrl, setPreviewImageUrl] = (0, import_react.useState)(null);
+	const [parsing, setParsing] = (0, import_react.useState)(false);
+	const [parseError, setParseError] = (0, import_react.useState)(null);
+	const [draft, setDraft] = (0, import_react.useState)(null);
+	const [saving, setSaving] = (0, import_react.useState)(false);
+	const [saveError, setSaveError] = (0, import_react.useState)(null);
+	const [copiedKey, setCopiedKey] = (0, import_react.useState)(null);
+	const [archivedExpanded, setArchivedExpanded] = (0, import_react.useState)(false);
+	const [clearingArchive, setClearingArchive] = (0, import_react.useState)(false);
+	const fileInputRef = (0, import_react.useRef)(null);
+	const copyTimerRef = (0, import_react.useRef)(null);
+	(0, import_react.useEffect)(() => {
+		return () => {
+			if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+		};
+	}, []);
+	(0, import_react.useEffect)(() => {
+		if (!pendingSharedContent) return;
+		const shared = pendingSharedContent;
+		onConsumeSharedContent();
+		let active = true;
+		(async () => {
+			setParseError(null);
+			setSaveError(null);
+			setParsing(true);
+			try {
+				if (shared.type === "image" && shared.base64) {
+					const mime = shared.mimeType || "image/jpeg";
+					setPreviewImageUrl(`data:${mime};base64,${shared.base64}`);
+					const result = await parseMailWithAI({
+						imageBase64: shared.base64,
+						mimeType: mime,
+						text: shared.text
+					});
+					if (active) setDraft({
+						...result,
+						raw_note: shared.text?.trim() || "",
+						is_private: isPrivate
+					});
+				} else if (shared.type === "text" && shared.text) {
+					setPreviewImageUrl(null);
+					setPastedText(shared.text);
+					const result = await parseMailWithAI({ text: shared.text });
+					if (active) setDraft({
+						...result,
+						raw_note: shared.text.trim(),
+						is_private: isPrivate
+					});
+				}
+			} catch (err) {
+				if (active) {
+					setParseError(err instanceof Error ? err.message : "Kunde inte tolka det delade innehållet med AI.");
+					setDraft({
+						...EMPTY_DRAFT,
+						raw_note: shared.text?.trim() || "",
+						is_private: isPrivate
+					});
+				}
+			} finally {
+				if (active) setParsing(false);
+			}
+		})();
+		return () => {
+			active = false;
+		};
+	}, [
+		pendingSharedContent,
+		onConsumeSharedContent,
+		isPrivate
+	]);
+	const handleCopy = async (key, value) => {
+		if (!value) return;
+		try {
+			await navigator.clipboard.writeText(value);
+			setCopiedKey(key);
+			if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+			copyTimerRef.current = window.setTimeout(() => setCopiedKey(null), 1800);
+		} catch {}
+	};
+	const handleFileUpload = async (e) => {
+		const file = e.target.files?.[0];
+		e.target.value = "";
+		if (!file || parsing) return;
+		setParseError(null);
+		setSaveError(null);
+		setParsing(true);
+		try {
+			const { base64, mimeType } = await imageFileToBase64(file);
+			setPreviewImageUrl(`data:${mimeType};base64,${base64}`);
+			const result = await parseMailWithAI({
+				imageBase64: base64,
+				mimeType,
+				text: pastedText.trim() || void 0
+			});
+			setDraft({
+				...result,
+				raw_note: pastedText.trim(),
+				is_private: isPrivate
+			});
+		} catch (err) {
+			setParseError(err instanceof Error ? err.message : "Kunde inte tolka bilden med AI. Du kan fylla i fälten manuellt.");
+			setDraft({
+				...EMPTY_DRAFT,
+				raw_note: pastedText.trim(),
+				is_private: isPrivate
+			});
+		} finally {
+			setParsing(false);
+		}
+	};
+	const handleAnalyzeText = async () => {
+		const clean = pastedText.trim();
+		if (!clean || parsing) return;
+		setParseError(null);
+		setSaveError(null);
+		setParsing(true);
+		setPreviewImageUrl(null);
+		try {
+			const result = await parseMailWithAI({ text: clean });
+			setDraft({
+				...result,
+				raw_note: clean,
+				is_private: isPrivate
+			});
+		} catch (err) {
+			setParseError(err instanceof Error ? err.message : "Kunde inte tolka texten med AI. Du kan redigera manuellt nedan.");
+			setDraft({
+				...EMPTY_DRAFT,
+				raw_note: clean,
+				is_private: isPrivate
+			});
+		} finally {
+			setParsing(false);
+		}
+	};
+	const handleSaveDraft = async (e) => {
+		e.preventDefault();
+		if (!draft || saving) return;
+		setSaveError(null);
+		setSaving(true);
+		try {
+			await onSaveMailItem(draft);
+			setDraft(null);
+			setPastedText("");
+			setPreviewImageUrl(null);
+		} catch (err) {
+			setSaveError(err instanceof Error ? err.message : "Kunde inte spara posten.");
+		} finally {
+			setSaving(false);
+		}
+	};
+	const filteredItems = (0, import_react.useMemo)(() => {
+		return items.filter((item) => {
+			if (shareFilter === "private" && !item.is_private) return false;
+			if (shareFilter === "shared" && item.is_private) return false;
+			return true;
+		});
+	}, [items, shareFilter]);
+	const activeItems = (0, import_react.useMemo)(() => filteredItems.filter((i) => !i.completed).sort((a, b) => {
+		if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
+		if (a.due_date) return -1;
+		if (b.due_date) return 1;
+		return (b.created_at || "").localeCompare(a.created_at || "");
+	}), [filteredItems]);
+	const archivedItems = (0, import_react.useMemo)(() => filteredItems.filter((i) => i.completed).sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")), [filteredItems]);
+	const handleClearArchiveClick = async () => {
+		if (archivedItems.length === 0 || clearingArchive) return;
+		setClearingArchive(true);
+		try {
+			await onClearArchived(shareFilter);
+		} finally {
+			setClearingArchive(false);
+		}
+	};
+	if (!userEmail || !householdName) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-6 text-center flex flex-col items-center gap-3 max-w-md mx-auto",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "w-12 h-12 rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, {
+					className: "w-6 h-6",
+					"aria-hidden": "true"
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+				className: "font-display text-lg font-bold",
+				children: "Post & Räkningar"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-sm text-[#525E56] dark:text-[#9BA79F]",
+				children: "Koppla ihop ert hushåll för att samla paketavier, Kivra-skärmdumpar och räkningar med AI-tolkning, E2E-kryptering och automatiska kalenderpåminnelser."
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				type: "button",
+				onClick: onOpenHouseholdModal,
+				className: "min-h-[42px] px-5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-sm font-semibold cursor-pointer",
+				children: "Koppla hushåll nu"
+			})
+		]
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "max-w-3xl w-full mx-auto flex flex-col gap-5",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-4",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-between gap-3 flex-wrap",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2.5 min-w-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "w-9 h-9 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Package, {
+									className: "w-4 h-4",
+									"aria-hidden": "true"
+								})
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
+									className: "font-display text-base sm:text-lg font-bold truncate",
+									children: [householdName, " · Post & Räkningar"]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "text-xs text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1.5 flex-wrap",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "inline-flex items-center gap-1 text-[#2E6B4E] dark:text-[#8FD4AE] font-medium",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+												className: "w-3 h-3 shrink-0",
+												"aria-hidden": "true"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "E2E-krypterad" })]
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											"aria-hidden": "true",
+											children: "·"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "font-mono-tabular",
+											children: [
+												activeItems.length,
+												" aktiva · ",
+												archivedItems.length,
+												" klara"
+											]
+										})
+									]
+								})]
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							role: "tablist",
+							"aria-label": "Filtrera delad eller privat post",
+							className: "inline-flex items-center gap-1 p-1 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723]",
+							children: [
+								{
+									id: "all",
+									label: "Alla"
+								},
+								{
+									id: "shared",
+									label: "Delad"
+								},
+								{
+									id: "private",
+									label: "Privat"
+								}
+							].map((tab) => {
+								const active = shareFilter === tab.id;
+								return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									role: "tab",
+									"aria-selected": active,
+									type: "button",
+									onClick: () => setShareFilter(tab.id),
+									className: `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${active ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+									children: [
+										tab.id === "private" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+											className: "w-3 h-3",
+											"aria-hidden": "true"
+										}),
+										tab.id === "shared" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, {
+											className: "w-3 h-3",
+											"aria-hidden": "true"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: tab.label })
+									]
+								}, tab.id);
+							})
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-col gap-3",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								ref: fileInputRef,
+								type: "file",
+								accept: "image/*",
+								onChange: handleFileUpload,
+								className: "sr-only"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex flex-wrap items-center gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => fileInputRef.current?.click(),
+									disabled: parsing,
+									className: "flex-1 min-w-[230px] min-h-[48px] px-4 py-2.5 rounded-2xl border-2 border-dashed border-[#2E6B4E]/40 dark:border-[#8FD4AE]/40 bg-[#F6F7F4] dark:bg-[#212723] hover:border-[#2E6B4E] dark:hover:border-[#8FD4AE] text-xs sm:text-sm font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors",
+									children: [parsing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+										className: "w-4 h-4 animate-spin shrink-0",
+										"aria-hidden": "true"
+									}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, {
+										className: "w-4 h-4 shrink-0",
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Ladda upp skärmdump (SMS / Kivra / Mejl) eller fota avi/räkning" })]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => {
+										setParseError(null);
+										setPreviewImageUrl(null);
+										setDraft({
+											...EMPTY_DRAFT,
+											raw_note: pastedText.trim(),
+											is_private: isPrivate
+										});
+									},
+									className: "min-h-[48px] px-3.5 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E1E6DE] dark:hover:bg-[#2B322E] text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6] inline-flex items-center gap-1.5 shrink-0 cursor-pointer",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Camera, {
+											className: "w-4 h-4 hidden",
+											"aria-hidden": "true"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
+											className: "w-4 h-4",
+											"aria-hidden": "true"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Fyll i manuellt" })
+									]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex flex-col sm:flex-row gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", {
+									rows: 2,
+									value: pastedText,
+									onChange: (e) => setPastedText(e.target.value),
+									placeholder: "Eller klistra in SMS/mejl här (t.ex. PostNord-avi eller Kivra-räkning)...",
+									"aria-label": "Klistra in text från SMS eller mejl",
+									disabled: parsing,
+									className: "flex-1 min-w-0 p-3 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] resize-none"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: handleAnalyzeText,
+									disabled: !pastedText.trim() || parsing,
+									className: "min-h-[44px] px-4 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] hover:bg-[#24563E] dark:hover:bg-[#A3DFBD] text-white dark:text-[#063822] text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer whitespace-nowrap",
+									children: [parsing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+										className: "w-4 h-4 animate-spin",
+										"aria-hidden": "true"
+									}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, {
+										className: "w-4 h-4",
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: parsing ? "Tolkar med AI..." : "Tolka med AI" })]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between gap-3 flex-wrap pt-0.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+									className: "inline-flex items-center gap-2.5 cursor-pointer select-none min-h-[36px]",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+										type: "checkbox",
+										checked: isPrivate,
+										onChange: (e) => {
+											const next = e.target.checked;
+											setIsPrivate(next);
+											setDraft((prev) => prev ? {
+												...prev,
+												is_private: next
+											} : prev);
+										},
+										className: "w-4 h-4 accent-[#2E6B4E] rounded cursor-pointer"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+										className: "inline-flex items-center gap-1.5 text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+											className: `w-3.5 h-3.5 ${isPrivate ? "text-[#2E6B4E] dark:text-[#8FD4AE]" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+											"aria-hidden": "true"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Privat (syns bara för mig)" })]
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
+									children: "Dela skärmdumpar direkt från mobilen till BetterKeep via Dela-menyn."
+								})]
+							})
+						]
+					}),
+					parsing && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-2xl bg-[#D3EBD9]/70 dark:bg-[#1C4A34]/70 px-4 py-3 flex items-center gap-2.5 text-xs sm:text-sm font-medium text-[#0D3824] dark:text-[#CBEED9]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+							className: "w-4 h-4 animate-spin shrink-0",
+							"aria-hidden": "true"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Gemini AI läser av transportör, hämtningskod, OCR, belopp och datum..." })]
+					}),
+					parseError && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-2xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: parseError }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => setParseError(null),
+							"aria-label": "Stäng felmeddelande",
+							className: "p-1 cursor-pointer",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-4 h-4" })
+						})]
+					})
+				]
+			}),
+			draft && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+				onSubmit: handleSaveDraft,
+				className: "rounded-3xl bg-white dark:bg-[#191D1A] border-2 border-[#2E6B4E]/45 dark:border-[#8FD4AE]/45 p-4 sm:p-5 flex flex-col gap-4 shadow-sm",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-between gap-2 flex-wrap",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, {
+								className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+								className: "font-display text-sm sm:text-base font-bold",
+								children: "Förhandsgranska & redigera innan du sparar"
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => {
+								setDraft(null);
+								setPreviewImageUrl(null);
+							},
+							"aria-label": "Avbryt förhandsgranskning",
+							className: "p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-4 h-4" })
+						})]
+					}),
+					previewImageUrl && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] p-2 flex justify-center",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+							src: previewImageUrl,
+							alt: "Uppladdad skärmdump",
+							className: "max-h-48 w-auto rounded-xl object-contain"
+						})
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "grid grid-cols-1 sm:grid-cols-3 gap-3",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Typ av post" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+									value: draft.item_category,
+									onChange: (e) => setDraft({
+										...draft,
+										item_category: e.target.value
+									}),
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: "package",
+											children: "📦 Paket"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: "invoice",
+											children: "💳 Räkning / Faktura"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: "letter",
+											children: "✉️ Brev / Meddelande"
+										})
+									]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: draft.item_category === "invoice" ? "Förfallodatum" : "Sista dag / Datum" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "date",
+									value: draft.due_date,
+									onChange: (e) => setDraft({
+										...draft,
+										due_date: e.target.value
+									}),
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Synlighet" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setDraft({
+										...draft,
+										is_private: !draft.is_private
+									}),
+									className: `h-10 px-3 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${draft.is_private ? "bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]" : "bg-[#ECEFE9] dark:bg-[#212723] text-[#171D19] dark:text-[#E4EBE6]"}`,
+									children: draft.is_private ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+										className: "w-3.5 h-3.5",
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Privat (bara jag)" })] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, {
+										className: "w-3.5 h-3.5",
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: ["Delad med ", householdName] })] })
+								})]
+							})
+						]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Avsändare / Butik / Företag" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "text",
+								value: draft.sender,
+								onChange: (e) => setDraft({
+									...draft,
+									sender: e.target.value
+								}),
+								placeholder: "T.ex. Zalando, Vattenfall, Skatteverket",
+								className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Transportör / Tjänst" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "text",
+								value: draft.carrier,
+								onChange: (e) => setDraft({
+									...draft,
+									carrier: e.target.value
+								}),
+								placeholder: "T.ex. PostNord, Instabox, Budbee, Kivra",
+								className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+							})]
+						})]
+					}),
+					draft.item_category === "package" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Hämtningskod / Pinkod" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "text",
+									value: draft.pickup_code,
+									onChange: (e) => setDraft({
+										...draft,
+										pickup_code: e.target.value
+									}),
+									placeholder: "T.ex. 482910",
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-mono-tabular text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kolli-ID / Spårningsnummer" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "text",
+									value: draft.tracking_id,
+									onChange: (e) => setDraft({
+										...draft,
+										tracking_id: e.target.value
+									}),
+									placeholder: "T.ex. 003732...",
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-mono-tabular text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Ombud / Paketskåp" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "text",
+									value: draft.pickup_location,
+									onChange: (e) => setDraft({
+										...draft,
+										pickup_location: e.target.value
+									}),
+									placeholder: "T.ex. ICA Supermarket Stenhagen",
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Adress & ort (för karta)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "text",
+									value: draft.pickup_address,
+									onChange: (e) => setDraft({
+										...draft,
+										pickup_address: e.target.value
+									}),
+									placeholder: "T.ex. Herrhagsvägen 10, Uppsala",
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								})]
+							})
+						]
+					}),
+					draft.item_category === "invoice" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "grid grid-cols-1 sm:grid-cols-3 gap-3",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Belopp" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "text",
+									value: draft.amount,
+									onChange: (e) => setDraft({
+										...draft,
+										amount: e.target.value
+									}),
+									placeholder: "T.ex. 499,00 kr",
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-mono-tabular text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Bankgiro / Plusgiro" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "text",
+									value: draft.payment_recipient,
+									onChange: (e) => setDraft({
+										...draft,
+										payment_recipient: e.target.value
+									}),
+									placeholder: "T.ex. BG 123-4567",
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-mono-tabular text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "OCR-nummer / Referens" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "text",
+									value: draft.ocr_number,
+									onChange: (e) => setDraft({
+										...draft,
+										ocr_number: e.target.value
+									}),
+									placeholder: "T.ex. 987654321012",
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-mono-tabular text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								})]
+							})
+						]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+						className: "flex flex-col gap-1 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Anteckning / Detaljer" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", {
+							rows: 2,
+							value: draft.raw_note,
+							onChange: (e) => setDraft({
+								...draft,
+								raw_note: e.target.value
+							}),
+							placeholder: "Valfri anteckning eller sammanfattning...",
+							className: "p-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] resize-none"
+						})]
+					}),
+					draft.due_date && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-xl bg-[#D3EBD9]/60 dark:bg-[#1C4A34]/60 px-3.5 py-2.5 flex items-center gap-2 text-xs text-[#0D3824] dark:text-[#CBEED9]",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, {
+							className: "w-4 h-4 shrink-0",
+							"aria-hidden": "true"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+							"Skapar automatiskt en ",
+							draft.is_private ? "privat" : "delad",
+							" kalenderhändelse den",
+							" ",
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
+								className: "font-mono-tabular",
+								children: draft.due_date
+							}),
+							"."
+						] })]
+					}),
+					saveError && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-xs text-red-700 dark:text-red-300",
+						children: saveError
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-end gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => {
+								setDraft(null);
+								setPreviewImageUrl(null);
+							},
+							className: "min-h-[40px] px-4 rounded-xl text-xs font-semibold text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 cursor-pointer",
+							children: "Avbryt"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "submit",
+							disabled: saving,
+							className: "min-h-[42px] px-5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer",
+							children: [saving ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+								className: "w-4 h-4 animate-spin",
+								"aria-hidden": "true"
+							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, {
+								className: "w-4 h-4",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Spara i Post & Räkningar" })]
+						})]
+					})
+				]
+			}),
+			activeItems.length === 0 && archivedItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "rounded-3xl border border-dashed border-[#18221C]/15 dark:border-[#E3EAE5]/15 py-12 px-6 text-center flex flex-col items-center gap-2",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
+						className: "w-8 h-8 text-[#525E56] dark:text-[#9BA79F] opacity-60",
+						"aria-hidden": "true"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+						className: "font-display text-base font-semibold",
+						children: shareFilter === "private" ? "Inga privata poster ännu" : shareFilter === "shared" ? "Inga delade poster ännu" : "Rent i brevlådan!"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-xs sm:text-sm text-[#525E56] dark:text-[#9BA79F] max-w-md",
+						children: "Ladda upp en skärmdump av en paketavi eller Kivra-räkning ovan så tolkar AI den och lägger in datum i kalendern automatiskt."
+					})
+				]
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex flex-col gap-4",
+				children: [activeItems.map((item) => {
+					const urgency = getDueUrgency(item.due_date);
+					const mapQuery = [item.pickup_location, item.pickup_address].filter(Boolean).join(", ");
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
+						className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3.5",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-start justify-between gap-3",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-start gap-3 min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: `w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${item.item_category === "package" ? "bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE]" : item.item_category === "invoice" ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-[#ECEFE9] dark:bg-[#212723] text-[#525E56] dark:text-[#9BA79F]"}`,
+										children: item.item_category === "package" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Package, {
+											className: "w-5 h-5",
+											"aria-hidden": "true"
+										}) : item.item_category === "invoice" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CreditCard, {
+											className: "w-5 h-5",
+											"aria-hidden": "true"
+										}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
+											className: "w-5 h-5",
+											"aria-hidden": "true"
+										})
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "min-w-0",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "flex items-center gap-2 flex-wrap",
+											children: [
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+													className: "font-display text-base font-bold text-[#171D19] dark:text-[#E4EBE6] break-words",
+													children: item.sender || item.carrier || (item.item_category === "package" ? "Paket" : item.item_category === "invoice" ? "Räkning" : "Brev")
+												}),
+												item.carrier && item.sender && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+													className: "px-2 py-0.5 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-[11px] font-semibold text-[#525E56] dark:text-[#9BA79F]",
+													children: item.carrier
+												}),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+													className: `inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold ${item.is_private ? "bg-[#ECEFE9] dark:bg-[#212723] text-[#525E56] dark:text-[#9BA79F]" : "bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]"}`,
+													children: [item.is_private ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+														className: "w-3 h-3",
+														"aria-hidden": "true"
+													}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, {
+														className: "w-3 h-3",
+														"aria-hidden": "true"
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: item.is_private ? "Privat" : "Delad" })]
+												})
+											]
+										}), item.due_date && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+											className: `mt-1 inline-flex items-center gap-1.5 text-xs font-semibold font-mono-tabular ${urgency === "overdue" ? "text-red-700 dark:text-red-300" : urgency === "soon" ? "text-amber-700 dark:text-amber-300" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, {
+												className: "w-3.5 h-3.5",
+												"aria-hidden": "true"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: item.item_category === "invoice" ? `Förfaller: ${item.due_date}` : `Sista dag: ${item.due_date}` })]
+										})]
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => onDeleteItem(item.id),
+									"aria-label": `Ta bort ${item.sender || "post"}`,
+									className: "w-9 h-9 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
+										className: "w-4 h-4",
+										"aria-hidden": "true"
+									})
+								})]
+							}),
+							item.item_category === "package" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex flex-col gap-2.5",
+								children: [
+									item.pickup_code && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "rounded-2xl bg-[#F6F7F4] dark:bg-[#212723] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 px-4 py-3 flex items-center justify-between gap-3",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "min-w-0",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-[11px] font-semibold uppercase tracking-wider text-[#525E56] dark:text-[#9BA79F]",
+												children: "Hämtningskod"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-xl sm:text-2xl font-bold font-mono-tabular tracking-wider text-[#171D19] dark:text-[#E4EBE6] break-all",
+												children: item.pickup_code
+											})]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+											type: "button",
+											onClick: () => handleCopy(`${item.id}-code`, item.pickup_code),
+											className: "min-h-[40px] px-3.5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer",
+											children: copiedKey === `${item.id}-code` ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kopierad!" })] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kopiera" })] })
+										})]
+									}),
+									(item.pickup_location || item.pickup_address) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "rounded-2xl bg-[#F6F7F4] dark:bg-[#212723] px-3.5 py-2.5 flex items-center justify-between gap-3 flex-wrap",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "min-w-0",
+											children: [item.pickup_location && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-sm font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+												children: item.pickup_location
+											}), item.pickup_address && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-xs text-[#525E56] dark:text-[#9BA79F]",
+												children: item.pickup_address
+											})]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+											href: buildGoogleMapsUrl(mapQuery || item.carrier),
+											target: "_blank",
+											rel: "noopener noreferrer",
+											className: "min-h-[36px] px-3 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9] text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap",
+											children: [
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MapPin, {
+													className: "w-3.5 h-3.5",
+													"aria-hidden": "true"
+												}),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Öppna karta" }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExternalLink, {
+													className: "w-3 h-3 opacity-75",
+													"aria-hidden": "true"
+												})
+											]
+										})]
+									}),
+									item.tracking_id && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between gap-2 px-1 text-xs text-[#525E56] dark:text-[#9BA79F]",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "truncate font-mono-tabular",
+											children: ["Kolli-ID: ", item.tracking_id]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+											type: "button",
+											onClick: () => handleCopy(`${item.id}-track`, item.tracking_id),
+											className: "inline-flex items-center gap-1 font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] hover:underline shrink-0 cursor-pointer",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, { className: "w-3 h-3" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: copiedKey === `${item.id}-track` ? "Kopierad!" : "Kopiera" })]
+										})]
+									})
+								]
+							}),
+							item.item_category === "invoice" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "rounded-2xl bg-[#F6F7F4] dark:bg-[#212723] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-3.5 flex flex-col gap-2.5",
+								children: [
+									item.amount && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between gap-2 pb-2 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+											children: "Att betala"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "flex items-center gap-2",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												className: "text-lg font-bold font-mono-tabular text-[#171D19] dark:text-[#E4EBE6]",
+												children: item.amount
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+												type: "button",
+												onClick: () => handleCopy(`${item.id}-amt`, item.amount),
+												"aria-label": "Kopiera belopp",
+												className: "p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-[#2E6B4E] dark:text-[#8FD4AE] cursor-pointer",
+												children: copiedKey === `${item.id}-amt` ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, { className: "w-3.5 h-3.5" })
+											})]
+										})]
+									}),
+									item.payment_recipient && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "min-w-0",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-[11px] font-semibold text-[#525E56] dark:text-[#9BA79F]",
+												children: "Bankgiro / Plusgiro"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-sm font-bold font-mono-tabular text-[#171D19] dark:text-[#E4EBE6] break-all",
+												children: item.payment_recipient
+											})]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+											type: "button",
+											onClick: () => handleCopy(`${item.id}-bg`, item.payment_recipient),
+											className: "min-h-[36px] px-3 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-xs font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] inline-flex items-center gap-1.5 shrink-0 cursor-pointer",
+											children: copiedKey === `${item.id}-bg` ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kopierad!" })] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kopiera" })] })
+										})]
+									}),
+									item.ocr_number && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "min-w-0",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-[11px] font-semibold text-[#525E56] dark:text-[#9BA79F]",
+												children: "OCR-nummer / Referens"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-sm font-bold font-mono-tabular text-[#171D19] dark:text-[#E4EBE6] break-all",
+												children: item.ocr_number
+											})]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+											type: "button",
+											onClick: () => handleCopy(`${item.id}-ocr`, item.ocr_number),
+											className: "min-h-[36px] px-3 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer",
+											children: copiedKey === `${item.id}-ocr` ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kopierad!" })] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kopiera OCR" })] })
+										})]
+									})
+								]
+							}),
+							item.raw_note && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "text-xs text-[#525E56] dark:text-[#9BA79F] whitespace-pre-wrap break-words bg-[#F6F7F4]/60 dark:bg-[#141816]/60 rounded-xl px-3 py-2",
+								children: item.raw_note
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between gap-2 pt-1 flex-wrap",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
+									children: ["Tillagd av ", item.created_by.split("@")[0]]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => onToggleCompleted(item),
+									className: "min-h-[40px] px-4 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] hover:bg-[#C2E2CA] dark:hover:bg-[#235B40] text-[#0D3824] dark:text-[#CBEED9] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, {
+										className: "w-4 h-4 stroke-[2.5]",
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: item.item_category === "package" ? "Markera som hämtat" : item.item_category === "invoice" ? "Markera som betald" : "Markera som klar" })]
+								})]
+							})
+						]
+					}, item.id);
+				}), archivedItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "rounded-3xl bg-[#F6F7F4]/80 dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 overflow-hidden",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "px-4 sm:px-5 py-3 flex items-center justify-between gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: () => setArchivedExpanded((v) => !v),
+							"aria-expanded": archivedExpanded,
+							className: "inline-flex items-center gap-2 text-xs font-semibold text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Archive, {
+									className: "w-4 h-4",
+									"aria-hidden": "true"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+									"Klart & Arkiverat (",
+									archivedItems.length,
+									")"
+								] }),
+								archivedExpanded ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronUp, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "w-4 h-4" })
+							]
+						}), archivedExpanded && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: handleClearArchiveClick,
+							disabled: clearingArchive,
+							className: "inline-flex items-center gap-1.5 min-h-[32px] px-3 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-500/10 disabled:opacity-50 cursor-pointer",
+							children: [clearingArchive ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Rensa arkiverade" })]
+						})]
+					}), archivedExpanded && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+						className: "divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8 border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10",
+						children: archivedItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+							className: "px-4 py-2.5 flex items-center justify-between gap-3 opacity-75",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "text-sm font-medium line-through text-[#525E56] dark:text-[#9BA79F] truncate",
+									children: [item.sender || item.carrier || "Post", item.amount ? ` · ${item.amount}` : ""]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate",
+									children: [
+										item.carrier,
+										item.is_private ? "Privat" : "Delad",
+										item.due_date
+									].filter(Boolean).join(" · ")
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-1 shrink-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => onToggleCompleted(item),
+									title: "Återställ till aktiv",
+									"aria-label": `Återställ ${item.sender || "post"}`,
+									className: "w-9 h-9 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RotateCcw, { className: "w-4 h-4" })
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => onDeleteItem(item.id),
+									"aria-label": `Ta bort ${item.sender || "post"}`,
+									className: "w-9 h-9 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 cursor-pointer",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-4 h-4" })
+								})]
+							})]
+						}, item.id))
+					})]
+				})]
+			})
+		]
+	});
+}
 // node_modules/@capacitor/local-notifications/dist/esm/definitions.js
 /**
 * Day of the week. Used for scheduling notifications on a particular weekday.
@@ -37718,7 +39004,7 @@ var Weekday;
 	Weekday[Weekday["Saturday"] = 7] = "Saturday";
 })(Weekday || (Weekday = {}));
 // node_modules/@capacitor/local-notifications/dist/esm/index.js
-var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-MJvZ8XW0.js").then((m) => new m.LocalNotificationsWeb()), []) });
+var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-C1p_PfAD.js").then((m) => new m.LocalNotificationsWeb()), []) });
 // src/services/notifications.ts
 var URGENT_CHANNEL_ID = "betterkeep-urgent";
 var channelCreated = false;
@@ -40158,6 +41444,9 @@ function App() {
 	const [rawShoppingPresets, setRawShoppingPresets] = (0, import_react.useState)([]);
 	const [shoppingItems, setShoppingItems] = (0, import_react.useState)([]);
 	const [shoppingPresets, setShoppingPresets] = (0, import_react.useState)([]);
+	const [rawMailItems, setRawMailItems] = (0, import_react.useState)([]);
+	const [mailItems, setMailItems] = (0, import_react.useState)([]);
+	const [pendingSharedContent, setPendingSharedContent] = (0, import_react.useState)(null);
 	const [unreadChatCount, setUnreadChatCount] = (0, import_react.useState)(0);
 	const [passphraseVersion, setPassphraseVersion] = (0, import_react.useState)(0);
 	const [latestRelease, setLatestRelease] = (0, import_react.useState)(null);
@@ -40171,6 +41460,8 @@ function App() {
 	const activeTabRef = (0, import_react.useRef)("notes");
 	const householdRef = (0, import_react.useRef)(null);
 	const shoppingItemsRef = (0, import_react.useRef)([]);
+	const mailItemsRef = (0, import_react.useRef)([]);
+	const lastHandledShareIdRef = (0, import_react.useRef)(null);
 	(0, import_react.useEffect)(() => {
 		householdRef.current = household;
 	}, [household]);
@@ -40241,9 +41532,45 @@ function App() {
 		for (const item of shoppingItems) if (item.store_name.trim()) set.add(item.store_name.trim());
 		return Array.from(set);
 	}, [shoppingPresets, shoppingItems]);
+	(0, import_react.useEffect)(() => {
+		mailItemsRef.current = mailItems;
+	}, [mailItems]);
+	(0, import_react.useEffect)(() => {
+		let active = true;
+		(async () => {
+			const decrypted = await Promise.all(rawMailItems.map((raw) => decryptMailItem(raw, encryptionSecret)));
+			if (active) setMailItems(decrypted);
+		})();
+		return () => {
+			active = false;
+		};
+	}, [rawMailItems, encryptionSecret]);
+	const activeMailCount = (0, import_react.useMemo)(() => mailItems.filter((m) => !m.completed).length, [mailItems]);
 	const uncheckedShoppingCount = (0, import_react.useMemo)(() => shoppingItems.filter((item) => !item.checked).length, [shoppingItems]);
 	(0, import_react.useEffect)(() => {
 		ensureHighPriorityNotificationChannel();
+	}, []);
+	(0, import_react.useEffect)(() => {
+		const acceptSharedPayload = (payload) => {
+			if (!payload || payload.type !== "image" && payload.type !== "text") return;
+			const dedupeKey = payload.shareId !== void 0 ? String(payload.shareId) : `${payload.type}:${(payload.base64 || payload.text || "").slice(0, 48)}`;
+			if (lastHandledShareIdRef.current === dedupeKey) return;
+			lastHandledShareIdRef.current = dedupeKey;
+			setShowSplash(false);
+			setActiveTab("mail");
+			setPendingSharedContent(payload);
+		};
+		const onSharedEvent = (ev) => {
+			acceptSharedPayload(ev.detail);
+		};
+		window.addEventListener("app-shared-content", onSharedEvent);
+		try {
+			const pendingJson = window.BetterKeepNativeShare?.consumePendingShare?.();
+			if (pendingJson) acceptSharedPayload(JSON.parse(pendingJson));
+		} catch {}
+		return () => {
+			window.removeEventListener("app-shared-content", onSharedEvent);
+		};
 	}, []);
 	(0, import_react.useEffect)(() => {
 		activeTabRef.current = activeTab;
@@ -40294,6 +41621,14 @@ function App() {
 		const { data, error } = await supabase.from("household_shopping_presets").select("*").eq("household_id", householdId).order("created_at", { ascending: true });
 		if (!error && data) setRawShoppingPresets(data);
 	}, []);
+	const fetchHouseholdMailItems = (0, import_react.useCallback)(async (householdId, currentUserEmail) => {
+		const { data, error } = await supabase.from("household_mail_items").select("*").eq("household_id", householdId).order("created_at", { ascending: false });
+		if (!error && data) {
+			const myEmail = (currentUserEmail ?? "").toLowerCase();
+			const visible = data.filter((item) => !item.is_private || item.created_by.toLowerCase() === myEmail);
+			setRawMailItems(visible);
+		}
+	}, []);
 	const syncFromCloud = (0, import_react.useCallback)(async (email) => {
 		try {
 			const [hh, cloudRecords] = await Promise.all([getUserHousehold(email), fetchCloudNotes()]);
@@ -40302,7 +41637,8 @@ function App() {
 				fetchHouseholdEvents(hh.id, email),
 				fetchHouseholdMessages(hh.id),
 				fetchHouseholdShoppingItems(hh.id),
-				fetchHouseholdShoppingPresets(hh.id)
+				fetchHouseholdShoppingPresets(hh.id),
+				fetchHouseholdMailItems(hh.id, email)
 			]);
 			else {
 				setHouseholdEvents([]);
@@ -40311,6 +41647,8 @@ function App() {
 				setRawShoppingPresets([]);
 				setShoppingItems([]);
 				setShoppingPresets([]);
+				setRawMailItems([]);
+				setMailItems([]);
 			}
 			const sharedIds = /* @__PURE__ */ new Set();
 			const mergedMap = /* @__PURE__ */ new Map();
@@ -40340,7 +41678,8 @@ function App() {
 		fetchHouseholdEvents,
 		fetchHouseholdMessages,
 		fetchHouseholdShoppingItems,
-		fetchHouseholdShoppingPresets
+		fetchHouseholdShoppingPresets,
+		fetchHouseholdMailItems
 	]);
 	(0, import_react.useEffect)(() => {
 		let active = true;
@@ -40373,6 +41712,8 @@ function App() {
 				setRawShoppingPresets([]);
 				setShoppingItems([]);
 				setShoppingPresets([]);
+				setRawMailItems([]);
+				setMailItems([]);
 			}
 		});
 		return () => {
@@ -40519,6 +41860,25 @@ function App() {
 		}).on("postgres_changes", {
 			event: "*",
 			schema: "public",
+			table: "household_mail_items"
+		}, (payload) => {
+			const currentHhId = householdRef.current?.id;
+			if (payload.eventType === "DELETE") {
+				const deletedId = payload.old?.id;
+				if (deletedId) setRawMailItems((prev) => prev.filter((item) => item.id !== deletedId));
+			} else if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+				const item = payload.new;
+				if (!item?.id) return;
+				if (currentHhId && item.household_id !== currentHhId) return;
+				const isMine = item.created_by.toLowerCase() === userEmail.toLowerCase();
+				if (item.is_private && !isMine) return;
+				setRawMailItems((prev) => {
+					return prev.some((i) => i.id === item.id) ? prev.map((i) => i.id === item.id ? item : i) : [item, ...prev];
+				});
+			}
+		}).on("postgres_changes", {
+			event: "*",
+			schema: "public",
 			table: "household_members"
 		}, async () => {
 			const hh = await getUserHousehold(userEmail);
@@ -40527,7 +41887,8 @@ function App() {
 				fetchHouseholdEvents(hh.id, userEmail),
 				fetchHouseholdMessages(hh.id),
 				fetchHouseholdShoppingItems(hh.id),
-				fetchHouseholdShoppingPresets(hh.id)
+				fetchHouseholdShoppingPresets(hh.id),
+				fetchHouseholdMailItems(hh.id, userEmail)
 			]);
 		}).subscribe();
 		return () => {
@@ -40538,7 +41899,8 @@ function App() {
 		fetchHouseholdEvents,
 		fetchHouseholdMessages,
 		fetchHouseholdShoppingItems,
-		fetchHouseholdShoppingPresets
+		fetchHouseholdShoppingPresets,
+		fetchHouseholdMailItems
 	]);
 	(0, import_react.useEffect)(() => {
 		const checkDueReminders = () => {
@@ -40789,7 +42151,7 @@ function App() {
 		await supabase.from("household_shopping_presets").delete().eq("id", id);
 	}, []);
 	const handleAddCalendarEvent = (0, import_react.useCallback)(async (draft) => {
-		if (!userEmail || !household?.id) return;
+		if (!userEmail || !household?.id) return null;
 		const { data, error } = await supabase.from("household_events").insert({
 			household_id: household.id,
 			created_by: userEmail,
@@ -40804,8 +42166,107 @@ function App() {
 			const created = data;
 			setHouseholdEvents((prev) => prev.some((e) => e.id === created.id) ? prev : [...prev, created]);
 			await scheduleCalendarEventNotifications(created, false);
+			return created;
 		}
+		return null;
 	}, [userEmail, household]);
+	const handleSaveMailItem = (0, import_react.useCallback)(async (draft) => {
+		if (!userEmail || !household?.id) return;
+		const encrypted = await encryptMailDraft(draft, resolveHouseholdSecret(household));
+		let calendarEventId = null;
+		if (draft.due_date) {
+			const senderLabel = draft.sender.trim() || draft.carrier.trim() || "Post";
+			const title = draft.item_category === "package" ? `📦 Sista hämtningsdag: ${senderLabel}` : draft.item_category === "invoice" ? `💳 Förfallodatum räkning: ${senderLabel}${draft.amount.trim() ? ` (${draft.amount.trim()})` : ""}` : `✉️ Viktigt brev: ${senderLabel}`;
+			const safeNoteParts = [
+				draft.carrier.trim(),
+				draft.pickup_location.trim(),
+				"Se krypterad detaljvy under fliken Post"
+			].filter(Boolean);
+			calendarEventId = (await handleAddCalendarEvent({
+				title,
+				notes: safeNoteParts.join(" · "),
+				event_date: draft.due_date,
+				event_time: "09:00",
+				remind_before_minutes: 60,
+				is_private: draft.is_private
+			}))?.id ?? null;
+		}
+		const payloadToInsert = {
+			household_id: household.id,
+			created_by: userEmail,
+			...encrypted,
+			completed: false
+		};
+		if (calendarEventId) payloadToInsert.calendar_event_id = calendarEventId;
+		let { data, error } = await supabase.from("household_mail_items").insert(payloadToInsert).select().single();
+		if (error && /calendar_event_id/i.test(error.message)) {
+			delete payloadToInsert.calendar_event_id;
+			const retry = await supabase.from("household_mail_items").insert(payloadToInsert).select().single();
+			data = retry.data;
+			error = retry.error;
+		}
+		if (error) throw error;
+		if (data) {
+			const created = data;
+			setRawMailItems((prev) => prev.some((m) => m.id === created.id) ? prev : [created, ...prev]);
+		}
+	}, [
+		userEmail,
+		household,
+		handleAddCalendarEvent
+	]);
+	const handleToggleMailCompleted = (0, import_react.useCallback)(async (item) => {
+		if (!userEmail || !household?.id) return;
+		const nextCompleted = !item.completed;
+		setMailItems((prev) => prev.map((m) => m.id === item.id ? {
+			...m,
+			completed: nextCompleted
+		} : m));
+		setRawMailItems((prev) => prev.map((m) => m.id === item.id ? {
+			...m,
+			completed: nextCompleted
+		} : m));
+		const { error } = await supabase.from("household_mail_items").update({ completed: nextCompleted }).eq("id", item.id);
+		if (error) {
+			setMailItems((prev) => prev.map((m) => m.id === item.id ? {
+				...m,
+				completed: item.completed
+			} : m));
+			setRawMailItems((prev) => prev.map((m) => m.id === item.id ? {
+				...m,
+				completed: item.completed
+			} : m));
+			return;
+		}
+		if (nextCompleted && !item.is_private) {
+			const actorName = userEmail.split("@")[0];
+			const senderText = item.sender || item.carrier || "Post";
+			const actionLabel = item.item_category === "package" ? "Paket hämtat" : item.item_category === "invoice" ? "Räkning betald" : "Post hanterad";
+			await handleSendChatMessage({ text: `✅ ${actionLabel}: ${senderText} (Utfört av ${actorName})` });
+		}
+	}, [
+		userEmail,
+		household,
+		handleSendChatMessage
+	]);
+	const handleDeleteMailItem = (0, import_react.useCallback)(async (id) => {
+		setMailItems((prev) => prev.filter((item) => item.id !== id));
+		setRawMailItems((prev) => prev.filter((item) => item.id !== id));
+		await supabase.from("household_mail_items").delete().eq("id", id);
+	}, []);
+	const handleClearArchivedMail = (0, import_react.useCallback)(async (filter) => {
+		const toClearIds = mailItemsRef.current.filter((item) => {
+			if (!item.completed) return false;
+			if (filter === "private") return item.is_private;
+			if (filter === "shared") return !item.is_private;
+			return true;
+		}).map((item) => item.id);
+		if (toClearIds.length === 0) return;
+		const idSet = new Set(toClearIds);
+		setMailItems((prev) => prev.filter((item) => !idSet.has(item.id)));
+		setRawMailItems((prev) => prev.filter((item) => !idSet.has(item.id)));
+		await supabase.from("household_mail_items").delete().in("id", toClearIds);
+	}, []);
 	const handleDeleteCalendarEvent = (0, import_react.useCallback)(async (id) => {
 		setHouseholdEvents((prev) => prev.filter((e) => e.id !== id));
 		await supabase.from("household_events").delete().eq("id", id);
@@ -41165,6 +42626,19 @@ function App() {
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								type: "button",
+								onClick: () => setActiveTab("mail"),
+								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${activeTab === "mail" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Package, { className: "w-4 h-4" }),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Post" }),
+									activeMailCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "px-1.5 py-0.5 rounded-full text-[10px] font-mono-tabular bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]",
+										children: activeMailCount
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
 								onClick: () => setActiveTab("calendar"),
 								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${activeTab === "calendar" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
 								children: [
@@ -41323,6 +42797,17 @@ function App() {
 						onClearChecked: handleClearCheckedShoppingItems,
 						onSavePreset: handleSaveShoppingPreset,
 						onDeletePreset: handleDeleteShoppingPreset,
+						onOpenHouseholdModal: () => setHouseholdModalOpen(true)
+					}) : activeTab === "mail" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MailManager, {
+						items: mailItems,
+						householdName: household?.name,
+						userEmail,
+						pendingSharedContent,
+						onConsumeSharedContent: () => setPendingSharedContent(null),
+						onSaveMailItem: handleSaveMailItem,
+						onToggleCompleted: handleToggleMailCompleted,
+						onDeleteItem: handleDeleteMailItem,
+						onClearArchived: handleClearArchivedMail,
 						onOpenHouseholdModal: () => setHouseholdModalOpen(true)
 					}) : activeTab === "calendar" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HouseholdCalendar, {
 						events: householdEvents,
