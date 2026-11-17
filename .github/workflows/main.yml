@@ -38,8 +38,11 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
 
-      - name: Synka Capacitor & bygg APK
+      - name: Lägg till Android & bygg APK
         run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
           npx cap sync android
           cd android
           chmod +x gradlew
