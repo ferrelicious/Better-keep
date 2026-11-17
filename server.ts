@@ -484,6 +484,9 @@ async function startServer() {
         currentWeekday?: unknown;
         knownStores?: unknown;
         memberNames?: unknown;
+        existingItems?: unknown;
+        existingNotes?: unknown;
+        existingEvents?: unknown;
       };
 
       const text = typeof body.text === 'string' ? body.text.trim() : '';
@@ -513,6 +516,9 @@ async function startServer() {
       const memberNames = Array.isArray(body.memberNames)
         ? body.memberNames.map((m) => String(m || '').trim()).filter(Boolean)
         : [];
+      const existingItems = Array.isArray(body.existingItems) ? body.existingItems : [];
+      const existingNotes = Array.isArray(body.existingNotes) ? body.existingNotes : [];
+      const existingEvents = Array.isArray(body.existingEvents) ? body.existingEvents : [];
 
       const parts: Array<
         { inlineData: { mimeType: string; data: string } } | { text: string }
@@ -535,18 +541,23 @@ async function startServer() {
         memberNames.length > 0
           ? `Familjemedlemmar: ${memberNames.join(', ')}.`
           : '',
-        'Analysera följande användarmeddelande / underlag och identifiera dess huvudsakliga avsikt (intent):',
+        existingItems.length > 0
+          ? `Befintliga aktiva inköpsvaror:\n${JSON.stringify(existingItems)}`
+          : '',
+        existingNotes.length > 0
+          ? `Befintliga aktiva anteckningar/påminnelser:\n${JSON.stringify(existingNotes)}`
+          : '',
+        existingEvents.length > 0
+          ? `Befintliga kommande kalenderhändelser:\n${JSON.stringify(existingEvents)}`
+          : '',
+        '',
+        'Analysera följande användarmeddelande / konversationsinlägg i familjechatten:',
         text ? `Meddelandetext:\n"""${text}"""` : '',
         '',
-        'Avsiktskategorier (intent):',
-        '1. "shopping": Användaren vill handla eller köpa mat/varor (t.ex. "Kan någon svänga förbi Willys imorgon och köpa mjölk, blöjor och taco-grejer?", "Glöm inte kaffe och bröd", "Handla på ICA: smör, ost").',
-        '   - Identifiera matched_store (nämnd butik, matcha mot kända butiker om möjligt).',
-        '   - Identifiera resolved_date (YYYY-MM-DD om t.ex. "imorgon", "på fredag", "på lördag", "i helgen", "idag" nämns, annars tom sträng).',
-        '   - Identifiera varor i "items" med label och passande department ("Frukt & Grönt", "Mejeri & Kyl", "Bröd & Bageri", "Kött, Fisk & Chark", "Skafferi", "Frys", "Hygien & Övrigt").',
-        '2. "calendar": Användaren nämner en bokad tid, aktivitet, möte, kallelse eller händelse (t.ex. "Tandläkaren på torsdag kl 10:30", "Föräldramöte kl 18 imorgon", "Fotbollsträning på lördag", "Bokad tid på vårdcentralen 24 nov").',
-        '   - Extrahera event: title, event_date (YYYY-MM-DD), event_time (HH:mm om klockslag finns, annars tom sträng), notes.',
-        '3. "mail_or_bill": Försändelser, paket, spårningsnummer, räkningar, OCR-nummer, fakturor, Kivra.',
-        '4. "chat": Vanlig konversation, hälsningar, allmänna frågor ("När kommer du hem?", "Är maten klar?", "Tack!").',
+        'VIKTIGA REGLER:',
+        '1. IGNORERA SMÅPRAT OCH FRISTÅENDE EMOJIS: Om meddelandet endast är rent småprat, hälsningar, bekräftelser eller fristående emojis (t.ex. "🥰", "Okej", "Hej", "Tack", "Ja"), sök inte skapa någon anteckning eller inköpsvara. Sätt intent till "chat" och låt duplicate_match vara null.',
+        '2. Om meddelandet däremot innehåller ett faktiskt ärende, en vara, en uppgift eller en tid (t.ex. "Köpa slips imorgon på H&M i Gränbystaden", "Tandläkare på torsdag kl 10"), extrahera struktur och jämför noggrant mot befintliga poster ovan.',
+        '3. DUPLICATE MATCHNING: Jämför om det redan finns en liknande aktiv post (anteckning, påminnelse, inköpsvara eller kalenderhändelse) bland befintliga poster. Om en liknande post hittas, fyll i "duplicate_match" med { id, type, title, details }, annars null.',
         'Returnera strukturerad JSON.',
       ]
         .filter(Boolean)
@@ -559,7 +570,7 @@ async function startServer() {
         contents: { parts },
         config: {
           systemInstruction:
-            'Du är en intelligent svensk vardagsassistent för familjeappen BetterKeep som förstår naturligt svenskt vardagsspråk, tidsuttryck och hushållsbehov.',
+            'Du är en intelligent svensk kontext- och dubblettassistent för familjeappen BetterKeep.',
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -567,20 +578,23 @@ async function startServer() {
               intent: {
                 type: Type.STRING,
                 description:
-                  "Ett av: 'shopping', 'calendar', 'mail_or_bill', 'chat'",
+                  "Ett av: 'shopping', 'calendar', 'mail_or_bill', 'reminder', 'chat'",
               },
-              summary: {
-                type: Type.STRING,
-                description:
-                  'Kort svensk sammanfattning, t.ex. "3 varor till Willys (imorgon)" eller "Tandläkaren på torsdag kl 10:30"',
-              },
+              summary: { type: Type.STRING },
               confidence: { type: Type.STRING },
-              shopping: {
+              action_data: {
                 type: Type.OBJECT,
                 properties: {
-                  matched_store: { type: Type.STRING },
+                  action_type: {
+                    type: Type.STRING,
+                    description: "Ett av: 'reminder', 'shopping', 'calendar'",
+                  },
+                  title: { type: Type.STRING },
+                  store_or_location: { type: Type.STRING },
                   resolved_date: { type: Type.STRING },
-                  items: {
+                  resolved_time: { type: Type.STRING },
+                  notes: { type: Type.STRING },
+                  shopping_items: {
                     type: Type.ARRAY,
                     items: {
                       type: Type.OBJECT,
@@ -593,13 +607,14 @@ async function startServer() {
                   },
                 },
               },
-              calendar: {
+              duplicate_match: {
                 type: Type.OBJECT,
+                nullable: true,
                 properties: {
+                  id: { type: Type.STRING },
+                  type: { type: Type.STRING },
                   title: { type: Type.STRING },
-                  event_date: { type: Type.STRING },
-                  event_time: { type: Type.STRING },
-                  notes: { type: Type.STRING },
+                  details: { type: Type.STRING },
                 },
               },
             },

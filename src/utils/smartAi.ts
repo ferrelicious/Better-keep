@@ -1,6 +1,6 @@
 import type { ShoppingDepartment } from '../services/shoppingParser';
 
-export type SmartIntentType = 'shopping' | 'calendar' | 'mail_or_bill' | 'chat';
+export type SmartIntentType = 'shopping' | 'calendar' | 'mail_or_bill' | 'reminder' | 'chat';
 
 export interface SmartAiShoppingItem {
   label: string;
@@ -14,10 +14,29 @@ export interface SmartAiEvent {
   notes?: string;
 }
 
+export interface ActionData {
+  action_type: 'reminder' | 'shopping' | 'calendar';
+  title?: string;
+  store_or_location?: string;
+  resolved_date?: string;
+  resolved_time?: string;
+  notes?: string;
+  shopping_items?: SmartAiShoppingItem[];
+}
+
+export interface DuplicateMatchInfo {
+  id: string;
+  type: 'reminder' | 'shopping' | 'calendar';
+  title: string;
+  details?: string;
+}
+
 export interface SmartAiResult {
   intent: SmartIntentType;
   summary: string;
   confidence?: string;
+  action_data?: ActionData;
+  duplicate_match?: DuplicateMatchInfo | null;
   shopping?: {
     matched_store?: string;
     resolved_date?: string | null;
@@ -45,6 +64,9 @@ export interface AnalyzeIntentOptions {
   mimeType?: string;
   knownStores?: string[];
   memberNames?: string[];
+  existingItems?: Array<{ id: string; label: string; store_name?: string }>;
+  existingNotes?: Array<{ id: string; title: string; notes?: string }>;
+  existingEvents?: Array<{ id: string; title: string; event_date?: string }>;
   signal?: AbortSignal;
 }
 
@@ -67,6 +89,9 @@ export async function analyzeSmartIntent(
       currentWeekday,
       knownStores: options.knownStores || [],
       memberNames: options.memberNames || [],
+      existingItems: options.existingItems || [],
+      existingNotes: options.existingNotes || [],
+      existingEvents: options.existingEvents || [],
     }),
   });
 
@@ -89,11 +114,63 @@ export async function analyzeSmartIntent(
         ? 'calendar'
         : intentRaw === 'mail_or_bill'
           ? 'mail_or_bill'
-          : 'chat';
+          : intentRaw === 'reminder'
+            ? 'reminder'
+            : 'chat';
 
   const summary = String(raw.summary || '').trim();
   const confidence = typeof raw.confidence === 'string' ? raw.confidence : undefined;
 
+  let action_data: ActionData | undefined = undefined;
+  if (raw.action_data && typeof raw.action_data === 'object') {
+    const ad = raw.action_data as Record<string, unknown>;
+    const action_type = String(ad.action_type || 'reminder') as 'reminder' | 'shopping' | 'calendar';
+    const items: SmartAiShoppingItem[] = [];
+    if (Array.isArray(ad.shopping_items)) {
+      for (const it of ad.shopping_items) {
+        if (it && typeof it === 'object' && 'label' in it) {
+          const lbl = String((it as { label: unknown }).label || '').trim();
+          if (lbl) {
+            const dep = (it as { department?: unknown }).department;
+            items.push({
+              label: lbl,
+              department: typeof dep === 'string' ? (dep as ShoppingDepartment) : undefined,
+            });
+          }
+        }
+      }
+    }
+    action_data = {
+      action_type,
+      title: String(ad.title || '').trim(),
+      store_or_location: String(ad.store_or_location || '').trim(),
+      resolved_date: String(ad.resolved_date || '').trim(),
+      resolved_time: String(ad.resolved_time || '').trim(),
+      notes: String(ad.notes || '').trim(),
+      shopping_items: items,
+    };
+  }
+
+  let duplicate_match: DuplicateMatchInfo | null | undefined = undefined;
+  if (raw.duplicate_match && typeof raw.duplicate_match === 'object') {
+    const dm = raw.duplicate_match as Record<string, unknown>;
+    const id = String(dm.id || '').trim();
+    const title = String(dm.title || '').trim();
+    if (id && title) {
+      duplicate_match = {
+        id,
+        type: (String(dm.type || 'reminder') as 'reminder' | 'shopping' | 'calendar'),
+        title,
+        details: String(dm.details || '').trim(),
+      };
+    } else {
+      duplicate_match = null;
+    }
+  } else {
+    duplicate_match = null;
+  }
+
+  // Fallback for older shapes
   let shopping: SmartAiResult['shopping'] = undefined;
   if (raw.shopping && typeof raw.shopping === 'object') {
     const rawShop = raw.shopping as Record<string, unknown>;
@@ -148,6 +225,8 @@ export async function analyzeSmartIntent(
     intent,
     summary,
     confidence,
+    action_data,
+    duplicate_match,
     shopping,
     calendar,
   };
