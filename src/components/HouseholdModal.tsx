@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { Home, LogOut, Mail, Plus, Trash2, UserPlus, Users, X } from 'lucide-react';
+import {
+  CheckCircle2,
+  Download,
+  Home,
+  Loader2,
+  LogOut,
+  Mail,
+  Plus,
+  RefreshCw,
+  Trash2,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react';
 import {
   HouseholdInfo,
   createHousehold,
@@ -7,6 +20,13 @@ import {
   removeHouseholdMember,
   supabase,
 } from '../services/supabase';
+import {
+  CURRENT_APP_VERSION,
+  UpdateCheckResult,
+  checkForAppUpdate,
+  downloadAndInstallApk,
+  formatVersionLabel,
+} from '../services/updater';
 
 interface HouseholdModalProps {
   open: boolean;
@@ -14,6 +34,7 @@ interface HouseholdModalProps {
   userEmail: string | null;
   household: HouseholdInfo | null;
   onHouseholdUpdated: () => Promise<void>;
+  onUpdateChecked?: (result: UpdateCheckResult) => void;
 }
 
 export function HouseholdModal({
@@ -22,6 +43,7 @@ export function HouseholdModal({
   userEmail,
   household,
   onHouseholdUpdated,
+  onUpdateChecked,
 }: HouseholdModalProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -31,6 +53,12 @@ export function HouseholdModal({
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
+
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [downloadingUpdate, setDownloadingUpdate] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
 
   if (!open) return null;
 
@@ -107,6 +135,42 @@ export function HouseholdModal({
       await onHouseholdUpdated();
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleManualUpdateCheck = async () => {
+    setCheckingUpdate(true);
+    setUpdateError(null);
+    try {
+      const res = await checkForAppUpdate();
+      setUpdateResult(res);
+      onUpdateChecked?.(res);
+    } catch {
+      setUpdateError('Kunde inte nå GitHub för att söka efter uppdatering.');
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
+  const handleInstallFromModal = async () => {
+    if (!updateResult) return;
+    const url = updateResult.downloadUrl || updateResult.releaseUrl;
+    if (!url || downloadingUpdate) return;
+    setUpdateError(null);
+    setDownloadingUpdate(true);
+    setDownloadProgress(0);
+    try {
+      await downloadAndInstallApk(url, updateResult.assetName, (pct) =>
+        setDownloadProgress(pct)
+      );
+    } catch (err: unknown) {
+      setUpdateError(
+        err instanceof Error
+          ? err.message
+          : 'Kunde inte öppna installationsfilen.'
+      );
+    } finally {
+      setDownloadingUpdate(false);
     }
   };
 
@@ -314,6 +378,75 @@ export function HouseholdModal({
             )}
           </div>
         )}
+
+        {/* App Version & Manual Update Check */}
+        <div className="border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10 pt-4 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-xs text-[#525E56] dark:text-[#9BA79F]">
+              <span>BetterKeep </span>
+              <span className="font-mono-tabular font-semibold text-[#171D19] dark:text-[#E4EBE6]">
+                {formatVersionLabel(CURRENT_APP_VERSION)}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleManualUpdateCheck}
+              disabled={checkingUpdate || downloadingUpdate}
+              className="inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6] disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {checkingUpdate ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]" aria-hidden="true" />
+              )}
+              <span>{checkingUpdate ? 'Söker...' : 'Sök efter uppdatering'}</span>
+            </button>
+          </div>
+
+          {updateError && (
+            <p className="text-xs text-red-600 dark:text-red-400">{updateError}</p>
+          )}
+
+          {updateResult && !updateError && (
+            updateResult.updateAvailable ? (
+              <div className="rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9] p-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold truncate">
+                    Ny uppdatering tillgänglig ({formatVersionLabel(updateResult.latestVersion)})
+                  </p>
+                  {downloadingUpdate && downloadProgress !== null && (
+                    <p className="text-[11px] font-mono-tabular opacity-85">
+                      Laddar ner... {downloadProgress}%
+                    </p>
+                  )}
+                </div>
+                {(updateResult.downloadUrl || updateResult.releaseUrl) && (
+                  <button
+                    type="button"
+                    onClick={handleInstallFromModal}
+                    disabled={downloadingUpdate}
+                    className="inline-flex items-center gap-1.5 min-h-[34px] px-3 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold shrink-0 disabled:opacity-60 cursor-pointer"
+                  >
+                    {downloadingUpdate ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                    )}
+                    <span>{downloadingUpdate ? 'Hämtar...' : 'Uppdatera nu'}</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs text-[#2E6B4E] dark:text-[#8FD4AE] font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>
+                  Appen är uppdaterad ({formatVersionLabel(updateResult.currentVersion)})
+                </span>
+              </div>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

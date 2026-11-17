@@ -20,6 +20,8 @@ import { HouseholdModal } from './components/HouseholdModal';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
 import { TopBar } from './components/TopBar';
+import { UpdateBanner } from './components/UpdateBanner';
+import { UpdateCheckResult } from './services/updater';
 import {
   SnoozePreset,
   cancelCalendarEventNotifications,
@@ -94,6 +96,7 @@ export default function App() {
   const [householdEvents, setHouseholdEvents] = useState<HouseholdEvent[]>([]);
   const [householdMessages, setHouseholdMessages] = useState<HouseholdMessage[]>([]);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [latestRelease, setLatestRelease] = useState<UpdateCheckResult | null>(null);
 
   const [deletedUndo, setDeletedUndo] = useState<Note | null>(null);
   const [dueBannerNote, setDueBannerNote] = useState<Note | null>(null);
@@ -823,6 +826,11 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-24 sm:py-6 flex flex-col gap-5">
+        <UpdateBanner
+          externalRelease={latestRelease}
+          onReleaseChecked={setLatestRelease}
+        />
+
         <div className="flex items-center justify-between gap-3 rounded-2xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 px-4 py-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0">
@@ -1248,6 +1256,7 @@ export default function App() {
             await syncFromCloud(userEmail);
           }
         }}
+        onUpdateChecked={setLatestRelease}
       />
     </div>
   );

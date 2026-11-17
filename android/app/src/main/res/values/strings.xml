@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BetterKeep</string>
+    <string name="title_activity_main">BetterKeep</string>
+    <string name="package_name">com.betterkeep.app</string>
+    <string name="custom_url_scheme">com.betterkeep.app</string>
+</resources>

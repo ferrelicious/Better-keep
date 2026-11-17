@@ -13,9 +13,11 @@
     "cap:open:android": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor-community/file-opener": "^8.0.1",
     "@capacitor/android": "^8.6.2",
     "@capacitor/cli": "^8.6.2",
     "@capacitor/core": "^8.6.2",
+    "@capacitor/filesystem": "^8.1.5",
     "@capacitor/local-notifications": "^8.3.1",
     "@google/genai": "^2.4.0",
     "@supabase/supabase-js": "^2.45.0",
