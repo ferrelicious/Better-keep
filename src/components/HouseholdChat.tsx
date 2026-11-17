@@ -22,10 +22,12 @@ import {
   inferMimeTypeFromFilename,
 } from '../services/crypto';
 import {
+  ShoppingDepartment,
   ShoppingItem,
   hasShoppingPrefix,
   parseShoppingCommand,
 } from '../services/shoppingParser';
+import type { ShoppingWriteContext } from './ShoppingList';
 import { supabase } from '../services/supabase';
 
 export interface HouseholdMessage {
@@ -57,7 +59,13 @@ interface HouseholdChatProps {
   onSendMessage: (payload: OutgoingChatPayload) => Promise<void>;
   onSaveAsNote: (body: string) => Promise<void>;
   onToggleShoppingItem: (item: ShoppingItem) => Promise<void>;
-  onCreateShoppingFromText: (rawText: string, storeName?: string) => Promise<number>;
+  onCreateShoppingFromText: (
+    rawText: string,
+    storeName?: string,
+    departmentOverride?: ShoppingDepartment,
+    context?: ShoppingWriteContext,
+    plannedDateOverride?: string | null
+  ) => Promise<number>;
   onOpenShoppingTab: () => void;
   onOpenHouseholdModal: () => void;
 }
@@ -82,7 +90,13 @@ interface EncryptedMessageBubbleProps {
   knownStoreNames: string[];
   onSaveAsNote: (decryptedBody: string) => Promise<void>;
   onToggleShoppingItem: (item: ShoppingItem) => Promise<void>;
-  onCreateShoppingFromText: (rawText: string, storeName?: string) => Promise<number>;
+  onCreateShoppingFromText: (
+    rawText: string,
+    storeName?: string,
+    departmentOverride?: ShoppingDepartment,
+    context?: ShoppingWriteContext,
+    plannedDateOverride?: string | null
+  ) => Promise<number>;
   onOpenShoppingTab: () => void;
   onPreviewImage: (url: string, name: string) => void;
 }
@@ -204,8 +218,9 @@ function EncryptedMessageBubble({
   const showInteractiveChecklist = isShoppingPrefixMsg || (canSaveNote && convertedToChecklist);
   const parsedCommand = showInteractiveChecklist
     ? parseShoppingCommand(decryptedBody, knownStoreNames)
-    : { storeName: '', items: [] as string[] };
+    : { storeName: '', plannedDate: null as string | null, items: [] as string[] };
   const checklistStoreName = parsedCommand.storeName;
+  const checklistPlannedDate = parsedCommand.plannedDate;
   const checklistTitles = parsedCommand.items;
 
   const findShoppingMatch = (title: string): ShoppingItem | undefined => {
@@ -323,6 +338,11 @@ function EncryptedMessageBubble({
                   <span className="truncate">
                     {checklistStoreName ? `Inköp · ${checklistStoreName}` : 'Inköpslista'}
                   </span>
+                  {checklistPlannedDate && (
+                    <span className="font-mono-tabular text-[10px] opacity-85 shrink-0">
+                      📅 {checklistPlannedDate}
+                    </span>
+                  )}
                   <span className="font-mono-tabular opacity-80 shrink-0">
                     ({checkedInBubbleCount}/{checklistTitles.length})
                   </span>
@@ -348,7 +368,13 @@ function EncryptedMessageBubble({
                         if (matched) {
                           onToggleShoppingItem(matched);
                         } else {
-                          onCreateShoppingFromText(title, checklistStoreName);
+                          onCreateShoppingFromText(
+                            title,
+                            checklistStoreName,
+                            undefined,
+                            undefined,
+                            checklistPlannedDate
+                          );
                         }
                       }}
                       className="flex items-center gap-2 py-1 text-left rounded-lg hover:bg-black/10 dark:hover:bg-white/10 px-1.5 -mx-1.5 transition-colors cursor-pointer"

@@ -47,6 +47,7 @@ export interface RawShoppingItem {
   store_name?: string | null;
   store_address?: string | null;
   department?: string | null;
+  planned_date?: string | null;
   checked: boolean;
   is_encrypted?: boolean;
   created_by?: string | null;
@@ -61,6 +62,7 @@ export interface ShoppingItem {
   store_name: string;
   store_address: string;
   department: ShoppingDepartment;
+  planned_date?: string | null;
   checked: boolean;
   is_encrypted?: boolean;
   created_by: string;
@@ -100,12 +102,12 @@ export interface ShoppingPreset {
   created_at?: string;
 }
 
-const SHOPPING_PREFIX_REGEX =
-  /^(handla|inköp|lista)(?:\s+(?:på|i|hos)\s+([^:\r\n]+)|\s+([^:\r\n]+))?\s*:\s*/i;
+const SHOPPING_PREFIX_REGEX = /^(handla|inköp|lista)(?:\s+([^:\r\n]+))?\s*:\s*/i;
 
 const GENERIC_NON_STORE_WORDS = new Set([
   'idag',
   'imorgon',
+  'övermorgon',
   'nu',
   'snabbt',
   'hem',
@@ -117,6 +119,95 @@ const GENERIC_NON_STORE_WORDS = new Set([
   'mat',
   'varor',
 ]);
+
+const SWEDISH_WEEKDAY_MAP: Record<string, number> = {
+  söndag: 0,
+  måndag: 1,
+  tisdag: 2,
+  onsdag: 3,
+  torsdag: 4,
+  fredag: 5,
+  lördag: 6,
+};
+
+function formatLocalYmd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function addDaysYmd(base: Date, days: number): string {
+  const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + days);
+  return formatLocalYmd(d);
+}
+
+function extractPlannedDateAndStore(
+  rawHeader: string,
+  knownStores: string[]
+): { storeName: string; plannedDate: string | null } {
+  let working = rawHeader.trim();
+  let plannedDate: string | null = null;
+  const now = new Date();
+
+  const isoMatch = working.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  if (isoMatch) {
+    plannedDate = isoMatch[1];
+    working = working.replace(isoMatch[0], ' ');
+  }
+
+  if (!plannedDate) {
+    const relOverMatch = working.match(/\b(?:i\s+)?övermorgon\b/i);
+    if (relOverMatch) {
+      plannedDate = addDaysYmd(now, 2);
+      working = working.replace(relOverMatch[0], ' ');
+    }
+  }
+
+  if (!plannedDate) {
+    const relTomorrowMatch = working.match(/\b(?:i\s*morgon|imorgon)\b/i);
+    if (relTomorrowMatch) {
+      plannedDate = addDaysYmd(now, 1);
+      working = working.replace(relTomorrowMatch[0], ' ');
+    }
+  }
+
+  if (!plannedDate) {
+    const relTodayMatch = working.match(/\b(?:i\s*dag|idag)\b/i);
+    if (relTodayMatch) {
+      plannedDate = addDaysYmd(now, 0);
+      working = working.replace(relTodayMatch[0], ' ');
+    }
+  }
+
+  if (!plannedDate) {
+    const wdMatch = working.match(
+      /(?:^|\s)(?:på\s+|nästa\s+)?(måndag|tisdag|onsdag|torsdag|fredag|lördag|söndag)\b/i
+    );
+    if (wdMatch) {
+      const targetDay = SWEDISH_WEEKDAY_MAP[wdMatch[1].toLowerCase()];
+      if (targetDay !== undefined) {
+        const diff = (targetDay - now.getDay() + 7) % 7 || 7;
+        plannedDate = addDaysYmd(now, diff);
+        working = working.replace(wdMatch[0], ' ');
+      }
+    }
+  }
+
+  // Strip leftover leading prepositions like "på Willys" / "i" / "hos"
+  const storeCleaned = working
+    .replace(/^\s*(?:på|i|hos)\s+/i, '')
+    .replace(/\s+(?:på|i|hos)\s*$/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  let storeName = '';
+  if (storeCleaned && !GENERIC_NON_STORE_WORDS.has(storeCleaned.toLowerCase())) {
+    storeName = resolveMatchedStoreName(storeCleaned, knownStores);
+  }
+
+  return { storeName, plannedDate };
+}
 
 export function normalizeDepartment(dept?: string | null): ShoppingDepartment {
   if (!dept) return 'Hygien & Övrigt';
@@ -482,27 +573,26 @@ export function resolveMatchedStoreName(
 export function parseShoppingCommand(
   rawText: string,
   knownStores: string[] = [...DEFAULT_STORES]
-): { storeName: string; items: string[] } {
+): { storeName: string; plannedDate: string | null; items: string[] } {
   const trimmed = rawText.trim();
   const match = trimmed.match(SHOPPING_PREFIX_REGEX);
 
   let storeName = '';
+  let plannedDate: string | null = null;
   let body = trimmed;
 
   if (match) {
     body = trimmed.slice(match[0].length);
-    const prepStore = match[2]?.trim();
-    const directStore = match[3]?.trim();
-
-    if (prepStore) {
-      storeName = resolveMatchedStoreName(prepStore, knownStores);
-    } else if (directStore && !GENERIC_NON_STORE_WORDS.has(directStore.toLowerCase())) {
-      storeName = resolveMatchedStoreName(directStore, knownStores);
+    const rawHeader = match[2]?.trim() ?? '';
+    if (rawHeader) {
+      const parsedHeader = extractPlannedDateAndStore(rawHeader, knownStores);
+      storeName = parsedHeader.storeName;
+      plannedDate = parsedHeader.plannedDate;
     }
   }
 
   if (!body) {
-    return { storeName, items: [] };
+    return { storeName, plannedDate, items: [] };
   }
 
   const tokens = body.split(/[\r\n,;]+/);
@@ -525,7 +615,7 @@ export function parseShoppingCommand(
     items.push(formatted);
   }
 
-  return { storeName, items };
+  return { storeName, plannedDate, items };
 }
 
 export function extractShoppingItems(rawText: string): string[] {

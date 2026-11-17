@@ -126,6 +126,37 @@ async function safeDecryptShoppingField(
 }
 
 const STORE_COORDS_STORAGE_KEY = 'betterkeep_store_coords_v1';
+const SHOPPING_DATES_STORAGE_KEY = 'betterkeep_shopping_dates_v1';
+const SHOPPING_CAL_EVENTS_KEY = 'betterkeep_shopping_cal_events_v1';
+const MAIL_CAL_EVENTS_KEY = 'betterkeep_mail_cal_events_v1';
+
+function readJsonMap(storageKey: string): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeJsonMapEntry(
+  storageKey: string,
+  entryKey: string,
+  value: string | null
+): Record<string, string> {
+  const current = readJsonMap(storageKey);
+  if (value) {
+    current[entryKey] = value;
+  } else {
+    delete current[entryKey];
+  }
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(current));
+  } catch {
+    // Ignore storage errors
+  }
+  return current;
+}
 
 function saveLocalStoreCoords(
   storeName: string,
@@ -223,10 +254,22 @@ export default function App() {
     actorName: string;
     at: string;
   } | null>(null);
+  const [localStoreDates, setLocalStoreDates] = useState<Record<string, string>>(() =>
+    readJsonMap(SHOPPING_DATES_STORAGE_KEY)
+  );
+  const [shoppingNavRequest, setShoppingNavRequest] = useState<{
+    storeName: string;
+    nonce: number;
+  } | null>(null);
+  const [highlightedMailRequest, setHighlightedMailRequest] = useState<{
+    mailId: string;
+    nonce: number;
+  } | null>(null);
   const notifiedIdsRef = useRef<Set<string>>(new Set());
   const undoTimerRef = useRef<number | null>(null);
   const activeTabRef = useRef<'notes' | 'shopping' | 'mail' | 'calendar' | 'chat'>('notes');
   const householdRef = useRef<HouseholdInfo | null>(null);
+  const householdEventsRef = useRef<HouseholdEvent[]>([]);
   const shoppingItemsRef = useRef<ShoppingItem[]>([]);
   const mailItemsRef = useRef<MailItem[]>([]);
   const lastHandledShareIdRef = useRef<string | null>(null);
@@ -234,6 +277,10 @@ export default function App() {
   useEffect(() => {
     householdRef.current = household;
   }, [household]);
+
+  useEffect(() => {
+    householdEventsRef.current = householdEvents;
+  }, [householdEvents]);
 
   useEffect(() => {
     shoppingItemsRef.current = shoppingItems;
@@ -277,6 +324,7 @@ export default function App() {
             store_address: storeAddress,
             department,
             checked: Boolean(raw.checked),
+            planned_date: raw.planned_date ?? null,
             is_encrypted: raw.is_encrypted,
             created_by: raw.created_by ?? raw.added_by ?? '',
             created_at: raw.created_at,
@@ -359,6 +407,26 @@ export default function App() {
     }
     return Array.from(set);
   }, [shoppingPresets, shoppingItems]);
+
+  const storePlannedDates = useMemo(() => {
+    const map: Record<string, string> = { ...localStoreDates };
+    for (const ev of householdEvents) {
+      const title = (ev.title || '').trim();
+      const match = title.match(/^🛒\s*Handla på\s+(.+?)(?:\s*\(\d+\s*varor?\))?$/i);
+      if (match) {
+        const key = match[1].trim().toLowerCase();
+        if (!map[key]) map[key] = ev.event_date;
+      } else if (/^🛒\s*Handla\s*\(\d+\s*varor?\)$/i.test(title)) {
+        if (!map['']) map[''] = ev.event_date;
+      }
+    }
+    for (const item of shoppingItems) {
+      if (!item.checked && item.planned_date) {
+        map[item.store_name.trim().toLowerCase()] = item.planned_date;
+      }
+    }
+    return map;
+  }, [localStoreDates, householdEvents, shoppingItems]);
 
   useEffect(() => {
     mailItemsRef.current = mailItems;
@@ -485,7 +553,7 @@ export default function App() {
         );
         setHouseholdEvents(visibleEvents);
         for (const ev of visibleEvents) {
-          await scheduleCalendarEventNotifications(ev, false);
+          await scheduleCalendarEventNotifications(ev, false, myEmail);
         }
       }
     },
@@ -747,7 +815,7 @@ export default function App() {
             if (isFromPartner) {
               setCalendarBanner(ev);
             }
-            await scheduleCalendarEventNotifications(ev, isFromPartner);
+            await scheduleCalendarEventNotifications(ev, isFromPartner, userEmail);
           }
         }
       )
@@ -1004,12 +1072,203 @@ export default function App() {
     [userEmail, household]
   );
 
+  const findShoppingCalendarEvent = useCallback(
+    (storeName: string, currentEvents: HouseholdEvent[]): HouseholdEvent | undefined => {
+      const storeKey = storeName.trim().toLowerCase();
+      const linkedMap = readJsonMap(SHOPPING_CAL_EVENTS_KEY);
+      const mappedId = linkedMap[storeKey];
+      if (mappedId) {
+        const byId = currentEvents.find((e) => e.id === mappedId);
+        if (byId) return byId;
+      }
+      return currentEvents.find((ev) => {
+        const t = (ev.title || '').trim();
+        if (storeKey) {
+          const m1 = t.match(/^🛒\s*Handla på\s+(.+?)(?:\s*\(\d+\s*varor?\))?$/i);
+          if (m1 && m1[1].trim().toLowerCase() === storeKey) return true;
+          const m2 = t.match(/^✅\s*Handlat klart på\s+(.+)$/i);
+          if (m2 && m2[1].trim().toLowerCase() === storeKey) return true;
+        } else {
+          if (/^(?:🛒\s*Handla\s*\(\d+\s*varor?\)|✅\s*Handlat klart)$/i.test(t)) {
+            return true;
+          }
+        }
+        return false;
+      });
+    },
+    []
+  );
+
+  const syncShoppingCalendarEvent = useCallback(
+    async (
+      storeName: string,
+      plannedDate: string | null,
+      uncheckedCount: number,
+      completed: boolean,
+      overrideContext?: { householdId: string; userEmail: string }
+    ) => {
+      const activeHhId = overrideContext?.householdId || householdRef.current?.id || '';
+      const activeEmail = overrideContext?.userEmail || userEmail || '';
+      if (!activeHhId || !activeEmail) return;
+
+      const cleanStore = storeName.trim();
+      const storeKey = cleanStore.toLowerCase();
+      const existingEv = findShoppingCalendarEvent(cleanStore, householdEventsRef.current);
+
+      if (completed) {
+        const nextMap = writeJsonMapEntry(SHOPPING_DATES_STORAGE_KEY, storeKey, null);
+        setLocalStoreDates(nextMap);
+        if (!existingEv) return;
+
+        const doneTitle = cleanStore
+          ? `✅ Handlat klart på ${cleanStore}`
+          : '✅ Handlat klart';
+        const { data, error } = await supabase
+          .from('household_events')
+          .update({
+            title: doneTitle,
+            notes: 'Alla varor är avbockade i inköpslistan.',
+          })
+          .eq('id', existingEv.id)
+          .select()
+          .single();
+
+        if (!error && data) {
+          const updated = data as HouseholdEvent;
+          setHouseholdEvents((prev) =>
+            prev.map((e) => (e.id === updated.id ? updated : e))
+          );
+          await cancelCalendarEventNotifications(updated.id);
+        }
+        return;
+      }
+
+      if (!plannedDate) {
+        if (existingEv && existingEv.title.trim().startsWith('🛒')) {
+          setHouseholdEvents((prev) => prev.filter((e) => e.id !== existingEv.id));
+          await supabase.from('household_events').delete().eq('id', existingEv.id);
+          await cancelCalendarEventNotifications(existingEv.id);
+          writeJsonMapEntry(SHOPPING_CAL_EVENTS_KEY, storeKey, null);
+        }
+        return;
+      }
+
+      const activeTitle = cleanStore
+        ? `🛒 Handla på ${cleanStore} (${uncheckedCount} varor)`
+        : `🛒 Handla (${uncheckedCount} varor)`;
+      const activeNotes = cleanStore
+        ? `Planerat inköp på ${cleanStore} · Tryck för att öppna listan`
+        : 'Planerat inköp · Tryck för att öppna listan';
+
+      if (existingEv) {
+        const { data, error } = await supabase
+          .from('household_events')
+          .update({
+            title: activeTitle,
+            notes: activeNotes,
+            event_date: plannedDate,
+            event_time: null,
+            remind_before_minutes: 0,
+            is_private: false,
+          })
+          .eq('id', existingEv.id)
+          .select()
+          .single();
+
+        if (!error && data) {
+          const updated = data as HouseholdEvent;
+          setHouseholdEvents((prev) =>
+            prev.map((e) => (e.id === updated.id ? updated : e))
+          );
+          writeJsonMapEntry(SHOPPING_CAL_EVENTS_KEY, storeKey, updated.id);
+          await scheduleCalendarEventNotifications(updated, false, activeEmail);
+        }
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('household_events')
+        .insert({
+          household_id: activeHhId,
+          created_by: activeEmail,
+          title: activeTitle,
+          notes: activeNotes,
+          event_date: plannedDate,
+          event_time: null,
+          remind_before_minutes: 0,
+          is_private: false,
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        const created = data as HouseholdEvent;
+        setHouseholdEvents((prev) =>
+          prev.some((e) => e.id === created.id) ? prev : [...prev, created]
+        );
+        writeJsonMapEntry(SHOPPING_CAL_EVENTS_KEY, storeKey, created.id);
+        await scheduleCalendarEventNotifications(created, false, activeEmail);
+      }
+    },
+    [userEmail, findShoppingCalendarEvent]
+  );
+
+  const handleScheduleShoppingDate = useCallback(
+    async (storeName: string, dateYmd: string | null) => {
+      const { householdId: activeHouseholdId, userEmail: activeEmail } =
+        await resolveShoppingContext();
+      const cleanStore = storeName.trim();
+      const storeKey = cleanStore.toLowerCase();
+
+      const nextDates = writeJsonMapEntry(
+        SHOPPING_DATES_STORAGE_KEY,
+        storeKey,
+        dateYmd
+      );
+      setLocalStoreDates(nextDates);
+
+      const matchingIds = shoppingItemsRef.current
+        .filter((i) => !i.checked && i.store_name.trim().toLowerCase() === storeKey)
+        .map((i) => i.id);
+
+      if (matchingIds.length > 0) {
+        setShoppingItems((prev) =>
+          prev.map((i) =>
+            matchingIds.includes(i.id) ? { ...i, planned_date: dateYmd } : i
+          )
+        );
+        setRawShoppingItems((prev) =>
+          prev.map((i) =>
+            matchingIds.includes(i.id) ? { ...i, planned_date: dateYmd } : i
+          )
+        );
+        const { error: updateErr } = await supabase
+          .from('household_shopping_items')
+          .update({ planned_date: dateYmd })
+          .in('id', matchingIds);
+        if (updateErr && !/planned_date/i.test(updateErr.message)) {
+          throw updateErr;
+        }
+      }
+
+      await syncShoppingCalendarEvent(
+        cleanStore,
+        dateYmd,
+        matchingIds.length,
+        false,
+        { householdId: activeHouseholdId, userEmail: activeEmail }
+      );
+    },
+    [resolveShoppingContext, syncShoppingCalendarEvent]
+  );
+
   const handleAddShoppingItems = useCallback(
     async (
       rawText: string,
       storeNameOverride?: string,
       departmentOverride?: ShoppingDepartment,
-      context?: ShoppingWriteContext
+      context?: ShoppingWriteContext,
+      plannedDateOverride?: string | null
     ): Promise<number> => {
       const {
         householdId: activeHouseholdId,
@@ -1023,13 +1282,28 @@ export default function App() {
       const resolvedStoreName = (
         storeNameOverride !== undefined ? storeNameOverride : parsed.storeName
       ).trim();
+      const storeKey = resolvedStoreName.toLowerCase();
+
+      const effectivePlannedDate =
+        parsed.plannedDate ??
+        plannedDateOverride ??
+        localStoreDates[storeKey] ??
+        null;
+
+      if (effectivePlannedDate) {
+        const nextDates = writeJsonMapEntry(
+          SHOPPING_DATES_STORAGE_KEY,
+          storeKey,
+          effectivePlannedDate
+        );
+        setLocalStoreDates(nextDates);
+      }
 
       const matchingStorePreset = resolvedStoreName
         ? shoppingPresets.find(
             (p) =>
               p.preset_type === 'store' &&
-              (p.store_name || p.label).trim().toLowerCase() ===
-                resolvedStoreName.toLowerCase()
+              (p.store_name || p.label).trim().toLowerCase() === storeKey
           )
         : undefined;
       const resolvedStoreAddress = matchingStorePreset?.store_address.trim() ?? '';
@@ -1042,9 +1316,7 @@ export default function App() {
 
       const newItems = parsed.items.filter(
         (label) =>
-          !existingUncheckedKeys.has(
-            `${resolvedStoreName.toLowerCase()}::${label.trim().toLowerCase()}`
-          )
+          !existingUncheckedKeys.has(`${storeKey}::${label.trim().toLowerCase()}`)
       );
 
       if (newItems.length === 0) return 0;
@@ -1064,6 +1336,7 @@ export default function App() {
           store_address: encStoreAddress,
           department: departmentOverride ?? categorizeShoppingItem(label),
           checked: false,
+          ...(effectivePlannedDate ? { planned_date: effectivePlannedDate } : {}),
           is_encrypted: true,
           created_by: activeEmail,
         }))
@@ -1074,11 +1347,15 @@ export default function App() {
         .insert(candidateRows)
         .select();
 
-      // Compatibility retries for legacy/variant schema columns (title, added_by, created_by)
-      for (let attempt = 0; attempt < 3 && error; attempt += 1) {
+      // Compatibility retries for legacy/variant schema columns (title, added_by, created_by, planned_date)
+      for (let attempt = 0; attempt < 4 && error; attempt += 1) {
         const msg = error.message || '';
         let adjusted = false;
 
+        if (/planned_date/i.test(msg) && 'planned_date' in candidateRows[0]) {
+          candidateRows = candidateRows.map(({ planned_date: _omit, ...rest }) => rest);
+          adjusted = true;
+        }
         if (/title/i.test(msg) && !('title' in candidateRows[0])) {
           candidateRows = candidateRows.map((row) => ({ ...row, title: row.label }));
           adjusted = true;
@@ -1113,11 +1390,44 @@ export default function App() {
           const existingIds = new Set(prev.map((i) => i.id));
           return [...prev, ...created.filter((c) => !existingIds.has(c.id))];
         });
+
+        const existingStoreUnchecked = shoppingItemsRef.current.filter(
+          (i) => !i.checked && i.store_name.trim().toLowerCase() === storeKey
+        ).length;
+        const totalStoreUnchecked = existingStoreUnchecked + created.length;
+
+        const existingCalEv = findShoppingCalendarEvent(
+          resolvedStoreName,
+          householdEventsRef.current
+        );
+        const dateToSync =
+          effectivePlannedDate ||
+          (existingCalEv && !existingCalEv.title.trim().startsWith('✅')
+            ? existingCalEv.event_date
+            : null);
+
+        if (dateToSync) {
+          await syncShoppingCalendarEvent(
+            resolvedStoreName,
+            dateToSync,
+            totalStoreUnchecked,
+            false,
+            { householdId: activeHouseholdId, userEmail: activeEmail }
+          );
+        }
+
         return created.length;
       }
       return 0;
     },
-    [resolveShoppingContext, knownStoreNames, shoppingPresets]
+    [
+      resolveShoppingContext,
+      knownStoreNames,
+      shoppingPresets,
+      localStoreDates,
+      findShoppingCalendarEvent,
+      syncShoppingCalendarEvent,
+    ]
   );
 
   const handleSendChatMessage = useCallback(
@@ -1194,6 +1504,16 @@ export default function App() {
         currentList.length >= 1 &&
         uncheckedBefore === 1;
 
+      const storeKey = item.store_name.trim().toLowerCase();
+      const storeItems = currentList.filter(
+        (i) => i.store_name.trim().toLowerCase() === storeKey
+      );
+      const storeUncheckedAfter = storeItems.filter((i) =>
+        i.id === item.id ? !nextChecked : !i.checked
+      ).length;
+      const willFinishStore =
+        nextChecked && !item.checked && storeItems.length >= 1 && storeUncheckedAfter === 0;
+
       setShoppingItems((prev) =>
         prev.map((i) => (i.id === item.id ? { ...i, checked: nextChecked } : i))
       );
@@ -1216,6 +1536,23 @@ export default function App() {
         throw error;
       }
 
+      if (willFinishStore) {
+        await syncShoppingCalendarEvent(item.store_name, null, 0, true);
+      } else {
+        const existingCalEv = findShoppingCalendarEvent(
+          item.store_name,
+          householdEventsRef.current
+        );
+        if (existingCalEv && storeUncheckedAfter > 0) {
+          await syncShoppingCalendarEvent(
+            item.store_name,
+            existingCalEv.event_date,
+            storeUncheckedAfter,
+            false
+          );
+        }
+      }
+
       if (willFinishList) {
         const actorName = userEmail.split('@')[0];
         setShoppingDoneBanner({ actorName, at: new Date().toISOString() });
@@ -1224,7 +1561,13 @@ export default function App() {
         });
       }
     },
-    [userEmail, household, handleSendChatMessage]
+    [
+      userEmail,
+      household,
+      handleSendChatMessage,
+      findShoppingCalendarEvent,
+      syncShoppingCalendarEvent,
+    ]
   );
 
   const handleUpdateShoppingDepartment = useCallback(
@@ -1489,7 +1832,7 @@ export default function App() {
         setHouseholdEvents((prev) =>
           prev.some((e) => e.id === created.id) ? prev : [...prev, created]
         );
-        await scheduleCalendarEventNotifications(created, false);
+        await scheduleCalendarEventNotifications(created, false, userEmail);
         return created;
       }
       return null;
@@ -1506,11 +1849,15 @@ export default function App() {
       let calendarEventId: string | null = null;
       if (draft.due_date) {
         const senderLabel = draft.sender.trim() || draft.carrier.trim() || 'Post';
+        const locPart = draft.pickup_location.trim()
+          ? ` (${draft.pickup_location.trim()})`
+          : '';
+        const amtPart = draft.amount.trim() ? ` (${draft.amount.trim()})` : '';
         const title =
           draft.item_category === 'package'
-            ? `📦 Sista hämtningsdag: ${senderLabel}`
+            ? `📦 Sista hämtningsdag: ${senderLabel}${locPart}`
             : draft.item_category === 'invoice'
-              ? `💳 Förfallodatum räkning: ${senderLabel}${draft.amount.trim() ? ` (${draft.amount.trim()})` : ''}`
+              ? `💳 Förfallodatum: ${senderLabel}${amtPart}`
               : `✉️ Viktigt brev: ${senderLabel}`;
         const safeNoteParts = [
           draft.carrier.trim(),
@@ -1523,7 +1870,7 @@ export default function App() {
           notes: safeNoteParts.join(' · '),
           event_date: draft.due_date,
           event_time: '09:00',
-          remind_before_minutes: 60,
+          remind_before_minutes: 0,
           is_private: draft.is_private,
         });
         calendarEventId = createdEv?.id ?? null;
@@ -1559,6 +1906,9 @@ export default function App() {
       if (error) throw error;
       if (data) {
         const created = data as RawMailItem;
+        if (calendarEventId) {
+          writeJsonMapEntry(MAIL_CAL_EVENTS_KEY, created.id, calendarEventId);
+        }
         setRawMailItems((prev) =>
           prev.some((m) => m.id === created.id) ? prev : [created, ...prev]
         );
@@ -1598,9 +1948,56 @@ export default function App() {
         return;
       }
 
+      // Two-way sync: update linked calendar event and cancel/restore 08:00 reminder
+      const mailCalMap = readJsonMap(MAIL_CAL_EVENTS_KEY);
+      const linkedEventId = item.calendar_event_id || mailCalMap[item.id] || null;
+      const senderText = item.sender.trim() || item.carrier.trim() || 'Post';
+      const linkedEv = linkedEventId
+        ? householdEventsRef.current.find((e) => e.id === linkedEventId)
+        : householdEventsRef.current.find(
+            (e) =>
+              item.due_date &&
+              e.event_date === item.due_date &&
+              e.title.toLowerCase().includes(senderText.toLowerCase())
+          );
+
+      if (linkedEv) {
+        const locPart = item.pickup_location.trim()
+          ? ` (${item.pickup_location.trim()})`
+          : '';
+        const amtPart = item.amount.trim() ? ` (${item.amount.trim()})` : '';
+        const activeTitle =
+          item.item_category === 'package'
+            ? `📦 Sista hämtningsdag: ${senderText}${locPart}`
+            : item.item_category === 'invoice'
+              ? `💳 Förfallodatum: ${senderText}${amtPart}`
+              : `✉️ Viktigt brev: ${senderText}`;
+        const nextTitle = nextCompleted
+          ? `✅ Hämtat / Betald: ${senderText}`
+          : activeTitle;
+
+        const { data: evData, error: evError } = await supabase
+          .from('household_events')
+          .update({ title: nextTitle })
+          .eq('id', linkedEv.id)
+          .select()
+          .single();
+
+        if (!evError && evData) {
+          const updatedEv = evData as HouseholdEvent;
+          setHouseholdEvents((prev) =>
+            prev.map((e) => (e.id === updatedEv.id ? updatedEv : e))
+          );
+          if (nextCompleted) {
+            await cancelCalendarEventNotifications(updatedEv.id);
+          } else {
+            await scheduleCalendarEventNotifications(updatedEv, false, userEmail);
+          }
+        }
+      }
+
       if (nextCompleted && !item.is_private) {
         const actorName = userEmail.split('@')[0];
-        const senderText = item.sender || item.carrier || 'Post';
         const actionLabel =
           item.item_category === 'package'
             ? 'Paket hämtat'
@@ -1647,6 +2044,34 @@ export default function App() {
     setHouseholdEvents((prev) => prev.filter((e) => e.id !== id));
     await supabase.from('household_events').delete().eq('id', id);
     await cancelCalendarEventNotifications(id);
+  }, []);
+
+  const handleNavigateToShoppingFromCalendar = useCallback((storeName: string) => {
+    setShoppingNavRequest({ storeName, nonce: Date.now() });
+    setActiveTab('shopping');
+  }, []);
+
+  const handleNavigateToMailFromCalendar = useCallback((ev: HouseholdEvent) => {
+    const mailCalMap = readJsonMap(MAIL_CAL_EVENTS_KEY);
+    const matched = mailItemsRef.current.find((m) => {
+      if (m.calendar_event_id === ev.id) return true;
+      if (mailCalMap[m.id] === ev.id) return true;
+      const sender = (m.sender || m.carrier || '').trim().toLowerCase();
+      if (
+        m.due_date &&
+        m.due_date === ev.event_date &&
+        sender &&
+        ev.title.toLowerCase().includes(sender)
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    if (matched) {
+      setHighlightedMailRequest({ mailId: matched.id, nonce: Date.now() });
+    }
+    setActiveTab('mail');
   }, []);
 
   const persistNoteEverywhere = useCallback(
@@ -2283,7 +2708,10 @@ export default function App() {
             householdName={household?.name}
             encryptionSecret={encryptionSecret}
             userEmail={userEmail}
+            storePlannedDates={storePlannedDates}
+            navigationRequest={shoppingNavRequest}
             onAddItems={handleAddShoppingItems}
+            onScheduleShoppingDate={handleScheduleShoppingDate}
             onToggleItem={handleToggleShoppingItem}
             onUpdateDepartment={handleUpdateShoppingDepartment}
             onDeleteItem={handleDeleteShoppingItem}
@@ -2298,6 +2726,7 @@ export default function App() {
             householdName={household?.name}
             userEmail={userEmail}
             pendingSharedContent={pendingSharedContent}
+            highlightedMailRequest={highlightedMailRequest}
             onConsumeSharedContent={() => setPendingSharedContent(null)}
             onSaveMailItem={handleSaveMailItem}
             onToggleCompleted={handleToggleMailCompleted}
@@ -2312,6 +2741,8 @@ export default function App() {
             userEmail={userEmail}
             onAddEvent={handleAddCalendarEvent}
             onDeleteEvent={handleDeleteCalendarEvent}
+            onNavigateToShopping={handleNavigateToShoppingFromCalendar}
+            onNavigateToMail={handleNavigateToMailFromCalendar}
             onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
           />
         ) : (

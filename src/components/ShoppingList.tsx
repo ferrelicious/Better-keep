@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import {
+  Calendar as CalendarIcon,
   Check,
   ChevronDown,
   ChevronUp,
@@ -75,12 +76,16 @@ interface ShoppingListProps {
   householdName?: string;
   encryptionSecret?: string | null;
   userEmail: string | null;
+  storePlannedDates?: Record<string, string>;
+  navigationRequest?: { storeName: string; nonce: number } | null;
   onAddItems: (
     rawText: string,
     storeName?: string,
     departmentOverride?: ShoppingDepartment,
-    context?: ShoppingWriteContext
+    context?: ShoppingWriteContext,
+    plannedDateOverride?: string | null
   ) => Promise<number>;
+  onScheduleShoppingDate?: (storeName: string, dateYmd: string | null) => Promise<void>;
   onToggleItem: (item: ShoppingItem) => Promise<void>;
   onUpdateDepartment: (item: ShoppingItem, department: ShoppingDepartment) => Promise<void>;
   onDeleteItem: (id: string) => Promise<void>;
@@ -108,7 +113,10 @@ export function ShoppingList({
   householdName,
   encryptionSecret,
   userEmail,
+  storePlannedDates,
+  navigationRequest,
   onAddItems,
+  onScheduleShoppingDate,
   onToggleItem,
   onUpdateDepartment,
   onDeleteItem,
@@ -121,11 +129,21 @@ export function ShoppingList({
   const [input, setInput] = useState('');
   const [adding, setAdding] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [savingPlannedDate, setSavingPlannedDate] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [gpsMatchedStoreName, setGpsMatchedStoreName] = useState<string | null>(null);
 
   const userManuallyPickedStoreRef = useRef(false);
   const hasTriedGpsAutoSelectRef = useRef(false);
+
+  useEffect(() => {
+    if (!navigationRequest) return;
+    userManuallyPickedStoreRef.current = true;
+    setSelectedStore(
+      navigationRequest.storeName ? navigationRequest.storeName : ALL_STORES_VALUE
+    );
+    setGpsMatchedStoreName(null);
+  }, [navigationRequest]);
 
   // Add custom store inline form + Nominatim search
   const [showStoreForm, setShowStoreForm] = useState(false);
@@ -329,6 +347,9 @@ export function ShoppingList({
   const activeStoreNameForNewItems =
     selectedStore === ALL_STORES_VALUE ? '' : activeStoreOption?.name ?? selectedStore;
 
+  const activePlannedDate =
+    storePlannedDates?.[activeStoreNameForNewItems.trim().toLowerCase()] ?? '';
+
   const filteredItems = useMemo(() => {
     if (selectedStore === ALL_STORES_VALUE) return items;
     const target = selectedStore.trim().toLowerCase();
@@ -517,12 +538,31 @@ export function ShoppingList({
     setErrorMsg(null);
     try {
       const context = await resolveWriteContext();
-      await onAddItems(clean, activeStoreNameForNewItems, undefined, context);
+      await onAddItems(
+        clean,
+        activeStoreNameForNewItems,
+        undefined,
+        context,
+        activePlannedDate || undefined
+      );
       setInput('');
     } catch (error) {
       setErrorMsg(getExactErrorMessage(error));
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handlePlannedDateChange = async (nextDate: string) => {
+    if (!onScheduleShoppingDate || savingPlannedDate) return;
+    setSavingPlannedDate(true);
+    setErrorMsg(null);
+    try {
+      await onScheduleShoppingDate(activeStoreNameForNewItems, nextDate || null);
+    } catch (error) {
+      setErrorMsg(getExactErrorMessage(error));
+    } finally {
+      setSavingPlannedDate(false);
     }
   };
 
@@ -586,7 +626,13 @@ export function ShoppingList({
     setErrorMsg(null);
     try {
       const context = await resolveWriteContext();
-      await onAddItems(label, activeStoreNameForNewItems, department, context);
+      await onAddItems(
+        label,
+        activeStoreNameForNewItems,
+        department,
+        context,
+        activePlannedDate || undefined
+      );
     } catch (error) {
       setErrorMsg(getExactErrorMessage(error));
     } finally {
@@ -705,10 +751,10 @@ export function ShoppingList({
           </div>
         </div>
 
-        {/* Store Picker, Compact Address/Navigation & GPS Banner */}
+        {/* Store Picker, Optional Shopping Date, Compact Address/Navigation & GPS Banner */}
         <div className="flex flex-col gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[190px]">
+            <div className="relative flex-1 min-w-[180px]">
               <Store
                 className="w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                 aria-hidden="true"
@@ -730,6 +776,38 @@ export function ShoppingList({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 h-11 px-3 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] shrink-0">
+              <CalendarIcon
+                className="w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0"
+                aria-hidden="true"
+              />
+              <label className="flex flex-col leading-none cursor-pointer">
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-[#525E56] dark:text-[#9BA79F]">
+                  Planerad inköpsdag (valfritt)
+                </span>
+                <input
+                  type="date"
+                  value={activePlannedDate}
+                  disabled={savingPlannedDate}
+                  onChange={(e) => handlePlannedDateChange(e.target.value)}
+                  aria-label="Planerad inköpsdag (valfritt)"
+                  className="bg-transparent text-xs font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none cursor-pointer"
+                />
+              </label>
+              {activePlannedDate && (
+                <button
+                  type="button"
+                  disabled={savingPlannedDate}
+                  onClick={() => handlePlannedDateChange('')}
+                  aria-label="Rensa planerad inköpsdag"
+                  title="Ta bort planerad inköpsdag"
+                  className="p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-[#525E56] dark:text-[#9BA79F] cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             <button
@@ -1143,12 +1221,22 @@ export function ShoppingList({
                       aria-hidden="true"
                     />
                     <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-[#171D19] dark:text-[#E4EBE6] truncate">
-                        {storeGroup.storeName || 'Övriga varor'}
-                        <span className="ml-2 text-xs font-normal font-mono-tabular text-[#525E56] dark:text-[#9BA79F]">
-                          ({storeGroup.totalCount})
-                        </span>
-                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-bold text-[#171D19] dark:text-[#E4EBE6] truncate">
+                          {storeGroup.storeName || 'Övriga varor'}
+                          <span className="ml-2 text-xs font-normal font-mono-tabular text-[#525E56] dark:text-[#9BA79F]">
+                            ({storeGroup.totalCount})
+                          </span>
+                        </h3>
+                        {storePlannedDates?.[storeGroup.storeName.trim().toLowerCase()] && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9] text-[10px] font-semibold font-mono-tabular">
+                            <CalendarIcon className="w-3 h-3" aria-hidden="true" />
+                            <span>
+                              {storePlannedDates[storeGroup.storeName.trim().toLowerCase()]}
+                            </span>
+                          </span>
+                        )}
+                      </div>
                       {storeGroup.storeAddress && (
                         <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
                           {storeGroup.storeAddress}

@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import {
+  ArrowUpRight,
   Bell,
   Calendar as CalendarIcon,
   CalendarPlus,
@@ -41,7 +42,36 @@ interface HouseholdCalendarProps {
     is_private: boolean;
   }) => Promise<void>;
   onDeleteEvent: (id: string) => Promise<void>;
+  onNavigateToShopping?: (storeName: string) => void;
+  onNavigateToMail?: (ev: HouseholdEvent) => void;
   onOpenHouseholdModal: () => void;
+}
+
+function classifyCalendarEvent(
+  ev: HouseholdEvent
+): { kind: 'shopping'; storeName: string } | { kind: 'mail' } | null {
+  const title = (ev.title || '').trim();
+  const activeShopMatch = title.match(
+    /^🛒\s*Handla på\s+(.+?)(?:\s*\(\d+\s*varor?\))?$/i
+  );
+  if (activeShopMatch) {
+    return { kind: 'shopping', storeName: activeShopMatch[1].trim() };
+  }
+  const doneShopMatch = title.match(/^✅\s*Handlat klart på\s+(.+)$/i);
+  if (doneShopMatch) {
+    return { kind: 'shopping', storeName: doneShopMatch[1].trim() };
+  }
+  if (/^(?:🛒\s*Handla|✅\s*Handlat klart)\b/i.test(title)) {
+    return { kind: 'shopping', storeName: '' };
+  }
+  if (
+    /^(?:📦\s*Sista hämtningsdag:|💳\s*Förfallodatum(?:\s+räkning)?:|✉️\s*Viktigt brev:|✅\s*Hämtat\s*\/\s*Betald:)/i.test(
+      title
+    )
+  ) {
+    return { kind: 'mail' };
+  }
+  return null;
 }
 
 const WEEKDAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
@@ -107,6 +137,8 @@ export function HouseholdCalendar({
   userEmail,
   onAddEvent,
   onDeleteEvent,
+  onNavigateToShopping,
+  onNavigateToMail,
   onOpenHouseholdModal,
 }: HouseholdCalendarProps) {
   const todayStr = useMemo(() => toYMD(new Date()), []);
@@ -537,70 +569,143 @@ export function HouseholdCalendar({
             </p>
           ) : (
             <div className="flex flex-col gap-2.5">
-              {selectedDayEvents.map((ev) => (
-                <div
-                  key={ev.id}
-                  className={`rounded-2xl p-3 flex items-start justify-between gap-3 border ${
-                    ev.is_private
-                      ? 'bg-[#F3EDF8] dark:bg-[#261E31] border-[#6E4C8E]/20 dark:border-[#C6A4EA]/20'
-                      : 'bg-[#F6F7F4] dark:bg-[#212723] border-transparent'
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      {ev.is_private && (
-                        <Lock
-                          className="w-3.5 h-3.5 text-[#6E4C8E] dark:text-[#C6A4EA] shrink-0"
-                          aria-label="Privat bokning"
-                        />
-                      )}
-                      {ev.event_time && (
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs font-mono-tabular font-semibold ${
-                            ev.is_private
-                              ? 'text-[#6E4C8E] dark:text-[#C6A4EA]'
-                              : 'text-[#2E6B4E] dark:text-[#8FD4AE]'
-                          }`}
-                        >
-                          <Clock className="w-3.5 h-3.5" />
-                          {ev.event_time}
-                        </span>
-                      )}
-                      <p className="text-sm font-semibold truncate">{ev.title}</p>
-                    </div>
-                    {ev.notes && (
-                      <p className="text-xs text-[#525E56] dark:text-[#9BA79F] mt-1">{ev.notes}</p>
+              {selectedDayEvents.map((ev) => {
+                const linkTarget = classifyCalendarEvent(ev);
+                const canJump =
+                  (linkTarget?.kind === 'shopping' && Boolean(onNavigateToShopping)) ||
+                  (linkTarget?.kind === 'mail' && Boolean(onNavigateToMail));
+
+                const handleJump = () => {
+                  if (!linkTarget) return;
+                  if (linkTarget.kind === 'shopping') {
+                    onNavigateToShopping?.(linkTarget.storeName);
+                  } else if (linkTarget.kind === 'mail') {
+                    onNavigateToMail?.(ev);
+                  }
+                };
+
+                return (
+                  <div
+                    key={ev.id}
+                    className={`rounded-2xl p-3 flex items-start justify-between gap-3 border transition-colors ${
+                      ev.is_private
+                        ? 'bg-[#F3EDF8] dark:bg-[#261E31] border-[#6E4C8E]/20 dark:border-[#C6A4EA]/20'
+                        : 'bg-[#F6F7F4] dark:bg-[#212723] border-transparent'
+                    } ${canJump ? 'hover:border-[#2E6B4E]/35 dark:hover:border-[#8FD4AE]/35' : ''}`}
+                  >
+                    {canJump ? (
+                      <button
+                        type="button"
+                        onClick={handleJump}
+                        className="min-w-0 flex-1 text-left cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2">
+                          {ev.is_private && (
+                            <Lock
+                              className="w-3.5 h-3.5 text-[#6E4C8E] dark:text-[#C6A4EA] shrink-0"
+                              aria-label="Privat bokning"
+                            />
+                          )}
+                          {ev.event_time && (
+                            <span
+                              className={`inline-flex items-center gap-1 text-xs font-mono-tabular font-semibold ${
+                                ev.is_private
+                                  ? 'text-[#6E4C8E] dark:text-[#C6A4EA]'
+                                  : 'text-[#2E6B4E] dark:text-[#8FD4AE]'
+                              }`}
+                            >
+                              <Clock className="w-3.5 h-3.5" />
+                              {ev.event_time}
+                            </span>
+                          )}
+                          <p className="text-sm font-semibold truncate group-hover:underline">
+                            {ev.title}
+                          </p>
+                        </div>
+                        {ev.notes && (
+                          <p className="text-xs text-[#525E56] dark:text-[#9BA79F] mt-1">
+                            {ev.notes}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2E6B4E] dark:text-[#8FD4AE]">
+                            <span>
+                              {linkTarget?.kind === 'shopping'
+                                ? 'Öppna i Inköp'
+                                : 'Öppna i Post'}
+                            </span>
+                            <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                          </span>
+                          <span className="text-[11px] text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1">
+                            <Bell className="w-3 h-3" />
+                            <span>
+                              {ev.is_private
+                                ? 'Privat bokning (visas bara för dig)'
+                                : `Inlagd av ${ev.created_by.split('@')[0]}`}
+                            </span>
+                          </span>
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          {ev.is_private && (
+                            <Lock
+                              className="w-3.5 h-3.5 text-[#6E4C8E] dark:text-[#C6A4EA] shrink-0"
+                              aria-label="Privat bokning"
+                            />
+                          )}
+                          {ev.event_time && (
+                            <span
+                              className={`inline-flex items-center gap-1 text-xs font-mono-tabular font-semibold ${
+                                ev.is_private
+                                  ? 'text-[#6E4C8E] dark:text-[#C6A4EA]'
+                                  : 'text-[#2E6B4E] dark:text-[#8FD4AE]'
+                              }`}
+                            >
+                              <Clock className="w-3.5 h-3.5" />
+                              {ev.event_time}
+                            </span>
+                          )}
+                          <p className="text-sm font-semibold truncate">{ev.title}</p>
+                        </div>
+                        {ev.notes && (
+                          <p className="text-xs text-[#525E56] dark:text-[#9BA79F] mt-1">
+                            {ev.notes}
+                          </p>
+                        )}
+                        <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] mt-1.5 flex items-center gap-1.5">
+                          <Bell className="w-3 h-3" />
+                          <span>
+                            {ev.is_private
+                              ? 'Privat bokning (visas bara för dig)'
+                              : `Inlagd av ${ev.created_by.split('@')[0]}`}
+                          </span>
+                        </p>
+                      </div>
                     )}
-                    <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] mt-1.5 flex items-center gap-1.5">
-                      <Bell className="w-3 h-3" />
-                      <span>
-                        {ev.is_private
-                          ? 'Privat bokning (visas bara för dig)'
-                          : `Inlagd av ${ev.created_by.split('@')[0]}`}
-                      </span>
-                    </p>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => exportToPhoneCalendar(ev)}
+                        title="Lägg i telefonens kalender (Samsung/Google)"
+                        aria-label="Lägg i telefonens kalender"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[#2E6B4E] dark:text-[#8FD4AE] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                      >
+                        <CalendarPlus className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteEvent(ev.id)}
+                        aria-label="Ta bort bokning"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[#525E56] hover:text-red-600 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => exportToPhoneCalendar(ev)}
-                      title="Lägg i telefonens kalender (Samsung/Google)"
-                      aria-label="Lägg i telefonens kalender"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#2E6B4E] dark:text-[#8FD4AE] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
-                    >
-                      <CalendarPlus className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteEvent(ev.id)}
-                      aria-label="Ta bort bokning"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#525E56] hover:text-red-600 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

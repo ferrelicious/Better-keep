@@ -39,6 +39,7 @@ interface MailManagerProps {
   householdName?: string;
   userEmail: string | null;
   pendingSharedContent: SharedContentPayload | null;
+  highlightedMailRequest?: { mailId: string; nonce: number } | null;
   onConsumeSharedContent: () => void;
   onSaveMailItem: (draft: ParsedMailDraft) => Promise<void>;
   onToggleCompleted: (item: MailItem) => Promise<void>;
@@ -80,6 +81,7 @@ export function MailManager({
   householdName,
   userEmail,
   pendingSharedContent,
+  highlightedMailRequest,
   onConsumeSharedContent,
   onSaveMailItem,
   onToggleCompleted,
@@ -100,15 +102,48 @@ export function MailManager({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [archivedExpanded, setArchivedExpanded] = useState(false);
   const [clearingArchive, setClearingArchive] = useState(false);
+  const [highlightedMailId, setHighlightedMailId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const copyTimerRef = useRef<number | null>(null);
+  const highlightTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
       if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+      if (highlightTimerRef.current) window.clearTimeout(highlightTimerRef.current);
     };
   }, []);
+
+  // Scroll to & highlight target card when jumped to from Calendar
+  useEffect(() => {
+    if (!highlightedMailRequest?.mailId) return;
+    const targetId = highlightedMailRequest.mailId;
+    setShareFilter('all');
+    const targetItem = items.find((m) => m.id === targetId);
+    if (targetItem?.completed) {
+      setArchivedExpanded(true);
+    }
+    setHighlightedMailId(targetId);
+
+    const scrollTimer = window.setTimeout(() => {
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(targetId)
+          : targetId.replace(/"/g, '\\"');
+      const el = document.querySelector(`[data-mail-id="${escaped}"]`);
+      if (el instanceof HTMLElement) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+
+    if (highlightTimerRef.current) window.clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedMailId((curr) => (curr === targetId ? null : curr));
+    }, 3000);
+
+    return () => window.clearTimeout(scrollTimer);
+  }, [highlightedMailRequest, items]);
 
   // Automatically process Android Share Target payloads (ACTION_SEND image/text)
   useEffect(() => {
@@ -823,7 +858,12 @@ export function MailManager({
             return (
               <article
                 key={item.id}
-                className="rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3.5"
+                data-mail-id={item.id}
+                className={`rounded-3xl bg-white dark:bg-[#191D1A] border p-4 sm:p-5 flex flex-col gap-3.5 transition-all ${
+                  highlightedMailId === item.id
+                    ? 'border-[#2E6B4E] dark:border-[#8FD4AE] ring-2 ring-[#2E6B4E] dark:ring-[#8FD4AE] shadow-md'
+                    : 'border-[#18221C]/12 dark:border-[#E3EAE5]/12'
+                }`}
               >
                 {/* Card Header */}
                 <div className="flex items-start justify-between gap-3">
@@ -1156,7 +1196,12 @@ export function MailManager({
                   {archivedItems.map((item) => (
                     <li
                       key={item.id}
-                      className="px-4 py-2.5 flex items-center justify-between gap-3 opacity-75"
+                      data-mail-id={item.id}
+                      className={`px-4 py-2.5 flex items-center justify-between gap-3 transition-colors ${
+                        highlightedMailId === item.id
+                          ? 'bg-[#D3EBD9]/50 dark:bg-[#1C4A34]/50 opacity-100'
+                          : 'opacity-75'
+                      }`}
                     >
                       <div className="min-w-0">
                         <p className="text-sm font-medium line-through text-[#525E56] dark:text-[#9BA79F] truncate">

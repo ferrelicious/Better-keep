@@ -123,6 +123,48 @@ export async function cancelNoteReminderNotification(noteId: string): Promise<vo
   }
 }
 
+function isAutoMorningReminderEvent(title: string): boolean {
+  const clean = title.trim();
+  if (!clean || clean.startsWith('✅')) return false;
+  return (
+    clean.startsWith('🛒') ||
+    clean.startsWith('📦') ||
+    clean.startsWith('💳') ||
+    clean.startsWith('✉️') ||
+    /handla|sista hämtningsdag|förfallodatum/i.test(clean)
+  );
+}
+
+function getLocalYmd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function computeMorningReminderTrigger(eventDateYmd: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDateYmd)) return null;
+  const [y, m, d] = eventDateYmd.split('-').map(Number);
+  const morningAtEight = new Date(y, m - 1, d, 8, 0, 0, 0);
+  if (Number.isNaN(morningAtEight.getTime())) return null;
+
+  const now = new Date();
+  const todayYmd = getLocalYmd(now);
+
+  if (eventDateYmd === todayYmd) {
+    if (now.getTime() < morningAtEight.getTime()) {
+      return morningAtEight;
+    }
+    return new Date(now.getTime() + 60 * 60 * 1000);
+  }
+
+  if (morningAtEight.getTime() > now.getTime()) {
+    return morningAtEight;
+  }
+
+  return null;
+}
+
 export async function scheduleCalendarEventNotifications(
   ev: {
     id: string;
@@ -132,14 +174,33 @@ export async function scheduleCalendarEventNotifications(
     event_time?: string | null;
     notes?: string | null;
     remind_before_minutes?: number | null;
+    is_private?: boolean;
   },
-  immediateFromPartner = false
+  immediateFromPartner = false,
+  currentUserEmail?: string | null
 ): Promise<void> {
   try {
+    // Private events must only ever schedule notifications on the creator's device
+    if (ev.is_private) {
+      if (
+        currentUserEmail &&
+        ev.created_by.toLowerCase() !== currentUserEmail.trim().toLowerCase()
+      ) {
+        await cancelCalendarEventNotifications(ev.id);
+        return;
+      }
+    }
+
+    const isCompletedEvent = ev.title.trim().startsWith('✅');
+    if (isCompletedEvent) {
+      await cancelCalendarEventNotifications(ev.id);
+      return;
+    }
+
     await ensureHighPriorityNotificationChannel();
 
     if (Capacitor.isNativePlatform()) {
-      if (immediateFromPartner) {
+      if (immediateFromPartner && !ev.is_private) {
         await LocalNotifications.schedule({
           notifications: [
             {
@@ -153,7 +214,7 @@ export async function scheduleCalendarEventNotifications(
         });
       }
 
-      if (ev.event_date && ev.event_time) {
+      if (ev.event_date && ev.event_time && (ev.remind_before_minutes ?? 0) > 0) {
         const eventStart = new Date(`${ev.event_date}T${ev.event_time}:00`);
         const beforeMs = (ev.remind_before_minutes ?? 60) * 60 * 1000;
         const remindAt = new Date(eventStart.getTime() - beforeMs);
@@ -174,8 +235,32 @@ export async function scheduleCalendarEventNotifications(
           });
         }
       }
+
+      // Automatic 08:00 morning reminder for shopping, packages, and invoices
+      const morningNotifId = eventNotificationId(ev.id, 5);
+      await LocalNotifications.cancel({
+        notifications: [{ id: morningNotifId }],
+      });
+
+      if (ev.event_date && isAutoMorningReminderEvent(ev.title)) {
+        const morningTrigger = computeMorningReminderTrigger(ev.event_date);
+        if (morningTrigger) {
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                id: morningNotifId,
+                channelId: URGENT_CHANNEL_ID,
+                title: `⏰ Påminnelse idag: ${ev.title}`,
+                body: ev.notes?.trim() || `Schemalagd för ${ev.event_date}`,
+                schedule: { at: morningTrigger, allowWhileIdle: true },
+              },
+            ],
+          });
+        }
+      }
     } else if (
       immediateFromPartner &&
+      !ev.is_private &&
       typeof window !== 'undefined' &&
       'Notification' in window &&
       Notification.permission === 'granted'
@@ -197,6 +282,7 @@ export async function cancelCalendarEventNotifications(eventId: string): Promise
         notifications: [
           { id: eventNotificationId(eventId, 1) },
           { id: eventNotificationId(eventId, 2) },
+          { id: eventNotificationId(eventId, 5) },
         ],
       });
     }
