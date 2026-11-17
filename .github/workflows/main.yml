@@ -1,8 +1,8 @@
-name: Build Android App
+name: Build Android App & Release
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -11,15 +11,21 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Hämta kod
+      - name: Checkout kod
         uses: actions/checkout@v4
 
-      - name: Sätt upp Node.js
+      - name: Sätt versionsnummer
+        id: version
+        run: |
+          VER="1.0.${{ github.run_number }}"
+          echo "version=$VER" >> $GITHUB_OUTPUT
+          npm version "$VER" --no-git-tag-version --allow-same-version
+
+      - name: Installera Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: 20
 
       - name: Sätt upp Java 21
         uses: actions/setup-java@v4
@@ -30,36 +36,21 @@ jobs:
       - name: Installera paket & bygg webbapp
         run: |
           npm install --legacy-peer-deps
-          npm install @capacitor/local-notifications @supabase/supabase-js --legacy-peer-deps
           npm run build
 
-      - name: Skapa & synka Android-projekt (Capacitor)
+      - name: Synka Capacitor & bygg APK
         run: |
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
           npx cap sync android
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          if ! grep -q "POST_NOTIFICATIONS" "$MANIFEST"; then
-            sed -i 's|<application|<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <application|' "$MANIFEST"
-          fi
-
-      - name: Bygg Android APK (för test på mobilen)
-        run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../BetterKeep-v${{ steps.version.outputs.version }}.apk
 
-      - name: Ladda upp färdig APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: BetterKeep-Debug-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Publicera APK till GitHub Releases
+      - name: Publicera GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: BetterKeep v1.0.${{ github.run_number }}
-          body: Automatiskt bygge av BetterKeep för Android. Ladda ner APK-filen nedan för att installera eller uppdatera.
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          tag_name: v${{ steps.version.outputs.version }}
+          name: BetterKeep v${{ steps.version.outputs.version }}
+          body: Automatiskt bygge från main (${{ github.sha }})
+          files: BetterKeep-v${{ steps.version.outputs.version }}.apk
+          make_latest: true
