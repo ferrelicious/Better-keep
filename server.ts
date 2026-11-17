@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import 'dotenv/config';
 import express, { type Request, type Response } from 'express';
+import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -65,6 +66,7 @@ function normalizeParsedMail(raw: Record<string, unknown>): ParsedMailResult {
 
 async function startServer() {
   const app = express();
+  const httpServer = http.createServer(app);
 
   app.use(express.json({ limit: '15mb' }));
 
@@ -224,7 +226,10 @@ async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === 'true' ? false : { server: httpServer },
+      },
       appType: 'custom',
     });
     app.use(vite.middlewares);
@@ -249,7 +254,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`BetterKeep server listening on http://0.0.0.0:${PORT}`);
   });
 }
