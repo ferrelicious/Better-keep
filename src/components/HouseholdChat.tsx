@@ -23,8 +23,8 @@ import {
 } from '../services/crypto';
 import {
   ShoppingItem,
-  extractShoppingItems,
   hasShoppingPrefix,
+  parseShoppingCommand,
 } from '../services/shoppingParser';
 import { supabase } from '../services/supabase';
 
@@ -50,13 +50,14 @@ export interface OutgoingChatPayload {
 interface HouseholdChatProps {
   messages: HouseholdMessage[];
   shoppingItems: ShoppingItem[];
+  knownStoreNames: string[];
   householdName?: string;
   encryptionSecret: string | null;
   userEmail: string | null;
   onSendMessage: (payload: OutgoingChatPayload) => Promise<void>;
   onSaveAsNote: (body: string) => Promise<void>;
   onToggleShoppingItem: (item: ShoppingItem) => Promise<void>;
-  onCreateShoppingFromText: (rawText: string) => Promise<number>;
+  onCreateShoppingFromText: (rawText: string, storeName?: string) => Promise<number>;
   onOpenShoppingTab: () => void;
   onOpenHouseholdModal: () => void;
 }
@@ -78,9 +79,10 @@ interface EncryptedMessageBubbleProps {
   isMine: boolean;
   encryptionSecret: string | null;
   shoppingItems: ShoppingItem[];
+  knownStoreNames: string[];
   onSaveAsNote: (decryptedBody: string) => Promise<void>;
   onToggleShoppingItem: (item: ShoppingItem) => Promise<void>;
-  onCreateShoppingFromText: (rawText: string) => Promise<number>;
+  onCreateShoppingFromText: (rawText: string, storeName?: string) => Promise<number>;
   onOpenShoppingTab: () => void;
   onPreviewImage: (url: string, name: string) => void;
 }
@@ -90,6 +92,7 @@ function EncryptedMessageBubble({
   isMine,
   encryptionSecret,
   shoppingItems,
+  knownStoreNames,
   onSaveAsNote,
   onToggleShoppingItem,
   onCreateShoppingFromText,
@@ -199,13 +202,33 @@ function EncryptedMessageBubble({
   const canSaveNote = Boolean(decryptedBody.trim()) && !decryptFailed;
   const isShoppingPrefixMsg = canSaveNote && hasShoppingPrefix(decryptedBody);
   const showInteractiveChecklist = isShoppingPrefixMsg || (canSaveNote && convertedToChecklist);
-  const checklistTitles = showInteractiveChecklist ? extractShoppingItems(decryptedBody) : [];
+  const parsedCommand = showInteractiveChecklist
+    ? parseShoppingCommand(decryptedBody, knownStoreNames)
+    : { storeName: '', items: [] as string[] };
+  const checklistStoreName = parsedCommand.storeName;
+  const checklistTitles = parsedCommand.items;
 
   const findShoppingMatch = (title: string): ShoppingItem | undefined => {
     const key = title.trim().toLowerCase();
+    const storeKey = checklistStoreName.trim().toLowerCase();
+    if (storeKey) {
+      const exactStoreMatch =
+        shoppingItems.find(
+          (i) =>
+            !i.checked &&
+            i.label.trim().toLowerCase() === key &&
+            i.store_name.trim().toLowerCase() === storeKey
+        ) ??
+        shoppingItems.find(
+          (i) =>
+            i.label.trim().toLowerCase() === key &&
+            i.store_name.trim().toLowerCase() === storeKey
+        );
+      if (exactStoreMatch) return exactStoreMatch;
+    }
     return (
-      shoppingItems.find((i) => !i.checked && i.title.trim().toLowerCase() === key) ??
-      shoppingItems.find((i) => i.title.trim().toLowerCase() === key)
+      shoppingItems.find((i) => !i.checked && i.label.trim().toLowerCase() === key) ??
+      shoppingItems.find((i) => i.label.trim().toLowerCase() === key)
     );
   };
 
@@ -295,10 +318,12 @@ function EncryptedMessageBubble({
           {showInteractiveChecklist && checklistTitles.length > 0 ? (
             <div className="flex flex-col gap-2 min-w-[200px]">
               <div className="flex items-center justify-between gap-3 border-b border-current/15 pb-1.5">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold truncate">
                   <ShoppingCart className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                  <span>Inköpslista</span>
-                  <span className="font-mono-tabular opacity-80">
+                  <span className="truncate">
+                    {checklistStoreName ? `Inköp · ${checklistStoreName}` : 'Inköpslista'}
+                  </span>
+                  <span className="font-mono-tabular opacity-80 shrink-0">
                     ({checkedInBubbleCount}/{checklistTitles.length})
                   </span>
                 </span>
@@ -323,7 +348,7 @@ function EncryptedMessageBubble({
                         if (matched) {
                           onToggleShoppingItem(matched);
                         } else {
-                          onCreateShoppingFromText(title);
+                          onCreateShoppingFromText(title, checklistStoreName);
                         }
                       }}
                       className="flex items-center gap-2 py-1 text-left rounded-lg hover:bg-black/10 dark:hover:bg-white/10 px-1.5 -mx-1.5 transition-colors cursor-pointer"
@@ -392,6 +417,7 @@ function EncryptedMessageBubble({
 export function HouseholdChat({
   messages,
   shoppingItems,
+  knownStoreNames,
   householdName,
   encryptionSecret,
   userEmail,
@@ -632,6 +658,7 @@ export function HouseholdChat({
                   isMine={isMine}
                   encryptionSecret={encryptionSecret}
                   shoppingItems={shoppingItems}
+                  knownStoreNames={knownStoreNames}
                   onSaveAsNote={onSaveAsNote}
                   onToggleShoppingItem={onToggleShoppingItem}
                   onCreateShoppingFromText={onCreateShoppingFromText}
@@ -720,7 +747,7 @@ export function HouseholdChat({
             placeholder={
               sending
                 ? 'Krypterar & skickar...'
-                : 'Skriv meddelande eller "Handla: mjölk, ägg"...'
+                : 'Skriv meddelande eller "Handla på Willys: mjölk, ägg"...'
             }
             disabled={sending}
             className="flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"

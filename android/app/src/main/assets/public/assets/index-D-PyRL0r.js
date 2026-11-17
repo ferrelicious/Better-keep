@@ -11636,6 +11636,16 @@ var Check = createLucideIcon("check", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ChevronDown = createLucideIcon("chevron-down", [["path", {
+	d: "m6 9 6 6 6-6",
+	key: "qrunsl"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var ChevronLeft = createLucideIcon("chevron-left", [["path", {
 	d: "m15 18-6-6 6-6",
 	key: "1wnfg3"
@@ -11649,6 +11659,16 @@ var ChevronLeft = createLucideIcon("chevron-left", [["path", {
 var ChevronRight = createLucideIcon("chevron-right", [["path", {
 	d: "m9 18 6-6-6-6",
 	key: "mthhwq"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var ChevronUp = createLucideIcon("chevron-up", [["path", {
+	d: "m18 15-6-6-6 6",
+	key: "153udz"
 }]]);
 /**
 * @license lucide-react v0.546.0 - ISC
@@ -12003,6 +12023,21 @@ var Mail = createLucideIcon("mail", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var MapPin = createLucideIcon("map-pin", [["path", {
+	d: "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0",
+	key: "1r0f0z"
+}], ["circle", {
+	cx: "12",
+	cy: "10",
+	r: "3",
+	key: "ilqhr7"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var MessageCircle = createLucideIcon("message-circle", [["path", {
 	d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719",
 	key: "1sd12s"
@@ -12298,6 +12333,16 @@ var Square = createLucideIcon("square", [["rect", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Star = createLucideIcon("star", [["path", {
+	d: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z",
+	key: "r04s7s"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var StickyNote = createLucideIcon("sticky-note", [["path", {
 	d: "M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z",
 	key: "qazsjp"
@@ -12305,6 +12350,26 @@ var StickyNote = createLucideIcon("sticky-note", [["path", {
 	d: "M15 3v4a2 2 0 0 0 2 2h4",
 	key: "40519r"
 }]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Store = createLucideIcon("store", [
+	["path", {
+		d: "M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5",
+		key: "slp6dd"
+	}],
+	["path", {
+		d: "M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244",
+		key: "o0xfot"
+	}],
+	["path", {
+		d: "M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05",
+		key: "wn3emo"
+	}]
+]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -13578,14 +13643,427 @@ function inferMimeTypeFromFilename(filename, fallbackType) {
 	return "application/octet-stream";
 }
 // src/services/shoppingParser.ts
-var SHOPPING_PREFIX_REGEX = /^(handla|inköp|lista)\s*:\s*/i;
+var SHOPPING_DEPARTMENTS = [
+	"Frukt & Grönt",
+	"Mejeri & Kyl",
+	"Bröd & Bageri",
+	"Kött, Fisk & Chark",
+	"Skafferi",
+	"Frys",
+	"Hygien & Övrigt"
+];
+var DEFAULT_STORES = [
+	"ICA Maxi",
+	"Willys",
+	"Lidl",
+	"Coop",
+	"Hemköp"
+];
+var DEFAULT_STAPLES = [
+	{
+		label: "Mjölk",
+		department: "Mejeri & Kyl"
+	},
+	{
+		label: "Ägg",
+		department: "Mejeri & Kyl"
+	},
+	{
+		label: "Smör",
+		department: "Mejeri & Kyl"
+	},
+	{
+		label: "Bröd",
+		department: "Bröd & Bageri"
+	},
+	{
+		label: "Ost",
+		department: "Mejeri & Kyl"
+	},
+	{
+		label: "Kaffe",
+		department: "Skafferi"
+	},
+	{
+		label: "Bananer",
+		department: "Frukt & Grönt"
+	},
+	{
+		label: "Toalettpapper",
+		department: "Hygien & Övrigt"
+	}
+];
+var SHOPPING_PREFIX_REGEX = /^(handla|inköp|lista)(?:\s+(?:på|i|hos)\s+([^:\r\n]+)|\s+([^:\r\n]+))?\s*:\s*/i;
+var GENERIC_NON_STORE_WORDS = /* @__PURE__ */ new Set([
+	"idag",
+	"imorgon",
+	"nu",
+	"snabbt",
+	"hem",
+	"hemma",
+	"sen",
+	"senare",
+	"veckan",
+	"helgen",
+	"mat",
+	"varor"
+]);
+function normalizeDepartment(dept) {
+	if (!dept) return "Hygien & Övrigt";
+	return SHOPPING_DEPARTMENTS.find((d) => d.toLowerCase() === dept.trim().toLowerCase()) ?? "Hygien & Övrigt";
+}
+var DEPARTMENT_KEYWORDS = [
+	{
+		department: "Frys",
+		keywords: [
+			"fryst",
+			"frysta",
+			"fryspizza",
+			"frysvaror",
+			"glass",
+			"isglass",
+			"pommes",
+			"klyftpotatis",
+			"pyttipanna",
+			"wokgrönsaker",
+			"fiskpinnar",
+			"ärtor",
+			"edamame"
+		]
+	},
+	{
+		department: "Frukt & Grönt",
+		keywords: [
+			"frukt",
+			"grönt",
+			"grönsaker",
+			"äpple",
+			"äpplen",
+			"banan",
+			"bananer",
+			"päron",
+			"apelsin",
+			"clementin",
+			"mandarin",
+			"citron",
+			"lime",
+			"avokado",
+			"tomat",
+			"tomater",
+			"körsbärstomat",
+			"gurka",
+			"paprika",
+			"sallad",
+			"isbergssallad",
+			"spenat",
+			"rucola",
+			"lök",
+			"rödlök",
+			"gul lök",
+			"vitlök",
+			"purjolök",
+			"potatis",
+			"sötpotatis",
+			"morot",
+			"morötter",
+			"broccoli",
+			"blomkål",
+			"vitkål",
+			"rödkål",
+			"zucchini",
+			"aubergine",
+			"champinjon",
+			"svamp",
+			"jordgubb",
+			"blåbär",
+			"hallon",
+			"vindruv",
+			"melon",
+			"vattenmelon",
+			"mango",
+			"kiwi",
+			"ananas",
+			"ingefära",
+			"persilja",
+			"dill",
+			"basilika",
+			"koriander",
+			"selleri",
+			"rädis",
+			"palsternacka",
+			"rödbet",
+			"majskolv",
+			"bär"
+		]
+	},
+	{
+		department: "Mejeri & Kyl",
+		keywords: [
+			"mjölk",
+			"havremjölk",
+			"havredryck",
+			"sojamjölk",
+			"mandelmjölk",
+			"laktosfri",
+			"filmjölk",
+			"fil",
+			"yoghurt",
+			"kvarg",
+			"keso",
+			"grädde",
+			"vispgrädde",
+			"matlagningsgrädde",
+			"creme fraiche",
+			"crème fraîche",
+			"gräddfil",
+			"smör",
+			"bregott",
+			"margarin",
+			"ost",
+			"hårdost",
+			"mozzarella",
+			"fetaost",
+			"halloumi",
+			"parmesan",
+			"färskost",
+			"philadelphia",
+			"ägg",
+			"juice",
+			"apelsinjuice",
+			"äppeljuice",
+			"smoothie",
+			"jäst",
+			"hummus",
+			"pesto",
+			"tofu"
+		]
+	},
+	{
+		department: "Bröd & Bageri",
+		keywords: [
+			"bröd",
+			"limpa",
+			"formfranska",
+			"toast",
+			"rostbröd",
+			"baguette",
+			"ciabatta",
+			"knäckebröd",
+			"fralla",
+			"frallor",
+			"bulle",
+			"bullar",
+			"kanelbulle",
+			"croissant",
+			"tortilla",
+			"tunnbröd",
+			"korvbröd",
+			"hamburgerbröd",
+			"pitabröd",
+			"naan",
+			"skorpor",
+			"kex",
+			"pepparkak",
+			"tårta",
+			"surdeg"
+		]
+	},
+	{
+		department: "Kött, Fisk & Chark",
+		keywords: [
+			"kött",
+			"köttfärs",
+			"nötfärs",
+			"blandfärs",
+			"fläskfärs",
+			"kyckling",
+			"kalkon",
+			"fläskfilé",
+			"fläskkotlett",
+			"karré",
+			"entrecote",
+			"biff",
+			"rostbiff",
+			"bacon",
+			"skinka",
+			"pålägg",
+			"korv",
+			"falukorv",
+			"grillkorv",
+			"prinskorv",
+			"salami",
+			"leverpastej",
+			"köttbullar",
+			"lax",
+			"torsk",
+			"sej",
+			"räkor",
+			"sill",
+			"tonfisk",
+			"makrill",
+			"fisk",
+			"skaldjur",
+			"musslor",
+			"kräftor",
+			"chark"
+		]
+	},
+	{
+		department: "Skafferi",
+		keywords: [
+			"kaffe",
+			"te",
+			"kakao",
+			"socker",
+			"mjöl",
+			"havregryn",
+			"gryn",
+			"müsli",
+			"granola",
+			"flingor",
+			"cornflakes",
+			"pasta",
+			"spaghetti",
+			"makaroner",
+			"penne",
+			"lasagne",
+			"ris",
+			"bulgur",
+			"couscous",
+			"quinoa",
+			"linser",
+			"bönor",
+			"kikärtor",
+			"krossade tomater",
+			"passerade tomater",
+			"tomatpuré",
+			"kokosmjölk",
+			"olivolja",
+			"rapsolja",
+			"matolja",
+			"olja",
+			"vinäger",
+			"balsamico",
+			"sojasås",
+			"soja",
+			"ketchup",
+			"senap",
+			"majonnäs",
+			"krydd",
+			"salt",
+			"peppar",
+			"oregano",
+			"kanel",
+			"kardemumma",
+			"bakpulver",
+			"vaniljsocker",
+			"buljong",
+			"fond",
+			"nudlar",
+			"ramen",
+			"taco",
+			"salsa",
+			"jordnötssmör",
+			"sylt",
+			"marmelad",
+			"honung",
+			"sirap",
+			"nötter",
+			"mandel",
+			"mandlar",
+			"cashew",
+			"russin",
+			"chips",
+			"popcorn",
+			"godis",
+			"choklad",
+			"läsk",
+			"cola",
+			"saft",
+			"vatten",
+			"öl",
+			"konserv"
+		]
+	},
+	{
+		department: "Hygien & Övrigt",
+		keywords: [
+			"toalettpapper",
+			"toapapper",
+			"hushållspapper",
+			"tvål",
+			"schampo",
+			"balsam",
+			"duschkräm",
+			"tandkräm",
+			"tandborste",
+			"tandtråd",
+			"deodorant",
+			"deo",
+			"rakhyvel",
+			"raklödder",
+			"bindor",
+			"tampong",
+			"blöjor",
+			"våtservett",
+			"näsduk",
+			"diskmedel",
+			"maskindisk",
+			"tvättmedel",
+			"sköljmedel",
+			"rengöring",
+			"soppåsar",
+			"avfallspåsar",
+			"plastpåsar",
+			"fryspåsar",
+			"bakplåtspapper",
+			"folie",
+			"diskborste",
+			"värmeljus",
+			"batteri",
+			"glödlamp",
+			"plåster",
+			"alvedon",
+			"ipren",
+			"hundmat",
+			"kattmat",
+			"kattsand"
+		]
+	}
+];
+function categorizeShoppingItem(label) {
+	const lower = label.trim().toLowerCase();
+	if (!lower) return "Hygien & Övrigt";
+	for (const entry of DEPARTMENT_KEYWORDS) for (const kw of entry.keywords) if (lower.includes(kw)) return entry.department;
+	return "Hygien & Övrigt";
+}
 function hasShoppingPrefix(text) {
 	return SHOPPING_PREFIX_REGEX.test(text.trim());
 }
-function extractShoppingItems(rawText) {
-	const withoutPrefix = rawText.trim().replace(SHOPPING_PREFIX_REGEX, "");
-	if (!withoutPrefix) return [];
-	const tokens = withoutPrefix.split(/[\r\n,;]+/);
+function resolveMatchedStoreName(candidate, knownStores = [...DEFAULT_STORES]) {
+	const trimmed = candidate.trim();
+	if (!trimmed) return "";
+	const exact = Array.from(/* @__PURE__ */ new Set([...knownStores, ...DEFAULT_STORES])).find((s) => s.toLowerCase() === trimmed.toLowerCase());
+	if (exact) return exact;
+	return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+function parseShoppingCommand(rawText, knownStores = [...DEFAULT_STORES]) {
+	const trimmed = rawText.trim();
+	const match = trimmed.match(SHOPPING_PREFIX_REGEX);
+	let storeName = "";
+	let body = trimmed;
+	if (match) {
+		body = trimmed.slice(match[0].length);
+		const prepStore = match[2]?.trim();
+		const directStore = match[3]?.trim();
+		if (prepStore) storeName = resolveMatchedStoreName(prepStore, knownStores);
+		else if (directStore && !GENERIC_NON_STORE_WORDS.has(directStore.toLowerCase())) storeName = resolveMatchedStoreName(directStore, knownStores);
+	}
+	if (!body) return {
+		storeName,
+		items: []
+	};
+	const tokens = body.split(/[\r\n,;]+/);
 	const seen = /* @__PURE__ */ new Set();
 	const items = [];
 	for (const token of tokens) {
@@ -13597,7 +14075,18 @@ function extractShoppingItems(rawText) {
 		const formatted = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 		items.push(formatted);
 	}
-	return items;
+	return {
+		storeName,
+		items
+	};
+}
+function buildGoogleMapsUrl(storeName, storeAddress) {
+	const cleanName = storeName.trim();
+	const cleanAddress = (storeAddress ?? "").trim();
+	let query = "";
+	if (cleanName && cleanAddress) query = cleanAddress.toLowerCase().includes(cleanName.toLowerCase()) ? cleanAddress : `${cleanName}, ${cleanAddress}`;
+	else query = cleanAddress || cleanName || "Matbutik";
+	return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 // node_modules/@supabase/supabase-js/dist/tracingRegistry.mjs
 var EXTRACTOR_KEY = Symbol.for("@supabase/supabase-js.traceContextExtractor");
@@ -35289,7 +35778,7 @@ function formatDuration(sec) {
 	const s = sec % 60;
 	return `${m}:${String(s).padStart(2, "0")}`;
 }
-function EncryptedMessageBubble({ msg, isMine, encryptionSecret, shoppingItems, onSaveAsNote, onToggleShoppingItem, onCreateShoppingFromText, onOpenShoppingTab, onPreviewImage }) {
+function EncryptedMessageBubble({ msg, isMine, encryptionSecret, shoppingItems, knownStoreNames, onSaveAsNote, onToggleShoppingItem, onCreateShoppingFromText, onOpenShoppingTab, onPreviewImage }) {
 	const [decryptedBody, setDecryptedBody] = (0, import_react.useState)(() => msg.is_encrypted ? "" : msg.body);
 	const [decryptedName, setDecryptedName] = (0, import_react.useState)("Fil");
 	const [decryptFailed, setDecryptFailed] = (0, import_react.useState)(false);
@@ -35377,10 +35866,20 @@ function EncryptedMessageBubble({ msg, isMine, encryptionSecret, shoppingItems, 
 	]);
 	const canSaveNote = Boolean(decryptedBody.trim()) && !decryptFailed;
 	const showInteractiveChecklist = canSaveNote && hasShoppingPrefix(decryptedBody) || canSaveNote && convertedToChecklist;
-	const checklistTitles = showInteractiveChecklist ? extractShoppingItems(decryptedBody) : [];
+	const parsedCommand = showInteractiveChecklist ? parseShoppingCommand(decryptedBody, knownStoreNames) : {
+		storeName: "",
+		items: []
+	};
+	const checklistStoreName = parsedCommand.storeName;
+	const checklistTitles = parsedCommand.items;
 	const findShoppingMatch = (title) => {
 		const key = title.trim().toLowerCase();
-		return shoppingItems.find((i) => !i.checked && i.title.trim().toLowerCase() === key) ?? shoppingItems.find((i) => i.title.trim().toLowerCase() === key);
+		const storeKey = checklistStoreName.trim().toLowerCase();
+		if (storeKey) {
+			const exactStoreMatch = shoppingItems.find((i) => !i.checked && i.label.trim().toLowerCase() === key && i.store_name.trim().toLowerCase() === storeKey) ?? shoppingItems.find((i) => i.label.trim().toLowerCase() === key && i.store_name.trim().toLowerCase() === storeKey);
+			if (exactStoreMatch) return exactStoreMatch;
+		}
+		return shoppingItems.find((i) => !i.checked && i.label.trim().toLowerCase() === key) ?? shoppingItems.find((i) => i.label.trim().toLowerCase() === key);
 	};
 	const handleCreateListClick = async () => {
 		if (!canSaveNote || creatingList) return;
@@ -35465,15 +35964,18 @@ function EncryptedMessageBubble({ msg, isMine, encryptionSecret, shoppingItems, 
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 								className: "flex items-center justify-between gap-3 border-b border-current/15 pb-1.5",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-									className: "inline-flex items-center gap-1.5 text-xs font-semibold",
+									className: "inline-flex items-center gap-1.5 text-xs font-semibold truncate",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
 											className: "w-3.5 h-3.5 shrink-0",
 											"aria-hidden": "true"
 										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Inköpslista" }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "truncate",
+											children: checklistStoreName ? `Inköp · ${checklistStoreName}` : "Inköpslista"
+										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-											className: "font-mono-tabular opacity-80",
+											className: "font-mono-tabular opacity-80 shrink-0",
 											children: [
 												"(",
 												checkedInBubbleCount,
@@ -35498,7 +36000,7 @@ function EncryptedMessageBubble({ msg, isMine, encryptionSecret, shoppingItems, 
 										type: "button",
 										onClick: () => {
 											if (matched) onToggleShoppingItem(matched);
-											else onCreateShoppingFromText(title);
+											else onCreateShoppingFromText(title, checklistStoreName);
 										},
 										className: "flex items-center gap-2 py-1 text-left rounded-lg hover:bg-black/10 dark:hover:bg-white/10 px-1.5 -mx-1.5 transition-colors cursor-pointer",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
@@ -35540,7 +36042,7 @@ function EncryptedMessageBubble({ msg, isMine, encryptionSecret, shoppingItems, 
 		]
 	});
 }
-function HouseholdChat({ messages, shoppingItems, householdName, encryptionSecret, userEmail, onSendMessage, onSaveAsNote, onToggleShoppingItem, onCreateShoppingFromText, onOpenShoppingTab, onOpenHouseholdModal }) {
+function HouseholdChat({ messages, shoppingItems, knownStoreNames, householdName, encryptionSecret, userEmail, onSendMessage, onSaveAsNote, onToggleShoppingItem, onCreateShoppingFromText, onOpenShoppingTab, onOpenHouseholdModal }) {
 	const [text, setText] = (0, import_react.useState)("");
 	const [sending, setSending] = (0, import_react.useState)(false);
 	const [mediaError, setMediaError] = (0, import_react.useState)(null);
@@ -35732,6 +36234,7 @@ function HouseholdChat({ messages, shoppingItems, householdName, encryptionSecre
 							isMine,
 							encryptionSecret,
 							shoppingItems,
+							knownStoreNames,
 							onSaveAsNote,
 							onToggleShoppingItem,
 							onCreateShoppingFromText,
@@ -35814,7 +36317,7 @@ function HouseholdChat({ messages, shoppingItems, householdName, encryptionSecre
 						type: "text",
 						value: text,
 						onChange: (e) => setText(e.target.value),
-						placeholder: sending ? "Krypterar & skickar..." : "Skriv meddelande eller \"Handla: mjölk, ägg\"...",
+						placeholder: sending ? "Krypterar & skickar..." : "Skriv meddelande eller \"Handla på Willys: mjölk, ägg\"...",
 						disabled: sending,
 						className: "flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
 					}),
@@ -36638,7 +37141,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	});
 };
 // node_modules/@capacitor/filesystem/dist/esm/index.js
-var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-BbwSF_Cx.js").then((m) => new m.FilesystemWeb()), []) });
+var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-fPr28Fxf.js").then((m) => new m.FilesystemWeb()), []) });
 f();
 // node_modules/@capacitor-community/file-opener/dist/esm/index.js
 var FileOpener = registerPlugin("FileOpener");
@@ -37215,7 +37718,7 @@ var Weekday;
 	Weekday[Weekday["Saturday"] = 7] = "Saturday";
 })(Weekday || (Weekday = {}));
 // node_modules/@capacitor/local-notifications/dist/esm/index.js
-var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-6OqzzBni.js").then((m) => new m.LocalNotificationsWeb()), []) });
+var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-MJvZ8XW0.js").then((m) => new m.LocalNotificationsWeb()), []) });
 // src/services/notifications.ts
 var URGENT_CHANNEL_ID = "betterkeep-urgent";
 var channelCreated = false;
@@ -38417,19 +38920,133 @@ function SettingsModal({ open, onClose, theme, onChangeTheme, userEmail, househo
 	});
 }
 // src/components/ShoppingList.tsx
-function ShoppingList({ items, householdName, userEmail, onAddItems, onToggleItem, onDeleteItem, onClearChecked, onOpenHouseholdModal }) {
+var ALL_STORES_VALUE = "__ALL__";
+function ShoppingList({ items, presets, householdName, userEmail, onAddItems, onToggleItem, onUpdateDepartment, onDeleteItem, onClearChecked, onSavePreset, onDeletePreset, onOpenHouseholdModal }) {
+	const [selectedStore, setSelectedStore] = (0, import_react.useState)(ALL_STORES_VALUE);
 	const [input, setInput] = (0, import_react.useState)("");
 	const [adding, setAdding] = (0, import_react.useState)(false);
 	const [clearing, setClearing] = (0, import_react.useState)(false);
-	const uncheckedItems = (0, import_react.useMemo)(() => items.filter((item) => !item.checked), [items]);
-	const checkedItems = (0, import_react.useMemo)(() => items.filter((item) => item.checked), [items]);
+	const [showStoreForm, setShowStoreForm] = (0, import_react.useState)(false);
+	const [newStoreName, setNewStoreName] = (0, import_react.useState)("");
+	const [newStoreAddress, setNewStoreAddress] = (0, import_react.useState)("");
+	const [savingStore, setSavingStore] = (0, import_react.useState)(false);
+	const [staplesExpanded, setStaplesExpanded] = (0, import_react.useState)(true);
+	const [busyStapleKey, setBusyStapleKey] = (0, import_react.useState)(null);
+	const storePresets = (0, import_react.useMemo)(() => presets.filter((p) => p.preset_type === "store"), [presets]);
+	const customStaples = (0, import_react.useMemo)(() => presets.filter((p) => p.preset_type === "staple"), [presets]);
+	const storeOptions = (0, import_react.useMemo)(() => {
+		const map = /* @__PURE__ */ new Map();
+		for (const defaultName of DEFAULT_STORES) map.set(defaultName.toLowerCase(), {
+			name: defaultName,
+			address: ""
+		});
+		for (const preset of storePresets) {
+			const cleanName = (preset.store_name || preset.label).trim();
+			if (!cleanName) continue;
+			map.set(cleanName.toLowerCase(), {
+				name: cleanName,
+				address: preset.store_address.trim(),
+				presetId: preset.id
+			});
+		}
+		for (const item of items) {
+			const cleanName = item.store_name.trim();
+			if (!cleanName) continue;
+			const key = cleanName.toLowerCase();
+			if (!map.has(key)) map.set(key, {
+				name: cleanName,
+				address: item.store_address.trim()
+			});
+		}
+		return Array.from(map.values());
+	}, [storePresets, items]);
+	const activeStoreOption = (0, import_react.useMemo)(() => {
+		if (selectedStore === ALL_STORES_VALUE) return null;
+		return storeOptions.find((s) => s.name.toLowerCase() === selectedStore.toLowerCase()) ?? {
+			name: selectedStore,
+			address: ""
+		};
+	}, [selectedStore, storeOptions]);
+	const activeStoreNameForNewItems = selectedStore === ALL_STORES_VALUE ? "" : activeStoreOption?.name ?? selectedStore;
+	const filteredItems = (0, import_react.useMemo)(() => {
+		if (selectedStore === ALL_STORES_VALUE) return items;
+		const target = selectedStore.trim().toLowerCase();
+		return items.filter((item) => item.store_name.trim().toLowerCase() === target);
+	}, [items, selectedStore]);
+	const uncheckedItems = (0, import_react.useMemo)(() => filteredItems.filter((item) => !item.checked), [filteredItems]);
+	const checkedItems = (0, import_react.useMemo)(() => filteredItems.filter((item) => item.checked), [filteredItems]);
+	const groupedUnchecked = (0, import_react.useMemo)(() => {
+		const storeGroups = /* @__PURE__ */ new Map();
+		for (const item of uncheckedItems) {
+			const rawStore = item.store_name.trim();
+			const storeKey = rawStore ? rawStore.toLowerCase() : "__none__";
+			const displayStore = rawStore || "Övriga varor (ej vald butik)";
+			const address = (rawStore ? storeOptions.find((s) => s.name.toLowerCase() === rawStore.toLowerCase()) : void 0)?.address || item.store_address.trim();
+			if (!storeGroups.has(storeKey)) storeGroups.set(storeKey, {
+				storeName: rawStore ? displayStore : "",
+				storeAddress: address,
+				departments: /* @__PURE__ */ new Map()
+			});
+			const group = storeGroups.get(storeKey);
+			const dept = item.department;
+			if (!group.departments.has(dept)) group.departments.set(dept, []);
+			group.departments.get(dept).push(item);
+		}
+		return Array.from(storeGroups.entries()).sort(([keyA], [keyB]) => {
+			if (keyA === "__none__") return 1;
+			if (keyB === "__none__") return -1;
+			return keyA.localeCompare(keyB, "sv");
+		}).map(([key, group]) => {
+			const orderedDepts = SHOPPING_DEPARTMENTS.filter((d) => group.departments.has(d)).map((d) => ({
+				department: d,
+				items: group.departments.get(d)
+			}));
+			const totalCount = orderedDepts.reduce((sum, d) => sum + d.items.length, 0);
+			return {
+				key,
+				storeName: group.storeName,
+				storeAddress: group.storeAddress,
+				totalCount,
+				departments: orderedDepts
+			};
+		});
+	}, [uncheckedItems, storeOptions]);
+	const combinedStaples = (0, import_react.useMemo)(() => {
+		const map = /* @__PURE__ */ new Map();
+		for (const def of DEFAULT_STAPLES) map.set(def.label.toLowerCase(), {
+			label: def.label,
+			department: def.department
+		});
+		for (const custom of customStaples) {
+			const label = custom.label.trim();
+			if (!label) continue;
+			map.set(label.toLowerCase(), {
+				label,
+				department: custom.department,
+				customPresetId: custom.id
+			});
+		}
+		return Array.from(map.values());
+	}, [customStaples]);
+	const stapleKeysSet = (0, import_react.useMemo)(() => {
+		return new Set(combinedStaples.map((s) => s.label.toLowerCase()));
+	}, [combinedStaples]);
+	const customStapleByLabel = (0, import_react.useMemo)(() => {
+		const map = /* @__PURE__ */ new Map();
+		for (const p of customStaples) map.set(p.label.trim().toLowerCase(), p);
+		return map;
+	}, [customStaples]);
+	const uncheckedLabelsInActiveStore = (0, import_react.useMemo)(() => {
+		const targetStore = activeStoreNameForNewItems.trim().toLowerCase();
+		return new Set(items.filter((i) => !i.checked && (!targetStore || i.store_name.trim().toLowerCase() === targetStore)).map((i) => i.label.trim().toLowerCase()));
+	}, [items, activeStoreNameForNewItems]);
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		const clean = input.trim();
 		if (!clean || adding) return;
 		setAdding(true);
 		try {
-			await onAddItems(clean);
+			await onAddItems(clean, activeStoreNameForNewItems);
 			setInput("");
 		} finally {
 			setAdding(false);
@@ -38443,15 +39060,60 @@ function ShoppingList({ items, householdName, userEmail, onAddItems, onToggleIte
 			setInput((prev) => prev.trim() ? `${prev.trim()}, ${normalized}` : normalized);
 		}
 	};
+	const handleSaveNewStore = async (e) => {
+		e.preventDefault();
+		const cleanName = newStoreName.trim();
+		if (!cleanName || savingStore) return;
+		setSavingStore(true);
+		try {
+			await onSavePreset({
+				presetType: "store",
+				label: cleanName,
+				storeName: cleanName,
+				storeAddress: newStoreAddress.trim()
+			});
+			setSelectedStore(cleanName);
+			setNewStoreName("");
+			setNewStoreAddress("");
+			setShowStoreForm(false);
+		} finally {
+			setSavingStore(false);
+		}
+	};
+	const handleQuickAddStaple = async (label, department) => {
+		const key = label.toLowerCase();
+		if (busyStapleKey === key) return;
+		setBusyStapleKey(key);
+		try {
+			await onAddItems(label, activeStoreNameForNewItems, department);
+		} finally {
+			setBusyStapleKey(null);
+		}
+	};
+	const handleToggleStarItem = async (item) => {
+		const key = item.label.trim().toLowerCase();
+		const existingCustom = customStapleByLabel.get(key);
+		if (existingCustom) {
+			await onDeletePreset(existingCustom.id);
+			return;
+		}
+		if (DEFAULT_STAPLES.some((d) => d.label.toLowerCase() === key)) return;
+		await onSavePreset({
+			presetType: "staple",
+			label: item.label,
+			department: item.department
+		});
+	};
 	const handleClear = async () => {
 		if (checkedItems.length === 0 || clearing) return;
 		setClearing(true);
 		try {
-			await onClearChecked();
+			await onClearChecked(selectedStore === ALL_STORES_VALUE ? void 0 : activeStoreNameForNewItems);
 		} finally {
 			setClearing(false);
 		}
 	};
+	const mapUrl = activeStoreOption ? buildGoogleMapsUrl(activeStoreOption.name, activeStoreOption.address) : buildGoogleMapsUrl("Matbutik");
 	if (!userEmail || !householdName) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-6 text-center flex flex-col items-center gap-3 max-w-md mx-auto",
 		children: [
@@ -38468,7 +39130,7 @@ function ShoppingList({ items, householdName, userEmail, onAddItems, onToggleIte
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 				className: "text-sm text-[#525E56] dark:text-[#9BA79F]",
-				children: "Koppla ihop ert hushåll för att dela inköpslistan i realtid, bocka av varor i butiken och få pling när allt är handlat."
+				children: "Koppla ihop ert hushåll för att dela E2E-krypterad inköpslista i realtid, gruppera efter butik och avdelning samt få pling när allt är handlat."
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 				type: "button",
@@ -38480,197 +39142,499 @@ function ShoppingList({ items, householdName, userEmail, onAddItems, onToggleIte
 	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "max-w-3xl w-full mx-auto flex flex-col gap-5",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-4",
-			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "flex items-center justify-between gap-3 flex-wrap",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-2.5",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "w-9 h-9 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-4",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "flex items-center justify-between gap-3 flex-wrap",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2.5 min-w-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "w-9 h-9 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
+									className: "w-4 h-4",
+									"aria-hidden": "true"
+								})
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
+									className: "font-display text-base sm:text-lg font-bold truncate",
+									children: [householdName, " · Inköp"]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "text-xs text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1.5 flex-wrap",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "inline-flex items-center gap-1 text-[#2E6B4E] dark:text-[#8FD4AE] font-medium",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+												className: "w-3 h-3 shrink-0",
+												"aria-hidden": "true"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "E2E-krypterad" })]
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											"aria-hidden": "true",
+											children: "·"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "font-mono-tabular",
+											children: [
+												uncheckedItems.length,
+												" kvar · ",
+												checkedItems.length,
+												" avbockade"
+											]
+										})
+									]
+								})]
+							})]
+						})
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-col gap-2.5",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex flex-wrap items-center gap-2",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "relative flex-1 min-w-[190px]",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Store, {
+											className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none",
+											"aria-hidden": "true"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+											value: selectedStore,
+											onChange: (e) => setSelectedStore(e.target.value),
+											"aria-label": "Välj eller filtrera butik",
+											className: "w-full h-11 pl-10 pr-8 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] dark:focus:ring-[#8FD4AE] cursor-pointer",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+												value: ALL_STORES_VALUE,
+												children: "Alla butiker"
+											}), storeOptions.map((store) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+												value: store.name,
+												children: store.address ? `${store.name} (${store.address})` : store.name
+											}, store.name))]
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+										href: mapUrl,
+										target: "_blank",
+										rel: "noopener noreferrer",
+										title: activeStoreOption ? `Öppna ${activeStoreOption.name} i Google Maps` : "Sök matbutiker i Google Maps",
+										className: "h-11 px-3.5 rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] hover:bg-[#C2E2CA] dark:hover:bg-[#235B40] text-[#0D3824] dark:text-[#CBEED9] text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-colors",
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MapPin, {
+												className: "w-4 h-4 shrink-0",
+												"aria-hidden": "true"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Öppna karta" }),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExternalLink, {
+												className: "w-3.5 h-3.5 opacity-75 shrink-0",
+												"aria-hidden": "true"
+											})
+										]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										onClick: () => {
+											if (!showStoreForm && activeStoreOption) {
+												setNewStoreName(activeStoreOption.name);
+												setNewStoreAddress(activeStoreOption.address);
+											} else if (!showStoreForm) {
+												setNewStoreName("");
+												setNewStoreAddress("");
+											}
+											setShowStoreForm((v) => !v);
+										},
+										className: "h-11 px-3.5 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E1E6DE] dark:hover:bg-[#2B322E] text-[#171D19] dark:text-[#E4EBE6] text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap transition-colors",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
+											className: "w-4 h-4 shrink-0",
+											"aria-hidden": "true"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "+ Lägg till egen butik & plats" })]
+									})
+								]
+							}),
+							activeStoreOption && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between gap-2 px-1 text-xs text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "truncate",
+									children: activeStoreOption.address ? `Plats: ${activeStoreOption.address}` : `Vald butik: ${activeStoreOption.name} (ingen adress sparad ännu)`
+								}), activeStoreOption.presetId && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => {
+										onDeletePreset(activeStoreOption.presetId);
+										setSelectedStore(ALL_STORES_VALUE);
+									},
+									className: "text-red-700 dark:text-red-300 hover:underline shrink-0 cursor-pointer",
+									children: "Ta bort sparad butik"
+								})]
+							}),
+							showStoreForm && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+								onSubmit: handleSaveNewStore,
+								className: "rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-3.5 flex flex-col gap-3",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											className: "text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+											children: "Spara butik & plats (E2E-krypterat)"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+											type: "button",
+											onClick: () => setShowStoreForm(false),
+											"aria-label": "Stäng butiksformulär",
+											className: "p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer",
+											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-4 h-4" })
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "grid grid-cols-1 sm:grid-cols-2 gap-2.5",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "text",
+											value: newStoreName,
+											onChange: (e) => setNewStoreName(e.target.value),
+											placeholder: "Butiksnamn (t.ex. ICA Maxi Stenhagen)",
+											"aria-label": "Butiksnamn",
+											required: true,
+											className: "h-10 px-3.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "text",
+											value: newStoreAddress,
+											onChange: (e) => setNewStoreAddress(e.target.value),
+											placeholder: "Adress / plats (t.ex. Stenhagen, Uppsala)",
+											"aria-label": "Butikens adress eller plats",
+											className: "h-10 px-3.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-end gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+											type: "button",
+											onClick: () => setShowStoreForm(false),
+											className: "h-9 px-3.5 rounded-xl text-xs font-medium text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 cursor-pointer",
+											children: "Avbryt"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+											type: "submit",
+											disabled: !newStoreName.trim() || savingStore,
+											className: "h-9 px-4 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer",
+											children: [savingStore && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Spara butik" })]
+										})]
+									})
+								]
+							})
+						]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+						onSubmit: handleSubmit,
+						className: "flex items-center gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							type: "text",
+							value: input,
+							onChange: (e) => setInput(e.target.value),
+							onPaste: handlePaste,
+							placeholder: activeStoreNameForNewItems ? `Lägg till vara i ${activeStoreNameForNewItems} (t.ex. Mjölk, ägg)...` : "Lägg till vara (t.ex. Mjölk, ägg, kaffe)...",
+							"aria-label": "Lägg till varor i inköpslistan",
+							disabled: adding,
+							className: "flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] dark:focus:ring-[#8FD4AE]"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "submit",
+							disabled: !input.trim() || adding,
+							className: "h-11 px-4 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] hover:bg-[#24563E] dark:hover:bg-[#A3DFBD] text-white dark:text-[#063822] text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer whitespace-nowrap",
+							children: [adding ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+								className: "w-4 h-4 animate-spin",
+								"aria-hidden": "true"
+							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
 								className: "w-4 h-4",
 								"aria-hidden": "true"
-							})
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
-							className: "font-display text-base sm:text-lg font-bold",
-							children: [householdName, " · Inköp"]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-							className: "text-xs text-[#525E56] dark:text-[#9BA79F] font-mono-tabular",
-							children: [
-								uncheckedItems.length,
-								" kvar att handla · ",
-								checkedItems.length,
-								" avbockade"
-							]
-						})] })]
-					})
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-					onSubmit: handleSubmit,
-					className: "flex items-center gap-2",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-						type: "text",
-						value: input,
-						onChange: (e) => setInput(e.target.value),
-						onPaste: handlePaste,
-						placeholder: "Lägg till vara (t.ex. Mjölk, ägg, kaffe)...",
-						"aria-label": "Lägg till varor i inköpslistan",
-						disabled: adding,
-						className: "flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] dark:focus:ring-[#8FD4AE]"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-						type: "submit",
-						disabled: !input.trim() || adding,
-						className: "h-11 px-4 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] hover:bg-[#24563E] dark:hover:bg-[#A3DFBD] text-white dark:text-[#063822] text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer whitespace-nowrap",
-						children: [adding ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-							className: "w-4 h-4 animate-spin",
-							"aria-hidden": "true"
-						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
-							className: "w-4 h-4",
-							"aria-hidden": "true"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Lägg till" })]
-					})]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-					className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
-					children: [
-						"Tips: Separera flera varor med kommatecken, klistra in en lista eller skriv ",
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-							className: "font-mono-tabular font-semibold",
-							children: "Handla: mjölk, ägg"
-						}),
-						" i chatten."
-					]
-				})
-			]
-		}), items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "rounded-3xl border border-dashed border-[#18221C]/15 dark:border-[#E3EAE5]/15 py-12 px-6 text-center flex flex-col items-center gap-2",
-			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
-					className: "w-8 h-8 text-[#525E56] dark:text-[#9BA79F] opacity-60",
-					"aria-hidden": "true"
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-					className: "font-display text-base font-semibold",
-					children: "Inköpslistan är tom"
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-					className: "text-xs sm:text-sm text-[#525E56] dark:text-[#9BA79F] max-w-md",
-					children: [
-						"Lägg till varor ovan eller skicka ett chattmeddelande som börjar med ",
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-							className: "font-mono-tabular",
-							children: "Handla:"
-						}),
-						" så skapas bockrutor automatiskt."
-					]
-				})
-			]
-		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex flex-col gap-5",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
-				className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "px-4 sm:px-5 py-3 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center justify-between",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-						className: "text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Lägg till" })]
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+						className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
 						children: [
-							"Att handla (",
-							uncheckedItems.length,
-							")"
+							"Varor sorteras automatiskt i avdelningar. Tips: Skriv",
+							" ",
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "font-mono-tabular font-semibold",
+								children: "Handla på Willys: mjölk, ägg, kaffe"
+							}),
+							" ",
+							"i chatten för att lägga till direkt under rätt butik."
 						]
 					})
-				}), uncheckedItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "px-5 py-6 text-center text-sm text-[#2E6B4E] dark:text-[#8FD4AE] font-medium",
-					children: "Alla varor på listan är avbockade!"
-				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-					className: "divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8",
-					children: uncheckedItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
-						className: "flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 hover:bg-[#F6F7F4]/70 dark:hover:bg-[#212723]/50 transition-colors",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: () => onToggleItem(item),
-							className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "w-6 h-6 rounded-lg border-2 border-[#2E6B4E] dark:border-[#8FD4AE] flex items-center justify-center shrink-0 transition-colors",
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					type: "button",
+					onClick: () => setStaplesExpanded((v) => !v),
+					"aria-expanded": staplesExpanded,
+					className: "w-full px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3 text-left hover:bg-[#F6F7F4]/70 dark:hover:bg-[#212723]/50 transition-colors cursor-pointer",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-2 min-w-0",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, {
+								className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE] fill-current shrink-0",
+								"aria-hidden": "true"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-xs sm:text-sm font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+								children: "Basvaror (Snabbval)"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "text-xs text-[#525E56] dark:text-[#9BA79F] font-mono-tabular",
+								children: [
+									"(",
+									combinedStaples.length,
+									")"
+								]
+							}),
+							activeStoreNameForNewItems && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "text-[11px] text-[#2E6B4E] dark:text-[#8FD4AE] truncate hidden sm:inline",
+								children: ["· läggs till i ", activeStoreNameForNewItems]
+							})
+						]
+					}), staplesExpanded ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronUp, { className: "w-4 h-4 text-[#525E56] dark:text-[#9BA79F] shrink-0" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "w-4 h-4 text-[#525E56] dark:text-[#9BA79F] shrink-0" })]
+				}), staplesExpanded && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "px-4 sm:px-5 pb-4 pt-1 flex flex-wrap gap-2 border-t border-[#18221C]/8 dark:border-[#E3EAE5]/8",
+					children: combinedStaples.map((staple) => {
+						const alreadyOnList = uncheckedLabelsInActiveStore.has(staple.label.toLowerCase());
+						const isBusy = busyStapleKey === staple.label.toLowerCase();
+						return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: `inline-flex items-center rounded-xl border text-xs font-medium transition-colors ${alreadyOnList ? "bg-[#D3EBD9]/70 dark:bg-[#1C4A34]/70 border-[#2E6B4E]/30 dark:border-[#8FD4AE]/30 text-[#0D3824] dark:text-[#CBEED9]" : "bg-[#F6F7F4] dark:bg-[#212723] border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-[#171D19] dark:text-[#E4EBE6]"}`,
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								disabled: isBusy,
+								onClick: () => handleQuickAddStaple(staple.label, staple.department),
+								className: "min-h-[36px] px-3 inline-flex items-center gap-1.5 hover:opacity-80 cursor-pointer disabled:opacity-50",
+								children: [isBusy ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+									className: "w-3.5 h-3.5 animate-spin",
+									"aria-hidden": "true"
+								}) : alreadyOnList ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, {
+									className: "w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]",
+									"aria-hidden": "true"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
+									className: "w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]",
+									"aria-hidden": "true"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: staple.label })]
+							}), staple.customPresetId && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								onClick: () => onDeletePreset(staple.customPresetId),
+								"aria-label": `Ta bort basvaran ${staple.label}`,
+								title: "Ta bort sparad basvara",
+								className: "h-9 w-7 flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 border-l border-[#18221C]/10 dark:border-[#E3EAE5]/10 cursor-pointer",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-3 h-3" })
+							})]
+						}, staple.label);
+					})
+				})]
+			}),
+			filteredItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "rounded-3xl border border-dashed border-[#18221C]/15 dark:border-[#E3EAE5]/15 py-12 px-6 text-center flex flex-col items-center gap-2",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
+						className: "w-8 h-8 text-[#525E56] dark:text-[#9BA79F] opacity-60",
+						"aria-hidden": "true"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+						className: "font-display text-base font-semibold",
+						children: selectedStore === ALL_STORES_VALUE ? "Inköpslistan är tom" : `Inga varor under ${activeStoreOption?.name ?? selectedStore}`
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+						className: "text-xs sm:text-sm text-[#525E56] dark:text-[#9BA79F] max-w-md",
+						children: [
+							"Lägg till varor ovan, använd Basvaror (Snabbval) eller skriv",
+							" ",
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "font-mono-tabular",
+								children: "Handla på Willys: mjölk, ägg"
+							}),
+							" i chatten."
+						]
+					})
+				]
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex flex-col gap-5",
+				children: [uncheckedItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 px-5 py-6 text-center text-sm text-[#2E6B4E] dark:text-[#8FD4AE] font-medium",
+					children: [
+						"Alla varor ",
+						selectedStore === ALL_STORES_VALUE ? "på listan" : `för ${activeStoreOption?.name ?? selectedStore}`,
+						" är avbockade!"
+					]
+				}) : groupedUnchecked.map((storeGroup) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "px-4 sm:px-5 py-3 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 bg-[#F6F7F4]/70 dark:bg-[#141816]/70 flex items-center justify-between gap-3 flex-wrap",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2 min-w-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Store, {
+								className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0",
 								"aria-hidden": "true"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 								className: "min-w-0",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "text-sm sm:text-base font-medium text-[#171D19] dark:text-[#E4EBE6] break-words",
-									children: item.title
-								}), item.created_by && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+									className: "text-sm font-bold text-[#171D19] dark:text-[#E4EBE6] truncate",
+									children: [storeGroup.storeName || "Övriga varor", /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+										className: "ml-2 text-xs font-normal font-mono-tabular text-[#525E56] dark:text-[#9BA79F]",
+										children: [
+											"(",
+											storeGroup.totalCount,
+											")"
+										]
+									})]
+								}), storeGroup.storeAddress && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 									className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate",
-									children: ["Tillagd av ", item.created_by.split("@")[0]]
+									children: storeGroup.storeAddress
 								})]
 							})]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							onClick: () => onDeleteItem(item.id),
-							"aria-label": `Ta bort ${item.title}`,
-							className: "w-10 h-10 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
-								className: "w-4 h-4",
+						}), storeGroup.storeName && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+							href: buildGoogleMapsUrl(storeGroup.storeName, storeGroup.storeAddress),
+							target: "_blank",
+							rel: "noopener noreferrer",
+							className: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-[11px] font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] hover:opacity-85 whitespace-nowrap",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MapPin, {
+								className: "w-3.5 h-3.5",
 								"aria-hidden": "true"
-							})
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Karta" })]
 						})]
-					}, item.id))
-				})]
-			}), checkedItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
-				className: "rounded-3xl bg-[#F6F7F4]/80 dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 overflow-hidden",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "px-4 sm:px-5 py-3 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center justify-between gap-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-						className: "text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
-						children: [
-							"Avbockat (",
-							checkedItems.length,
-							")"
-						]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-						type: "button",
-						onClick: handleClear,
-						disabled: clearing,
-						className: "inline-flex items-center gap-1.5 min-h-[34px] px-3 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-500/10 disabled:opacity-50 cursor-pointer whitespace-nowrap",
-						children: [clearing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-							className: "w-3.5 h-3.5 animate-spin",
-							"aria-hidden": "true"
-						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
-							className: "w-3.5 h-3.5",
-							"aria-hidden": "true"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Rensa avbockade" })]
-					})]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-					className: "divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8",
-					children: checkedItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
-						className: "flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 opacity-75",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: () => onToggleItem(item),
-							className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "w-6 h-6 rounded-lg bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shrink-0",
-								"aria-hidden": "true",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-4 h-4 stroke-[2.5]" })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "divide-y divide-[#18221C]/10 dark:divide-[#E3EAE5]/10",
+						children: storeGroup.departments.map((deptGroup) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "px-4 sm:px-5 py-2 bg-[#ECEFE9]/45 dark:bg-[#212723]/45 flex items-center justify-between",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
+								className: "text-[11px] font-bold uppercase tracking-wider text-[#2E6B4E] dark:text-[#8FD4AE]",
+								children: deptGroup.department
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "text-sm line-through text-[#525E56] dark:text-[#9BA79F] break-words",
-								children: item.title
+								className: "text-[11px] font-mono-tabular text-[#525E56] dark:text-[#9BA79F]",
+								children: deptGroup.items.length
 							})]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							onClick: () => onDeleteItem(item.id),
-							"aria-label": `Ta bort ${item.title}`,
-							className: "w-10 h-10 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
-								className: "w-4 h-4",
-								"aria-hidden": "true"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+							className: "divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8",
+							children: deptGroup.items.map((item) => {
+								const labelKey = item.label.trim().toLowerCase();
+								const isCustomStaple = customStapleByLabel.has(labelKey);
+								const isDefaultStaple = DEFAULT_STAPLES.some((d) => d.label.toLowerCase() === labelKey);
+								const isStarred = stapleKeysSet.has(labelKey);
+								return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+									className: "flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 hover:bg-[#F6F7F4]/70 dark:hover:bg-[#212723]/50 transition-colors",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										onClick: () => onToggleItem(item),
+										className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "w-6 h-6 rounded-lg border-2 border-[#2E6B4E] dark:border-[#8FD4AE] flex items-center justify-center shrink-0 transition-colors",
+											"aria-hidden": "true"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "min-w-0",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-sm sm:text-base font-medium text-[#171D19] dark:text-[#E4EBE6] break-words",
+												children: item.label
+											}), item.created_by && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+												className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate",
+												children: ["Tillagd av ", item.created_by.split("@")[0]]
+											})]
+										})]
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-1 shrink-0",
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("select", {
+												value: item.department,
+												onChange: (e) => onUpdateDepartment(item, e.target.value),
+												"aria-label": `Byt avdelning för ${item.label}`,
+												className: "h-8 max-w-[116px] sm:max-w-[140px] px-2 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] cursor-pointer truncate",
+												children: SHOPPING_DEPARTMENTS.map((dept) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+													value: dept,
+													children: dept
+												}, dept))
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+												type: "button",
+												onClick: () => handleToggleStarItem(item),
+												disabled: isDefaultStaple && !isCustomStaple,
+												title: isDefaultStaple ? "Standard-basvara i Snabbval" : isCustomStaple ? "Ta bort från Basvaror" : "Spara som basvara (Snabbval)",
+												"aria-label": isCustomStaple ? `Ta bort ${item.label} från basvaror` : `Spara ${item.label} som basvara`,
+												className: `w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${isStarred ? "text-amber-500 dark:text-amber-400" : "text-[#525E56] dark:text-[#9BA79F] hover:text-amber-500 dark:hover:text-amber-400"} ${isDefaultStaple && !isCustomStaple ? "opacity-70 cursor-default" : "hover:bg-amber-500/10 cursor-pointer"}`,
+												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, {
+													className: `w-4 h-4 ${isStarred ? "fill-current" : ""}`,
+													"aria-hidden": "true"
+												})
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+												type: "button",
+												onClick: () => onDeleteItem(item.id),
+												"aria-label": `Ta bort ${item.label}`,
+												className: "w-9 h-9 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
+												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
+													className: "w-4 h-4",
+													"aria-hidden": "true"
+												})
+											})
+										]
+									})]
+								}, item.id);
 							})
+						})] }, deptGroup.department))
+					})]
+				}, storeGroup.key)), checkedItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "rounded-3xl bg-[#F6F7F4]/80 dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 overflow-hidden",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "px-4 sm:px-5 py-3 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center justify-between gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+							className: "text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+							children: [
+								"Avbockat (",
+								checkedItems.length,
+								")"
+							]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: handleClear,
+							disabled: clearing,
+							className: "inline-flex items-center gap-1.5 min-h-[34px] px-3 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-500/10 disabled:opacity-50 cursor-pointer whitespace-nowrap",
+							children: [clearing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+								className: "w-3.5 h-3.5 animate-spin",
+								"aria-hidden": "true"
+							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
+								className: "w-3.5 h-3.5",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Rensa avbockade" })]
 						})]
-					}, item.id))
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+						className: "divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8",
+						children: checkedItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+							className: "flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 opacity-75",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => onToggleItem(item),
+								className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "w-6 h-6 rounded-lg bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shrink-0",
+									"aria-hidden": "true",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-4 h-4 stroke-[2.5]" })
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "text-sm line-through text-[#525E56] dark:text-[#9BA79F] break-words",
+										children: item.label
+									}), (item.store_name || item.department) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate",
+										children: [item.store_name, item.department].filter(Boolean).join(" · ")
+									})]
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								onClick: () => onDeleteItem(item.id),
+								"aria-label": `Ta bort ${item.label}`,
+								className: "w-10 h-10 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
+									className: "w-4 h-4",
+									"aria-hidden": "true"
+								})
+							})]
+						}, item.id))
+					})]
 				})]
-			})]
-		})]
+			})
+		]
 	});
 }
 // src/components/TopBar.tsx
@@ -39152,6 +40116,16 @@ function generateNoteId() {
 	if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
 	return `note-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
+async function safeDecryptShoppingField(value, isEncrypted, secret) {
+	if (!value) return "";
+	if (isEncrypted === false) return value;
+	if (!secret) return isEncrypted ? "Låst" : value;
+	try {
+		return await decryptText(value, secret);
+	} catch {
+		return value;
+	}
+}
 function App() {
 	const [notes, setNotes] = (0, import_react.useState)([]);
 	const [loading, setLoading] = (0, import_react.useState)(true);
@@ -39180,7 +40154,10 @@ function App() {
 	const [sharedNoteIds, setSharedNoteIds] = (0, import_react.useState)(/* @__PURE__ */ new Set());
 	const [householdEvents, setHouseholdEvents] = (0, import_react.useState)([]);
 	const [householdMessages, setHouseholdMessages] = (0, import_react.useState)([]);
+	const [rawShoppingItems, setRawShoppingItems] = (0, import_react.useState)([]);
+	const [rawShoppingPresets, setRawShoppingPresets] = (0, import_react.useState)([]);
 	const [shoppingItems, setShoppingItems] = (0, import_react.useState)([]);
+	const [shoppingPresets, setShoppingPresets] = (0, import_react.useState)([]);
 	const [unreadChatCount, setUnreadChatCount] = (0, import_react.useState)(0);
 	const [passphraseVersion, setPassphraseVersion] = (0, import_react.useState)(0);
 	const [latestRelease, setLatestRelease] = (0, import_react.useState)(null);
@@ -39201,6 +40178,69 @@ function App() {
 		shoppingItemsRef.current = shoppingItems;
 	}, [shoppingItems]);
 	const encryptionSecret = (0, import_react.useMemo)(() => household ? resolveHouseholdSecret(household) : null, [household, passphraseVersion]);
+	(0, import_react.useEffect)(() => {
+		let active = true;
+		(async () => {
+			const decrypted = await Promise.all(rawShoppingItems.map(async (raw) => {
+				const label = await safeDecryptShoppingField(raw.label ?? raw.title ?? "", raw.is_encrypted, encryptionSecret);
+				const storeName = await safeDecryptShoppingField(raw.store_name, raw.is_encrypted, encryptionSecret);
+				const storeAddress = await safeDecryptShoppingField(raw.store_address, raw.is_encrypted, encryptionSecret);
+				const department = raw.department ? normalizeDepartment(raw.department) : categorizeShoppingItem(label);
+				return {
+					id: raw.id,
+					household_id: raw.household_id,
+					label,
+					store_name: storeName,
+					store_address: storeAddress,
+					department,
+					checked: Boolean(raw.checked),
+					is_encrypted: raw.is_encrypted,
+					created_by: raw.created_by,
+					created_at: raw.created_at
+				};
+			}));
+			if (active) setShoppingItems(decrypted);
+		})();
+		return () => {
+			active = false;
+		};
+	}, [rawShoppingItems, encryptionSecret]);
+	(0, import_react.useEffect)(() => {
+		let active = true;
+		(async () => {
+			const decrypted = await Promise.all(rawShoppingPresets.map(async (raw) => {
+				const label = await safeDecryptShoppingField(raw.label, raw.is_encrypted, encryptionSecret);
+				const storeName = await safeDecryptShoppingField(raw.store_name, raw.is_encrypted, encryptionSecret);
+				const storeAddress = await safeDecryptShoppingField(raw.store_address, raw.is_encrypted, encryptionSecret);
+				const department = raw.department ? normalizeDepartment(raw.department) : categorizeShoppingItem(label);
+				return {
+					id: raw.id,
+					household_id: raw.household_id,
+					preset_type: raw.preset_type,
+					label,
+					store_name: storeName,
+					store_address: storeAddress,
+					department,
+					is_encrypted: raw.is_encrypted,
+					created_by: raw.created_by ?? void 0,
+					created_at: raw.created_at
+				};
+			}));
+			if (active) setShoppingPresets(decrypted);
+		})();
+		return () => {
+			active = false;
+		};
+	}, [rawShoppingPresets, encryptionSecret]);
+	const knownStoreNames = (0, import_react.useMemo)(() => {
+		const set = new Set(DEFAULT_STORES);
+		for (const p of shoppingPresets) if (p.preset_type === "store") {
+			const name = (p.store_name || p.label).trim();
+			if (name) set.add(name);
+		}
+		for (const item of shoppingItems) if (item.store_name.trim()) set.add(item.store_name.trim());
+		return Array.from(set);
+	}, [shoppingPresets, shoppingItems]);
 	const uncheckedShoppingCount = (0, import_react.useMemo)(() => shoppingItems.filter((item) => !item.checked).length, [shoppingItems]);
 	(0, import_react.useEffect)(() => {
 		ensureHighPriorityNotificationChannel();
@@ -39248,7 +40288,11 @@ function App() {
 	}, []);
 	const fetchHouseholdShoppingItems = (0, import_react.useCallback)(async (householdId) => {
 		const { data, error } = await supabase.from("household_shopping_items").select("*").eq("household_id", householdId).order("created_at", { ascending: true });
-		if (!error && data) setShoppingItems(data);
+		if (!error && data) setRawShoppingItems(data);
+	}, []);
+	const fetchHouseholdShoppingPresets = (0, import_react.useCallback)(async (householdId) => {
+		const { data, error } = await supabase.from("household_shopping_presets").select("*").eq("household_id", householdId).order("created_at", { ascending: true });
+		if (!error && data) setRawShoppingPresets(data);
 	}, []);
 	const syncFromCloud = (0, import_react.useCallback)(async (email) => {
 		try {
@@ -39257,12 +40301,16 @@ function App() {
 			if (hh?.id) await Promise.all([
 				fetchHouseholdEvents(hh.id, email),
 				fetchHouseholdMessages(hh.id),
-				fetchHouseholdShoppingItems(hh.id)
+				fetchHouseholdShoppingItems(hh.id),
+				fetchHouseholdShoppingPresets(hh.id)
 			]);
 			else {
 				setHouseholdEvents([]);
 				setHouseholdMessages([]);
+				setRawShoppingItems([]);
+				setRawShoppingPresets([]);
 				setShoppingItems([]);
+				setShoppingPresets([]);
 			}
 			const sharedIds = /* @__PURE__ */ new Set();
 			const mergedMap = /* @__PURE__ */ new Map();
@@ -39288,7 +40336,12 @@ function App() {
 			setSharedNoteIds(sharedIds);
 			setNotes(Array.from(mergedMap.values()));
 		} catch {}
-	}, [fetchHouseholdEvents, fetchHouseholdMessages]);
+	}, [
+		fetchHouseholdEvents,
+		fetchHouseholdMessages,
+		fetchHouseholdShoppingItems,
+		fetchHouseholdShoppingPresets
+	]);
 	(0, import_react.useEffect)(() => {
 		let active = true;
 		(async () => {
@@ -39316,7 +40369,10 @@ function App() {
 				setSharedNoteIds(/* @__PURE__ */ new Set());
 				setHouseholdEvents([]);
 				setHouseholdMessages([]);
+				setRawShoppingItems([]);
+				setRawShoppingPresets([]);
 				setShoppingItems([]);
+				setShoppingPresets([]);
 			}
 		});
 		return () => {
@@ -39434,13 +40490,30 @@ function App() {
 			const currentHhId = householdRef.current?.id;
 			if (payload.eventType === "DELETE") {
 				const deletedId = payload.old?.id;
-				if (deletedId) setShoppingItems((prev) => prev.filter((item) => item.id !== deletedId));
+				if (deletedId) setRawShoppingItems((prev) => prev.filter((item) => item.id !== deletedId));
 			} else if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
 				const item = payload.new;
 				if (!item?.id) return;
 				if (currentHhId && item.household_id !== currentHhId) return;
-				setShoppingItems((prev) => {
+				setRawShoppingItems((prev) => {
 					return prev.some((i) => i.id === item.id) ? prev.map((i) => i.id === item.id ? item : i) : [...prev, item];
+				});
+			}
+		}).on("postgres_changes", {
+			event: "*",
+			schema: "public",
+			table: "household_shopping_presets"
+		}, (payload) => {
+			const currentHhId = householdRef.current?.id;
+			if (payload.eventType === "DELETE") {
+				const deletedId = payload.old?.id;
+				if (deletedId) setRawShoppingPresets((prev) => prev.filter((p) => p.id !== deletedId));
+			} else if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+				const preset = payload.new;
+				if (!preset?.id) return;
+				if (currentHhId && preset.household_id !== currentHhId) return;
+				setRawShoppingPresets((prev) => {
+					return prev.some((p) => p.id === preset.id) ? prev.map((p) => p.id === preset.id ? preset : p) : [...prev, preset];
 				});
 			}
 		}).on("postgres_changes", {
@@ -39453,7 +40526,8 @@ function App() {
 			if (hh?.id) await Promise.all([
 				fetchHouseholdEvents(hh.id, userEmail),
 				fetchHouseholdMessages(hh.id),
-				fetchHouseholdShoppingItems(hh.id)
+				fetchHouseholdShoppingItems(hh.id),
+				fetchHouseholdShoppingPresets(hh.id)
 			]);
 		}).subscribe();
 		return () => {
@@ -39463,7 +40537,8 @@ function App() {
 		userEmail,
 		fetchHouseholdEvents,
 		fetchHouseholdMessages,
-		fetchHouseholdShoppingItems
+		fetchHouseholdShoppingItems,
+		fetchHouseholdShoppingPresets
 	]);
 	(0, import_react.useEffect)(() => {
 		const checkDueReminders = () => {
@@ -39495,30 +40570,54 @@ function App() {
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, []);
-	const handleAddShoppingItems = (0, import_react.useCallback)(async (rawText) => {
+	const handleAddShoppingItems = (0, import_react.useCallback)(async (rawText, storeNameOverride, departmentOverride) => {
 		if (!userEmail || !household?.id) return 0;
-		const parsed = extractShoppingItems(rawText);
-		if (parsed.length === 0) return 0;
-		const existingUnchecked = new Set(shoppingItemsRef.current.filter((i) => !i.checked).map((i) => i.title.trim().toLowerCase()));
-		const toInsert = parsed.filter((title) => !existingUnchecked.has(title.trim().toLowerCase())).map((title) => ({
+		const secret = resolveHouseholdSecret(household);
+		const parsed = parseShoppingCommand(rawText, knownStoreNames);
+		if (parsed.items.length === 0) return 0;
+		const resolvedStoreName = (storeNameOverride !== void 0 ? storeNameOverride : parsed.storeName).trim();
+		const resolvedStoreAddress = (resolvedStoreName ? shoppingPresets.find((p) => p.preset_type === "store" && (p.store_name || p.label).trim().toLowerCase() === resolvedStoreName.toLowerCase()) : void 0)?.store_address.trim() ?? "";
+		const existingUncheckedKeys = new Set(shoppingItemsRef.current.filter((i) => !i.checked).map((i) => `${i.store_name.trim().toLowerCase()}::${i.label.trim().toLowerCase()}`));
+		const newItems = parsed.items.filter((label) => !existingUncheckedKeys.has(`${resolvedStoreName.toLowerCase()}::${label.trim().toLowerCase()}`));
+		if (newItems.length === 0) return 0;
+		const encStoreName = resolvedStoreName ? await encryptText(resolvedStoreName, secret) : "";
+		const encStoreAddress = resolvedStoreAddress ? await encryptText(resolvedStoreAddress, secret) : "";
+		const toInsert = await Promise.all(newItems.map(async (label) => ({
 			household_id: household.id,
-			title,
+			label: await encryptText(label, secret),
+			store_name: encStoreName,
+			store_address: encStoreAddress,
+			department: departmentOverride ?? categorizeShoppingItem(label),
 			checked: false,
+			is_encrypted: true,
 			created_by: userEmail
-		}));
-		if (toInsert.length === 0) return 0;
-		const { data, error } = await supabase.from("household_shopping_items").insert(toInsert).select();
+		})));
+		let { data, error } = await supabase.from("household_shopping_items").insert(toInsert).select();
+		if (error && /title/i.test(error.message)) {
+			const withTitle = toInsert.map((row) => ({
+				...row,
+				title: row.label
+			}));
+			const retry = await supabase.from("household_shopping_items").insert(withTitle).select();
+			data = retry.data;
+			error = retry.error;
+		}
 		if (error) throw error;
 		if (data && data.length > 0) {
 			const created = data;
-			setShoppingItems((prev) => {
+			setRawShoppingItems((prev) => {
 				const existingIds = new Set(prev.map((i) => i.id));
 				return [...prev, ...created.filter((c) => !existingIds.has(c.id))];
 			});
 			return created.length;
 		}
 		return 0;
-	}, [userEmail, household]);
+	}, [
+		userEmail,
+		household,
+		knownStoreNames,
+		shoppingPresets
+	]);
 	const handleSendChatMessage = (0, import_react.useCallback)(async (payload) => {
 		if (!userEmail || !household?.id) return;
 		const secret = resolveHouseholdSecret(household);
@@ -39569,9 +40668,17 @@ function App() {
 			...i,
 			checked: nextChecked
 		} : i));
+		setRawShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
+			...i,
+			checked: nextChecked
+		} : i));
 		const { error } = await supabase.from("household_shopping_items").update({ checked: nextChecked }).eq("id", item.id);
 		if (error) {
 			setShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
+				...i,
+				checked: item.checked
+			} : i));
+			setRawShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
 				...i,
 				checked: item.checked
 			} : i));
@@ -39590,15 +40697,97 @@ function App() {
 		household,
 		handleSendChatMessage
 	]);
+	const handleUpdateShoppingDepartment = (0, import_react.useCallback)(async (item, department) => {
+		setShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
+			...i,
+			department
+		} : i));
+		setRawShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
+			...i,
+			department
+		} : i));
+		const { error } = await supabase.from("household_shopping_items").update({ department }).eq("id", item.id);
+		if (error) {
+			setShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
+				...i,
+				department: item.department
+			} : i));
+			setRawShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
+				...i,
+				department: item.department
+			} : i));
+		}
+	}, []);
 	const handleDeleteShoppingItem = (0, import_react.useCallback)(async (id) => {
 		setShoppingItems((prev) => prev.filter((item) => item.id !== id));
+		setRawShoppingItems((prev) => prev.filter((item) => item.id !== id));
 		await supabase.from("household_shopping_items").delete().eq("id", id);
 	}, []);
-	const handleClearCheckedShoppingItems = (0, import_react.useCallback)(async () => {
+	const handleClearCheckedShoppingItems = (0, import_react.useCallback)(async (storeNameFilter) => {
 		if (!household?.id) return;
-		setShoppingItems((prev) => prev.filter((item) => !item.checked));
-		await supabase.from("household_shopping_items").delete().eq("household_id", household.id).eq("checked", true);
+		const normalizedFilter = storeNameFilter?.trim().toLowerCase();
+		const toClearIds = shoppingItemsRef.current.filter((item) => {
+			if (!item.checked) return false;
+			if (!normalizedFilter) return true;
+			return item.store_name.trim().toLowerCase() === normalizedFilter;
+		}).map((item) => item.id);
+		if (toClearIds.length === 0) return;
+		const idSet = new Set(toClearIds);
+		setShoppingItems((prev) => prev.filter((item) => !idSet.has(item.id)));
+		setRawShoppingItems((prev) => prev.filter((item) => !idSet.has(item.id)));
+		await supabase.from("household_shopping_items").delete().in("id", toClearIds);
 	}, [household]);
+	const handleSaveShoppingPreset = (0, import_react.useCallback)(async (draft) => {
+		if (!userEmail || !household?.id) return;
+		const secret = resolveHouseholdSecret(household);
+		const cleanLabel = draft.label.trim();
+		if (!cleanLabel) return;
+		const cleanStoreName = (draft.storeName ?? (draft.presetType === "store" ? cleanLabel : "")).trim();
+		const cleanStoreAddress = (draft.storeAddress ?? "").trim();
+		const department = draft.department ?? categorizeShoppingItem(cleanLabel);
+		const encLabel = await encryptText(cleanLabel, secret);
+		const encStoreName = cleanStoreName ? await encryptText(cleanStoreName, secret) : "";
+		const encStoreAddress = cleanStoreAddress ? await encryptText(cleanStoreAddress, secret) : "";
+		const existing = shoppingPresets.find((p) => p.preset_type === draft.presetType && p.label.trim().toLowerCase() === cleanLabel.toLowerCase());
+		if (existing) {
+			const { data, error } = await supabase.from("household_shopping_presets").update({
+				label: encLabel,
+				store_name: encStoreName,
+				store_address: encStoreAddress,
+				department,
+				is_encrypted: true
+			}).eq("id", existing.id).select().single();
+			if (!error && data) {
+				const updated = data;
+				setRawShoppingPresets((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+			}
+			return;
+		}
+		const { data, error } = await supabase.from("household_shopping_presets").insert({
+			household_id: household.id,
+			preset_type: draft.presetType,
+			label: encLabel,
+			store_name: encStoreName,
+			store_address: encStoreAddress,
+			department,
+			is_encrypted: true,
+			created_by: userEmail
+		}).select().single();
+		if (error) throw error;
+		if (data) {
+			const created = data;
+			setRawShoppingPresets((prev) => prev.some((p) => p.id === created.id) ? prev : [...prev, created]);
+		}
+	}, [
+		userEmail,
+		household,
+		shoppingPresets
+	]);
+	const handleDeleteShoppingPreset = (0, import_react.useCallback)(async (id) => {
+		setShoppingPresets((prev) => prev.filter((p) => p.id !== id));
+		setRawShoppingPresets((prev) => prev.filter((p) => p.id !== id));
+		await supabase.from("household_shopping_presets").delete().eq("id", id);
+	}, []);
 	const handleAddCalendarEvent = (0, import_react.useCallback)(async (draft) => {
 		if (!userEmail || !household?.id) return;
 		const { data, error } = await supabase.from("household_events").insert({
@@ -40112,6 +41301,7 @@ function App() {
 					activeTab === "chat" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HouseholdChat, {
 						messages: householdMessages,
 						shoppingItems,
+						knownStoreNames,
 						householdName: household?.name,
 						encryptionSecret,
 						userEmail,
@@ -40123,12 +41313,16 @@ function App() {
 						onOpenHouseholdModal: () => setHouseholdModalOpen(true)
 					}) : activeTab === "shopping" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingList, {
 						items: shoppingItems,
+						presets: shoppingPresets,
 						householdName: household?.name,
 						userEmail,
 						onAddItems: handleAddShoppingItems,
 						onToggleItem: handleToggleShoppingItem,
+						onUpdateDepartment: handleUpdateShoppingDepartment,
 						onDeleteItem: handleDeleteShoppingItem,
 						onClearChecked: handleClearCheckedShoppingItems,
+						onSavePreset: handleSaveShoppingPreset,
+						onDeletePreset: handleDeleteShoppingPreset,
 						onOpenHouseholdModal: () => setHouseholdModalOpen(true)
 					}) : activeTab === "calendar" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HouseholdCalendar, {
 						events: householdEvents,
