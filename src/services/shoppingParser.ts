@@ -18,6 +18,16 @@ export const DEFAULT_STORES = [
   'Hemköp',
 ] as const;
 
+export const STORE_CHAINS = [
+  'ICA',
+  'Willys',
+  'Lidl',
+  'Coop',
+  'Hemköp',
+  'City Gross',
+  'Tempo',
+] as const;
+
 export const DEFAULT_STAPLES: Array<{ label: string; department: ShoppingDepartment }> = [
   { label: 'Mjölk', department: 'Mejeri & Kyl' },
   { label: 'Ägg', department: 'Mejeri & Kyl' },
@@ -67,6 +77,8 @@ export interface RawShoppingPreset {
   store_name?: string | null;
   store_address?: string | null;
   department?: string | null;
+  lat?: number | null;
+  lng?: number | null;
   is_encrypted?: boolean;
   created_by?: string | null;
   added_by?: string | null;
@@ -81,6 +93,8 @@ export interface ShoppingPreset {
   store_name: string;
   store_address: string;
   department: ShoppingDepartment;
+  lat?: number | null;
+  lng?: number | null;
   is_encrypted?: boolean;
   created_by?: string;
   created_at?: string;
@@ -518,18 +532,175 @@ export function extractShoppingItems(rawText: string): string[] {
   return parseShoppingCommand(rawText).items;
 }
 
-export function buildGoogleMapsUrl(storeName: string, storeAddress?: string): string {
+export function buildStoreNavigationQuery(
+  storeName: string,
+  storeAddress?: string
+): string {
   const cleanName = storeName.trim();
   const cleanAddress = (storeAddress ?? '').trim();
 
-  let query = '';
   if (cleanName && cleanAddress) {
-    query = cleanAddress.toLowerCase().includes(cleanName.toLowerCase())
+    return cleanAddress.toLowerCase().includes(cleanName.toLowerCase())
       ? cleanAddress
       : `${cleanName}, ${cleanAddress}`;
-  } else {
-    query = cleanAddress || cleanName || 'Matbutik';
+  }
+  return cleanAddress || cleanName || 'Matbutik';
+}
+
+export function buildGoogleMapsUrl(storeName: string, storeAddress?: string): string {
+  const query = buildStoreNavigationQuery(storeName, storeAddress);
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+export function getStoreNavigationHref(
+  storeName: string,
+  storeAddress: string | undefined,
+  isNativePlatform: boolean
+): string {
+  const fullQuery = buildStoreNavigationQuery(storeName, storeAddress);
+  if (isNativePlatform) {
+    return `geo:0,0?q=${encodeURIComponent(fullQuery)}`;
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullQuery)}`;
+}
+
+export function haversineDistanceMeters(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const earthRadiusMeters = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusMeters * c;
+}
+
+export interface NominatimStoreSuggestion {
+  placeId: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+interface NominatimRawResult {
+  place_id?: number | string;
+  lat?: string;
+  lon?: string;
+  name?: string;
+  display_name?: string;
+  address?: {
+    shop?: string;
+    supermarket?: string;
+    convenience?: string;
+    amenity?: string;
+    road?: string;
+    pedestrian?: string;
+    house_number?: string;
+    suburb?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+  };
+}
+
+export async function searchNominatimStores(
+  query: string,
+  signal?: AbortSignal
+): Promise<NominatimStoreSuggestion[]> {
+  const clean = query.trim();
+  if (!clean) return [];
+
+  const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=se&addressdetails=1&limit=5&q=${encodeURIComponent(
+    clean
+  )}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Accept-Language': 'sv',
+    },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Butikssökning misslyckades (HTTP ${response.status}).`);
   }
 
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  const rawList = (await response.json()) as NominatimRawResult[];
+  if (!Array.isArray(rawList)) return [];
+
+  const suggestions: NominatimStoreSuggestion[] = [];
+
+  for (const item of rawList) {
+    const lat = Number.parseFloat(String(item.lat ?? ''));
+    const lng = Number.parseFloat(String(item.lon ?? ''));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+    const addr = item.address ?? {};
+    const displayParts = (item.display_name ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const storeName =
+      (
+        item.name ||
+        addr.supermarket ||
+        addr.shop ||
+        addr.convenience ||
+        addr.amenity ||
+        displayParts[0] ||
+        ''
+      ).trim();
+
+    if (!storeName) continue;
+
+    const road = (addr.road || addr.pedestrian || '').trim();
+    const street = [road, (addr.house_number || '').trim()]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    const locality = (
+      addr.city ||
+      addr.town ||
+      addr.village ||
+      addr.municipality ||
+      addr.suburb ||
+      ''
+    )
+      .replace(/\s+kommun$/i, '')
+      .trim();
+
+    let formattedAddress = '';
+    if (street && locality) {
+      formattedAddress = `${street}, ${locality}`;
+    } else if (street || locality) {
+      formattedAddress = street || locality;
+    } else {
+      formattedAddress = displayParts.slice(1, 3).join(', ');
+    }
+
+    suggestions.push({
+      placeId: String(item.place_id ?? `${lat}_${lng}_${storeName}`),
+      name: storeName,
+      address: formattedAddress,
+      lat,
+      lng,
+    });
+  }
+
+  return suggestions;
 }

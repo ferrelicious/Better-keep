@@ -1,14 +1,17 @@
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 import {
   Check,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
   Loader2,
   Lock,
   MapPin,
+  Navigation,
   Plus,
+  Search,
   ShoppingCart,
   Star,
   Store,
@@ -19,11 +22,15 @@ import {
 import {
   DEFAULT_STAPLES,
   DEFAULT_STORES,
+  NominatimStoreSuggestion,
   SHOPPING_DEPARTMENTS,
+  STORE_CHAINS,
   ShoppingDepartment,
   ShoppingItem,
   ShoppingPreset,
-  buildGoogleMapsUrl,
+  getStoreNavigationHref,
+  haversineDistanceMeters,
+  searchNominatimStores,
 } from '../services/shoppingParser';
 import { resolveHouseholdSecret } from '../services/crypto';
 import { getUserHousehold, supabase } from '../services/supabase';
@@ -57,6 +64,8 @@ interface StoreOption {
   name: string;
   address: string;
   presetId?: string;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 interface ShoppingListProps {
@@ -83,6 +92,8 @@ interface ShoppingListProps {
       storeName?: string;
       storeAddress?: string;
       department?: ShoppingDepartment;
+      lat?: number | null;
+      lng?: number | null;
     },
     context?: ShoppingWriteContext
   ) => Promise<void>;
@@ -111,16 +122,29 @@ export function ShoppingList({
   const [adding, setAdding] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [gpsMatchedStoreName, setGpsMatchedStoreName] = useState<string | null>(null);
 
-  // Add custom store inline form
+  const userManuallyPickedStoreRef = useRef(false);
+  const hasTriedGpsAutoSelectRef = useRef(false);
+
+  // Add custom store inline form + Nominatim search
   const [showStoreForm, setShowStoreForm] = useState(false);
+  const [searchChain, setSearchChain] = useState('');
+  const [searchLocation, setSearchLocation] = useState('');
+  const [nominatimResults, setNominatimResults] = useState<NominatimStoreSuggestion[]>([]);
+  const [searchingStores, setSearchingStores] = useState(false);
+  const [searchStoreError, setSearchStoreError] = useState<string | null>(null);
   const [newStoreName, setNewStoreName] = useState('');
   const [newStoreAddress, setNewStoreAddress] = useState('');
+  const [newStoreLat, setNewStoreLat] = useState<number | null>(null);
+  const [newStoreLng, setNewStoreLng] = useState<number | null>(null);
   const [savingStore, setSavingStore] = useState(false);
 
   // Collapsible staples quick-pick
   const [staplesExpanded, setStaplesExpanded] = useState(true);
   const [busyStapleKey, setBusyStapleKey] = useState<string | null>(null);
+
+  const isNativePlatform = useMemo(() => Capacitor.isNativePlatform(), []);
 
   const storePresets = useMemo(
     () => presets.filter((p) => p.preset_type === 'store'),
@@ -132,7 +156,7 @@ export function ShoppingList({
     [presets]
   );
 
-  // Merge default stores, saved store presets (which carry address), and any store names seen on items
+  // Merge default stores, saved store presets (which carry address + coordinates), and any store names seen on items
   const storeOptions = useMemo<StoreOption[]>(() => {
     const map = new Map<string, StoreOption>();
 
@@ -147,6 +171,8 @@ export function ShoppingList({
         name: cleanName,
         address: (preset.store_address || '').trim(),
         presetId: preset.id,
+        lat: preset.lat ?? null,
+        lng: preset.lng ?? null,
       });
     }
 
@@ -164,6 +190,131 @@ export function ShoppingList({
 
     return Array.from(map.values());
   }, [storePresets, items]);
+
+  // Debounced OpenStreetMap Nominatim search (400 ms) inside "+ Lägg till egen butik & plats"
+  useEffect(() => {
+    if (!showStoreForm) return;
+    const trimmedLocation = searchLocation.trim();
+    const combinedQuery = [searchChain.trim(), trimmedLocation]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    if (!trimmedLocation || trimmedLocation.length < 2) {
+      setNominatimResults([]);
+      setSearchingStores(false);
+      setSearchStoreError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setSearchingStores(true);
+      setSearchStoreError(null);
+      try {
+        const results = await searchNominatimStores(combinedQuery, controller.signal);
+        if (!controller.signal.aborted) {
+          setNominatimResults(results);
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setSearchStoreError(getExactErrorMessage(err));
+        setNominatimResults([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setSearchingStores(false);
+        }
+      }
+    }, 400);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [showStoreForm, searchChain, searchLocation]);
+
+  // Automatic GPS store selection within 300 meters when opening "Inköp"
+  useEffect(() => {
+    if (!userEmail || !householdName) return;
+    if (hasTriedGpsAutoSelectRef.current || userManuallyPickedStoreRef.current) return;
+
+    const geoStores = storeOptions.filter(
+      (s): s is StoreOption & { lat: number; lng: number } =>
+        typeof s.lat === 'number' &&
+        typeof s.lng === 'number' &&
+        Number.isFinite(s.lat) &&
+        Number.isFinite(s.lng)
+    );
+
+    if (geoStores.length === 0) return;
+
+    hasTriedGpsAutoSelectRef.current = true;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        if (Capacitor.isNativePlatform()) {
+          const perm = await Geolocation.checkPermissions();
+          if (perm.location === 'denied' && perm.coarseLocation === 'denied') {
+            return;
+          }
+          if (
+            perm.location === 'prompt' ||
+            perm.location === 'prompt-with-rationale'
+          ) {
+            const requested = await Geolocation.requestPermissions();
+            if (
+              requested.location !== 'granted' &&
+              requested.coarseLocation !== 'granted'
+            ) {
+              return;
+            }
+          }
+        } else if (typeof navigator === 'undefined' || !navigator.geolocation) {
+          return;
+        }
+
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 60000,
+        });
+
+        if (cancelled || userManuallyPickedStoreRef.current) return;
+
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        if (!Number.isFinite(userLat) || !Number.isFinite(userLng)) return;
+
+        let closestStore: StoreOption | null = null;
+        let closestDistance = Infinity;
+
+        for (const store of geoStores) {
+          const distance = haversineDistanceMeters(
+            userLat,
+            userLng,
+            store.lat,
+            store.lng
+          );
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestStore = store;
+          }
+        }
+
+        if (closestStore && closestDistance <= 300) {
+          setSelectedStore(closestStore.name);
+          setGpsMatchedStoreName(closestStore.name);
+        }
+      } catch {
+        // Silent fallback if location services are disabled or denied
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userEmail, householdName, storeOptions]);
 
   const activeStoreOption = useMemo<StoreOption | null>(() => {
     if (selectedStore === ALL_STORES_VALUE) return null;
@@ -402,12 +553,21 @@ export function ShoppingList({
           label: cleanName,
           storeName: cleanName,
           storeAddress: newStoreAddress.trim(),
+          lat: newStoreLat,
+          lng: newStoreLng,
         },
         context
       );
+      userManuallyPickedStoreRef.current = true;
       setSelectedStore(cleanName);
+      setGpsMatchedStoreName(null);
+      setSearchChain('');
+      setSearchLocation('');
+      setNominatimResults([]);
       setNewStoreName('');
       setNewStoreAddress('');
+      setNewStoreLat(null);
+      setNewStoreLng(null);
       setShowStoreForm(false);
     } catch (error) {
       setErrorMsg(getExactErrorMessage(error));
@@ -475,9 +635,13 @@ export function ShoppingList({
     }
   };
 
-  const mapUrl = activeStoreOption
-    ? buildGoogleMapsUrl(activeStoreOption.name, activeStoreOption.address)
-    : buildGoogleMapsUrl('Matbutik');
+  const activeNavigationHref = activeStoreOption
+    ? getStoreNavigationHref(
+        activeStoreOption.name,
+        activeStoreOption.address,
+        isNativePlatform
+      )
+    : null;
 
   if (!userEmail || !householdName) {
     return (
@@ -541,7 +705,7 @@ export function ShoppingList({
           </div>
         </div>
 
-        {/* Store Picker & Google Maps */}
+        {/* Store Picker, Compact Address/Navigation & GPS Banner */}
         <div className="flex flex-col gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[190px]">
@@ -551,7 +715,11 @@ export function ShoppingList({
               />
               <select
                 value={selectedStore}
-                onChange={(e) => setSelectedStore(e.target.value)}
+                onChange={(e) => {
+                  userManuallyPickedStoreRef.current = true;
+                  setSelectedStore(e.target.value);
+                  setGpsMatchedStoreName(null);
+                }}
                 aria-label="Välj eller filtrera butik"
                 className="w-full h-11 pl-10 pr-8 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] dark:focus:ring-[#8FD4AE] cursor-pointer"
               >
@@ -564,31 +732,25 @@ export function ShoppingList({
               </select>
             </div>
 
-            <a
-              href={mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={
-                activeStoreOption
-                  ? `Öppna ${activeStoreOption.name} i Google Maps`
-                  : 'Sök matbutiker i Google Maps'
-              }
-              className="h-11 px-3.5 rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] hover:bg-[#C2E2CA] dark:hover:bg-[#235B40] text-[#0D3824] dark:text-[#CBEED9] text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-colors"
-            >
-              <MapPin className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span>Öppna karta</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-75 shrink-0" aria-hidden="true" />
-            </a>
-
             <button
               type="button"
               onClick={() => {
-                if (!showStoreForm && activeStoreOption) {
-                  setNewStoreName(activeStoreOption.name);
-                  setNewStoreAddress(activeStoreOption.address);
-                } else if (!showStoreForm) {
-                  setNewStoreName('');
-                  setNewStoreAddress('');
+                if (!showStoreForm) {
+                  setSearchChain('');
+                  setSearchLocation('');
+                  setNominatimResults([]);
+                  setSearchStoreError(null);
+                  if (activeStoreOption) {
+                    setNewStoreName(activeStoreOption.name);
+                    setNewStoreAddress(activeStoreOption.address);
+                    setNewStoreLat(activeStoreOption.lat ?? null);
+                    setNewStoreLng(activeStoreOption.lng ?? null);
+                  } else {
+                    setNewStoreName('');
+                    setNewStoreAddress('');
+                    setNewStoreLat(null);
+                    setNewStoreLng(null);
+                  }
                 }
                 setShowStoreForm((v) => !v);
               }}
@@ -598,13 +760,47 @@ export function ShoppingList({
             </button>
           </div>
 
-          {activeStoreOption && (
-            <div className="flex items-center justify-between gap-2 px-1 text-xs text-[#525E56] dark:text-[#9BA79F]">
+          {gpsMatchedStoreName && (
+            <div className="inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9] text-xs font-medium">
               <span className="truncate">
-                {activeStoreOption.address
-                  ? `Plats: ${activeStoreOption.address}`
-                  : `Vald butik: ${activeStoreOption.name} (ingen adress sparad ännu)`}
+                📍 Du är vid {gpsMatchedStoreName} — listan valdes automatiskt
               </span>
+              <button
+                type="button"
+                onClick={() => setGpsMatchedStoreName(null)}
+                aria-label="Stäng platsmeddelande"
+                className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 shrink-0 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {activeStoreOption && (
+            <div className="flex items-center justify-between gap-2 px-1 text-xs text-[#525E56] dark:text-[#9BA79F] flex-wrap">
+              {activeStoreOption.address ? (
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="truncate text-[#171D19] dark:text-[#E4EBE6]">
+                    📍 {activeStoreOption.address}
+                  </span>
+                  {activeNavigationHref && (
+                    <a
+                      href={activeNavigationHref}
+                      target={isNativePlatform ? undefined : '_blank'}
+                      rel={isNativePlatform ? undefined : 'noopener noreferrer'}
+                      title={`Navigera till ${activeStoreOption.name}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#D3EBD9] dark:bg-[#1C4A34] hover:bg-[#C2E2CA] dark:hover:bg-[#235B40] text-[#0D3824] dark:text-[#CBEED9] text-[11px] font-semibold shrink-0 whitespace-nowrap transition-colors"
+                    >
+                      <Navigation className="w-3 h-3 shrink-0" aria-hidden="true" />
+                      <span>Navigera</span>
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <span className="truncate">
+                  Vald butik: {activeStoreOption.name} (ingen adress sparad ännu)
+                </span>
+              )}
               {activeStoreOption.presetId && (
                 <button
                   type="button"
@@ -612,6 +808,7 @@ export function ShoppingList({
                     try {
                       await onDeletePreset(activeStoreOption.presetId!);
                       setSelectedStore(ALL_STORES_VALUE);
+                      setGpsMatchedStoreName(null);
                     } catch (error) {
                       setErrorMsg(getExactErrorMessage(error));
                     }
@@ -631,7 +828,7 @@ export function ShoppingList({
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6]">
-                  Spara butik & plats (E2E-krypterat)
+                  Sök eller lägg till butik & plats (E2E-krypterat)
                 </p>
                 <button
                   type="button"
@@ -642,12 +839,102 @@ export function ShoppingList({
                   <X className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* OpenStreetMap Nominatim Automatic Store Search */}
+              <div className="rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-2.5 flex flex-col gap-2">
+                <span className="text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1.5">
+                  <Search className="w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]" aria-hidden="true" />
+                  <span>Snabbsök butik i Sverige (hämtar namn, adress & GPS automatiskt)</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <select
+                    value={searchChain}
+                    onChange={(e) => setSearchChain(e.target.value)}
+                    aria-label="Välj butikskedja"
+                    className="h-9 px-2.5 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-xs font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] cursor-pointer"
+                  >
+                    <option value="">Alla kedjor</option>
+                    {STORE_CHAINS.map((chain) => (
+                      <option key={chain} value={chain}>
+                        {chain}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="sm:col-span-2 relative">
+                    <input
+                      type="text"
+                      value={searchLocation}
+                      onChange={(e) => setSearchLocation(e.target.value)}
+                      placeholder="Skriv plats/stadsdel (t.ex. Gnista, Stenhagen, Uppsala)..."
+                      aria-label="Sök plats eller stadsdel för butik"
+                      className="w-full h-9 px-3 pr-8 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-xs text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+                    />
+                    {searchingStores && (
+                      <Loader2
+                        className="w-3.5 h-3.5 animate-spin text-[#2E6B4E] dark:text-[#8FD4AE] absolute right-2.5 top-1/2 -translate-y-1/2"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {searchStoreError && (
+                  <p className="text-[11px] text-red-600 dark:text-red-400">
+                    {searchStoreError}
+                  </p>
+                )}
+
+                {nominatimResults.length > 0 && (
+                  <ul className="divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8 rounded-lg border border-[#18221C]/10 dark:border-[#E3EAE5]/10 bg-[#F6F7F4] dark:bg-[#141816] max-h-48 overflow-y-auto">
+                    {nominatimResults.map((suggestion) => (
+                      <li key={suggestion.placeId}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewStoreName(suggestion.name);
+                            setNewStoreAddress(suggestion.address);
+                            setNewStoreLat(suggestion.lat);
+                            setNewStoreLng(suggestion.lng);
+                            setNominatimResults([]);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-[#D3EBD9]/60 dark:hover:bg-[#1C4A34]/60 transition-colors flex items-start justify-between gap-2 cursor-pointer"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6] truncate">
+                              {suggestion.name}
+                            </p>
+                            {suggestion.address && (
+                              <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
+                                📍 {suggestion.address}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0 pt-0.5">
+                            Välj
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {!searchingStores &&
+                  !searchStoreError &&
+                  searchLocation.trim().length >= 2 &&
+                  nominatimResults.length === 0 &&
+                  !newStoreName.trim() && (
+                    <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F]">
+                      Inga förslag hittades — du kan fylla i butiksnamn och adress manuellt nedan.
+                    </p>
+                  )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <input
                   type="text"
                   value={newStoreName}
                   onChange={(e) => setNewStoreName(e.target.value)}
-                  placeholder="Butiksnamn (t.ex. ICA Maxi Stenhagen)"
+                  placeholder="Butiksnamn (t.ex. ICA Maxi Stormarknad Gnista)"
                   aria-label="Butiksnamn"
                   required
                   className="h-10 px-3.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
@@ -656,11 +943,21 @@ export function ShoppingList({
                   type="text"
                   value={newStoreAddress}
                   onChange={(e) => setNewStoreAddress(e.target.value)}
-                  placeholder="Adress / plats (t.ex. Stenhagen, Uppsala)"
+                  placeholder="Adress / plats (t.ex. Visthusvägen 1, Uppsala)"
                   aria-label="Butikens adress eller plats"
                   className="h-10 px-3.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
                 />
               </div>
+
+              {newStoreLat !== null && newStoreLng !== null && (
+                <p className="text-[11px] text-[#2E6B4E] dark:text-[#8FD4AE] font-mono-tabular flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>
+                    GPS-koordinater sparade ({newStoreLat.toFixed(5)}, {newStoreLng.toFixed(5)}) — möjliggör automatiskt val inom 300 m
+                  </span>
+                </p>
+              )}
+
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -862,16 +1159,17 @@ export function ShoppingList({
 
                   {storeGroup.storeName && (
                     <a
-                      href={buildGoogleMapsUrl(
+                      href={getStoreNavigationHref(
                         storeGroup.storeName,
-                        storeGroup.storeAddress
+                        storeGroup.storeAddress,
+                        isNativePlatform
                       )}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      target={isNativePlatform ? undefined : '_blank'}
+                      rel={isNativePlatform ? undefined : 'noopener noreferrer'}
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-[11px] font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] hover:opacity-85 whitespace-nowrap"
                     >
-                      <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Karta</span>
+                      <Navigation className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Navigera</span>
                     </a>
                   )}
                 </div>

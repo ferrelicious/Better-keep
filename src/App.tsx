@@ -125,6 +125,47 @@ async function safeDecryptShoppingField(
   }
 }
 
+const STORE_COORDS_STORAGE_KEY = 'betterkeep_store_coords_v1';
+
+function saveLocalStoreCoords(
+  storeName: string,
+  lat: number | null | undefined,
+  lng: number | null | undefined
+): void {
+  if (!storeName.trim() || typeof lat !== 'number' || typeof lng !== 'number') return;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+  try {
+    const raw = localStorage.getItem(STORE_COORDS_STORAGE_KEY);
+    const map = raw ? (JSON.parse(raw) as Record<string, { lat: number; lng: number }>) : {};
+    map[storeName.trim().toLowerCase()] = { lat, lng };
+    localStorage.setItem(STORE_COORDS_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function getLocalStoreCoords(storeName: string): { lat: number; lng: number } | null {
+  if (!storeName.trim()) return null;
+  try {
+    const raw = localStorage.getItem(STORE_COORDS_STORAGE_KEY);
+    if (!raw) return null;
+    const map = JSON.parse(raw) as Record<string, { lat: number; lng: number }>;
+    const found = map[storeName.trim().toLowerCase()];
+    if (
+      found &&
+      typeof found.lat === 'number' &&
+      typeof found.lng === 'number' &&
+      Number.isFinite(found.lat) &&
+      Number.isFinite(found.lng)
+    ) {
+      return found;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,6 +314,15 @@ export default function App() {
             ? normalizeDepartment(raw.department)
             : categorizeShoppingItem(label);
 
+          const dbLat =
+            typeof raw.lat === 'number' && Number.isFinite(raw.lat) ? raw.lat : null;
+          const dbLng =
+            typeof raw.lng === 'number' && Number.isFinite(raw.lng) ? raw.lng : null;
+          const fallbackCoords =
+            dbLat === null || dbLng === null
+              ? getLocalStoreCoords(storeName || label)
+              : null;
+
           return {
             id: raw.id,
             household_id: raw.household_id,
@@ -281,6 +331,8 @@ export default function App() {
             store_name: storeName,
             store_address: storeAddress,
             department,
+            lat: dbLat ?? fallbackCoords?.lat ?? null,
+            lng: dbLng ?? fallbackCoords?.lng ?? null,
             is_encrypted: raw.is_encrypted,
             created_by: raw.created_by ?? raw.added_by ?? undefined,
             created_at: raw.created_at,
@@ -1251,6 +1303,8 @@ export default function App() {
         storeName?: string;
         storeAddress?: string;
         department?: ShoppingDepartment;
+        lat?: number | null;
+        lng?: number | null;
       },
       context?: ShoppingWriteContext
     ) => {
@@ -1268,6 +1322,14 @@ export default function App() {
       ).trim();
       const cleanStoreAddress = (draft.storeAddress ?? '').trim();
       const department = draft.department ?? categorizeShoppingItem(cleanLabel);
+      const validLat =
+        typeof draft.lat === 'number' && Number.isFinite(draft.lat) ? draft.lat : null;
+      const validLng =
+        typeof draft.lng === 'number' && Number.isFinite(draft.lng) ? draft.lng : null;
+
+      if (draft.presetType === 'store' && validLat !== null && validLng !== null) {
+        saveLocalStoreCoords(cleanStoreName || cleanLabel, validLat, validLng);
+      }
 
       const encLabel = await encryptText(cleanLabel, secret);
       const encStoreName = cleanStoreName
@@ -1285,18 +1347,36 @@ export default function App() {
       );
 
       if (existing) {
-        const { data, error } = await supabase
+        let updatePayload: Record<string, unknown> = {
+          label: encLabel,
+          store_name: encStoreName,
+          store_address: encStoreAddress,
+          department,
+          is_encrypted: true,
+          ...(validLat !== null && validLng !== null
+            ? { lat: validLat, lng: validLng }
+            : {}),
+        };
+
+        let { data, error } = await supabase
           .from('household_shopping_presets')
-          .update({
-            label: encLabel,
-            store_name: encStoreName,
-            store_address: encStoreAddress,
-            department,
-            is_encrypted: true,
-          })
+          .update(updatePayload)
           .eq('id', existing.id)
           .select()
           .single();
+
+        if (error && (/\blat\b/i.test(error.message) || /\blng\b/i.test(error.message))) {
+          const { lat: _l1, lng: _l2, ...restUpdate } = updatePayload;
+          updatePayload = restUpdate;
+          const retryUpdate = await supabase
+            .from('household_shopping_presets')
+            .update(updatePayload)
+            .eq('id', existing.id)
+            .select()
+            .single();
+          data = retryUpdate.data;
+          error = retryUpdate.error;
+        }
 
         if (error) throw error;
         if (data) {
@@ -1317,6 +1397,9 @@ export default function App() {
         department,
         is_encrypted: true,
         created_by: activeEmail,
+        ...(validLat !== null && validLng !== null
+          ? { lat: validLat, lng: validLng }
+          : {}),
       };
 
       let { data, error } = await supabase
@@ -1325,10 +1408,15 @@ export default function App() {
         .select()
         .single();
 
-      for (let attempt = 0; attempt < 2 && error; attempt += 1) {
+      for (let attempt = 0; attempt < 3 && error; attempt += 1) {
         const msg = error.message || '';
         let adjusted = false;
 
+        if (/\blat\b/i.test(msg) || /\blng\b/i.test(msg)) {
+          const { lat: _l1, lng: _l2, ...rest } = candidatePreset;
+          candidatePreset = rest;
+          adjusted = true;
+        }
         if (/added_by/i.test(msg) && !('added_by' in candidatePreset)) {
           candidatePreset = { ...candidatePreset, added_by: activeEmail };
           adjusted = true;

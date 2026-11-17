@@ -12171,6 +12171,16 @@ var Moon = createLucideIcon("moon", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Navigation = createLucideIcon("navigation", [["polygon", {
+	points: "3 11 22 2 13 21 11 13 3 11",
+	key: "1ltx0t"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Package = createLucideIcon("package", [
 	["path", {
 		d: "M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z",
@@ -13763,6 +13773,15 @@ var DEFAULT_STORES = [
 	"Coop",
 	"Hemköp"
 ];
+var STORE_CHAINS = [
+	"ICA",
+	"Willys",
+	"Lidl",
+	"Coop",
+	"Hemköp",
+	"City Gross",
+	"Tempo"
+];
 var DEFAULT_STAPLES = [
 	{
 		label: "Mjölk",
@@ -14184,13 +14203,68 @@ function parseShoppingCommand(rawText, knownStores = [...DEFAULT_STORES]) {
 		items
 	};
 }
-function buildGoogleMapsUrl(storeName, storeAddress) {
+function buildStoreNavigationQuery(storeName, storeAddress) {
 	const cleanName = storeName.trim();
 	const cleanAddress = (storeAddress ?? "").trim();
-	let query = "";
-	if (cleanName && cleanAddress) query = cleanAddress.toLowerCase().includes(cleanName.toLowerCase()) ? cleanAddress : `${cleanName}, ${cleanAddress}`;
-	else query = cleanAddress || cleanName || "Matbutik";
+	if (cleanName && cleanAddress) return cleanAddress.toLowerCase().includes(cleanName.toLowerCase()) ? cleanAddress : `${cleanName}, ${cleanAddress}`;
+	return cleanAddress || cleanName || "Matbutik";
+}
+function buildGoogleMapsUrl(storeName, storeAddress) {
+	const query = buildStoreNavigationQuery(storeName, storeAddress);
 	return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+function getStoreNavigationHref(storeName, storeAddress, isNativePlatform) {
+	const fullQuery = buildStoreNavigationQuery(storeName, storeAddress);
+	if (isNativePlatform) return `geo:0,0?q=${encodeURIComponent(fullQuery)}`;
+	return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullQuery)}`;
+}
+function haversineDistanceMeters(lat1, lng1, lat2, lng2) {
+	const earthRadiusMeters = 6371e3;
+	const toRad = (deg) => deg * Math.PI / 180;
+	const dLat = toRad(lat2 - lat1);
+	const dLng = toRad(lng2 - lng1);
+	const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+	return earthRadiusMeters * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+async function searchNominatimStores(query, signal) {
+	const clean = query.trim();
+	if (!clean) return [];
+	const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=se&addressdetails=1&limit=5&q=${encodeURIComponent(clean)}`;
+	const response = await fetch(url, {
+		method: "GET",
+		headers: {
+			Accept: "application/json",
+			"Accept-Language": "sv"
+		},
+		signal
+	});
+	if (!response.ok) throw new Error(`Butikssökning misslyckades (HTTP ${response.status}).`);
+	const rawList = await response.json();
+	if (!Array.isArray(rawList)) return [];
+	const suggestions = [];
+	for (const item of rawList) {
+		const lat = Number.parseFloat(String(item.lat ?? ""));
+		const lng = Number.parseFloat(String(item.lon ?? ""));
+		if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+		const addr = item.address ?? {};
+		const displayParts = (item.display_name ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+		const storeName = (item.name || addr.supermarket || addr.shop || addr.convenience || addr.amenity || displayParts[0] || "").trim();
+		if (!storeName) continue;
+		const street = [(addr.road || addr.pedestrian || "").trim(), (addr.house_number || "").trim()].filter(Boolean).join(" ").trim();
+		const locality = (addr.city || addr.town || addr.village || addr.municipality || addr.suburb || "").replace(/\s+kommun$/i, "").trim();
+		let formattedAddress = "";
+		if (street && locality) formattedAddress = `${street}, ${locality}`;
+		else if (street || locality) formattedAddress = street || locality;
+		else formattedAddress = displayParts.slice(1, 3).join(", ");
+		suggestions.push({
+			placeId: String(item.place_id ?? `${lat}_${lng}_${storeName}`),
+			name: storeName,
+			address: formattedAddress,
+			lat,
+			lng
+		});
+	}
+	return suggestions;
 }
 // node_modules/@supabase/supabase-js/dist/tracingRegistry.mjs
 var EXTRACTOR_KEY = Symbol.for("@supabase/supabase-js.traceContextExtractor");
@@ -37245,7 +37319,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	});
 };
 // node_modules/@capacitor/filesystem/dist/esm/index.js
-var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-GwsNM8HN.js").then((m) => new m.FilesystemWeb()), []) });
+var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-Cvk_2yLy.js").then((m) => new m.FilesystemWeb()), []) });
 f();
 // node_modules/@capacitor-community/file-opener/dist/esm/index.js
 var FileOpener = registerPlugin("FileOpener");
@@ -37271,6 +37345,7 @@ var CURRENT_APP_VERSION = {
 		"@capacitor/cli": "^8.6.2",
 		"@capacitor/core": "^8.6.2",
 		"@capacitor/filesystem": "^8.1.5",
+		"@capacitor/geolocation": "^8.2.5",
 		"@capacitor/local-notifications": "^8.3.1",
 		"@google/genai": "^3.4.0",
 		"@supabase/supabase-js": "^2.45.0",
@@ -39005,7 +39080,7 @@ var Weekday;
 	Weekday[Weekday["Saturday"] = 7] = "Saturday";
 })(Weekday || (Weekday = {}));
 // node_modules/@capacitor/local-notifications/dist/esm/index.js
-var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-DLskBG18.js").then((m) => new m.LocalNotificationsWeb()), []) });
+var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-Dd2wPHa9.js").then((m) => new m.LocalNotificationsWeb()), []) });
 // src/services/notifications.ts
 var URGENT_CHANNEL_ID = "betterkeep-urgent";
 var channelCreated = false;
@@ -40206,20 +40281,46 @@ function SettingsModal({ open, onClose, theme, onChangeTheme, userEmail, househo
 		})
 	});
 }
+// node_modules/@capacitor/geolocation/dist/esm/index.js
+var Geolocation = registerPlugin("Geolocation", { web: () => __vitePreload(() => import("./web-Bt2yMt-u.js").then((m) => new m.GeolocationWeb()), []) });
+f();
 // src/components/ShoppingList.tsx
+function getExactErrorMessage(error) {
+	if (error && typeof error === "object" && "message" in error) {
+		const msg = error.message;
+		if (typeof msg === "string" && msg.trim()) return msg;
+	}
+	if (typeof error === "string" && error.trim()) return error;
+	try {
+		return JSON.stringify(error);
+	} catch {
+		return String(error);
+	}
+}
 var ALL_STORES_VALUE = "__ALL__";
-function ShoppingList({ items, presets, householdName, userEmail, onAddItems, onToggleItem, onUpdateDepartment, onDeleteItem, onClearChecked, onSavePreset, onDeletePreset, onOpenHouseholdModal }) {
+function ShoppingList({ items, presets, householdId, householdName, encryptionSecret, userEmail, onAddItems, onToggleItem, onUpdateDepartment, onDeleteItem, onClearChecked, onSavePreset, onDeletePreset, onOpenHouseholdModal }) {
 	const [selectedStore, setSelectedStore] = (0, import_react.useState)(ALL_STORES_VALUE);
 	const [input, setInput] = (0, import_react.useState)("");
 	const [adding, setAdding] = (0, import_react.useState)(false);
 	const [clearing, setClearing] = (0, import_react.useState)(false);
 	const [errorMsg, setErrorMsg] = (0, import_react.useState)(null);
+	const [gpsMatchedStoreName, setGpsMatchedStoreName] = (0, import_react.useState)(null);
+	const userManuallyPickedStoreRef = (0, import_react.useRef)(false);
+	const hasTriedGpsAutoSelectRef = (0, import_react.useRef)(false);
 	const [showStoreForm, setShowStoreForm] = (0, import_react.useState)(false);
+	const [searchChain, setSearchChain] = (0, import_react.useState)("");
+	const [searchLocation, setSearchLocation] = (0, import_react.useState)("");
+	const [nominatimResults, setNominatimResults] = (0, import_react.useState)([]);
+	const [searchingStores, setSearchingStores] = (0, import_react.useState)(false);
+	const [searchStoreError, setSearchStoreError] = (0, import_react.useState)(null);
 	const [newStoreName, setNewStoreName] = (0, import_react.useState)("");
 	const [newStoreAddress, setNewStoreAddress] = (0, import_react.useState)("");
+	const [newStoreLat, setNewStoreLat] = (0, import_react.useState)(null);
+	const [newStoreLng, setNewStoreLng] = (0, import_react.useState)(null);
 	const [savingStore, setSavingStore] = (0, import_react.useState)(false);
 	const [staplesExpanded, setStaplesExpanded] = (0, import_react.useState)(true);
 	const [busyStapleKey, setBusyStapleKey] = (0, import_react.useState)(null);
+	const isNativePlatform = (0, import_react.useMemo)(() => Capacitor.isNativePlatform(), []);
 	const storePresets = (0, import_react.useMemo)(() => presets.filter((p) => p.preset_type === "store"), [presets]);
 	const customStaples = (0, import_react.useMemo)(() => presets.filter((p) => p.preset_type === "staple"), [presets]);
 	const storeOptions = (0, import_react.useMemo)(() => {
@@ -40234,7 +40335,9 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 			map.set(cleanName.toLowerCase(), {
 				name: cleanName,
 				address: (preset.store_address || "").trim(),
-				presetId: preset.id
+				presetId: preset.id,
+				lat: preset.lat ?? null,
+				lng: preset.lng ?? null
 			});
 		}
 		for (const item of items) {
@@ -40248,6 +40351,89 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		}
 		return Array.from(map.values());
 	}, [storePresets, items]);
+	(0, import_react.useEffect)(() => {
+		if (!showStoreForm) return;
+		const trimmedLocation = searchLocation.trim();
+		const combinedQuery = [searchChain.trim(), trimmedLocation].filter(Boolean).join(" ").trim();
+		if (!trimmedLocation || trimmedLocation.length < 2) {
+			setNominatimResults([]);
+			setSearchingStores(false);
+			setSearchStoreError(null);
+			return;
+		}
+		const controller = new AbortController();
+		const timer = window.setTimeout(async () => {
+			setSearchingStores(true);
+			setSearchStoreError(null);
+			try {
+				const results = await searchNominatimStores(combinedQuery, controller.signal);
+				if (!controller.signal.aborted) setNominatimResults(results);
+			} catch (err) {
+				if (controller.signal.aborted) return;
+				setSearchStoreError(getExactErrorMessage(err));
+				setNominatimResults([]);
+			} finally {
+				if (!controller.signal.aborted) setSearchingStores(false);
+			}
+		}, 400);
+		return () => {
+			window.clearTimeout(timer);
+			controller.abort();
+		};
+	}, [
+		showStoreForm,
+		searchChain,
+		searchLocation
+	]);
+	(0, import_react.useEffect)(() => {
+		if (!userEmail || !householdName) return;
+		if (hasTriedGpsAutoSelectRef.current || userManuallyPickedStoreRef.current) return;
+		const geoStores = storeOptions.filter((s) => typeof s.lat === "number" && typeof s.lng === "number" && Number.isFinite(s.lat) && Number.isFinite(s.lng));
+		if (geoStores.length === 0) return;
+		hasTriedGpsAutoSelectRef.current = true;
+		let cancelled = false;
+		(async () => {
+			try {
+				if (Capacitor.isNativePlatform()) {
+					const perm = await Geolocation.checkPermissions();
+					if (perm.location === "denied" && perm.coarseLocation === "denied") return;
+					if (perm.location === "prompt" || perm.location === "prompt-with-rationale") {
+						const requested = await Geolocation.requestPermissions();
+						if (requested.location !== "granted" && requested.coarseLocation !== "granted") return;
+					}
+				} else if (typeof navigator === "undefined" || !navigator.geolocation) return;
+				const position = await Geolocation.getCurrentPosition({
+					enableHighAccuracy: true,
+					timeout: 8e3,
+					maximumAge: 6e4
+				});
+				if (cancelled || userManuallyPickedStoreRef.current) return;
+				const userLat = position.coords.latitude;
+				const userLng = position.coords.longitude;
+				if (!Number.isFinite(userLat) || !Number.isFinite(userLng)) return;
+				let closestStore = null;
+				let closestDistance = Infinity;
+				for (const store of geoStores) {
+					const distance = haversineDistanceMeters(userLat, userLng, store.lat, store.lng);
+					if (distance < closestDistance) {
+						closestDistance = distance;
+						closestStore = store;
+					}
+				}
+				if (closestStore && closestDistance <= 300) {
+					setSelectedStore(closestStore.name);
+					setGpsMatchedStoreName(closestStore.name);
+				}
+			} catch {}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		userEmail,
+		householdName,
+		storeOptions
+	]);
 	const activeStoreOption = (0, import_react.useMemo)(() => {
 		if (selectedStore === ALL_STORES_VALUE) return null;
 		return storeOptions.find((s) => s.name.toLowerCase() === selectedStore.toLowerCase()) ?? {
@@ -40328,6 +40514,38 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		const targetStore = activeStoreNameForNewItems.trim().toLowerCase();
 		return new Set(items.filter((i) => !i.checked && (!targetStore || i.store_name.trim().toLowerCase() === targetStore)).map((i) => i.label.trim().toLowerCase()));
 	}, [items, activeStoreNameForNewItems]);
+	const resolveWriteContext = async () => {
+		let activeEmail = userEmail?.trim().toLowerCase() ?? "";
+		if (!activeEmail) {
+			const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
+			if (sessionError) throw sessionError;
+			activeEmail = sessionData.user?.email?.trim().toLowerCase() ?? "";
+		}
+		if (!activeEmail) throw new Error("Användarens e-post (added_by) saknas.");
+		let activeHouseholdId = householdId?.trim() ?? "";
+		let resolvedSecret = encryptionSecret?.trim() ?? "";
+		if (!activeHouseholdId) {
+			const activeHousehold = await getUserHousehold(activeEmail);
+			if (activeHousehold?.id) {
+				activeHouseholdId = activeHousehold.id;
+				if (!resolvedSecret) resolvedSecret = resolveHouseholdSecret(activeHousehold);
+			}
+		}
+		if (!activeHouseholdId) throw new Error("Aktivt household_id saknas.");
+		if (!resolvedSecret) {
+			const { data: hhRow, error: hhError } = await supabase.from("households").select("encryption_secret").eq("id", activeHouseholdId).maybeSingle();
+			if (hhError) throw hhError;
+			resolvedSecret = resolveHouseholdSecret({
+				id: activeHouseholdId,
+				encryption_secret: hhRow?.encryption_secret ?? null
+			});
+		}
+		return {
+			householdId: activeHouseholdId,
+			userEmail: activeEmail,
+			secret: resolvedSecret
+		};
+	};
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		const clean = input.trim();
@@ -40335,10 +40553,11 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		setAdding(true);
 		setErrorMsg(null);
 		try {
-			await onAddItems(clean, activeStoreNameForNewItems);
+			const context = await resolveWriteContext();
+			await onAddItems(clean, activeStoreNameForNewItems, void 0, context);
 			setInput("");
-		} catch (err) {
-			setErrorMsg(err instanceof Error ? err.message : "Kunde inte lägga till vara.");
+		} catch (error) {
+			setErrorMsg(getExactErrorMessage(error));
 		} finally {
 			setAdding(false);
 		}
@@ -40358,18 +40577,28 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		setSavingStore(true);
 		setErrorMsg(null);
 		try {
+			const context = await resolveWriteContext();
 			await onSavePreset({
 				presetType: "store",
 				label: cleanName,
 				storeName: cleanName,
-				storeAddress: newStoreAddress.trim()
-			});
+				storeAddress: newStoreAddress.trim(),
+				lat: newStoreLat,
+				lng: newStoreLng
+			}, context);
+			userManuallyPickedStoreRef.current = true;
 			setSelectedStore(cleanName);
+			setGpsMatchedStoreName(null);
+			setSearchChain("");
+			setSearchLocation("");
+			setNominatimResults([]);
 			setNewStoreName("");
 			setNewStoreAddress("");
+			setNewStoreLat(null);
+			setNewStoreLng(null);
 			setShowStoreForm(false);
-		} catch (err) {
-			setErrorMsg(err instanceof Error ? err.message : "Kunde inte spara butik.");
+		} catch (error) {
+			setErrorMsg(getExactErrorMessage(error));
 		} finally {
 			setSavingStore(false);
 		}
@@ -40380,9 +40609,10 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		setBusyStapleKey(key);
 		setErrorMsg(null);
 		try {
-			await onAddItems(label, activeStoreNameForNewItems, department);
-		} catch (err) {
-			setErrorMsg(err instanceof Error ? err.message : "Kunde inte lägga till basvara.");
+			const context = await resolveWriteContext();
+			await onAddItems(label, activeStoreNameForNewItems, department, context);
+		} catch (error) {
+			setErrorMsg(getExactErrorMessage(error));
 		} finally {
 			setBusyStapleKey(null);
 		}
@@ -40397,13 +40627,14 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 				return;
 			}
 			if (DEFAULT_STAPLES.some((d) => d.label.toLowerCase() === key)) return;
+			const context = await resolveWriteContext();
 			await onSavePreset({
 				presetType: "staple",
 				label: item.label,
 				department: item.department
-			});
-		} catch (err) {
-			setErrorMsg(err instanceof Error ? err.message : "Kunde inte spara/ta bort basvara.");
+			}, context);
+		} catch (error) {
+			setErrorMsg(getExactErrorMessage(error));
 		}
 	};
 	const handleClear = async () => {
@@ -40412,13 +40643,13 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		setErrorMsg(null);
 		try {
 			await onClearChecked(selectedStore === ALL_STORES_VALUE ? void 0 : activeStoreNameForNewItems);
-		} catch (err) {
-			setErrorMsg(err instanceof Error ? err.message : "Kunde inte rensa avbockade varor.");
+		} catch (error) {
+			setErrorMsg(getExactErrorMessage(error));
 		} finally {
 			setClearing(false);
 		}
 	};
-	const mapUrl = activeStoreOption ? buildGoogleMapsUrl(activeStoreOption.name, activeStoreOption.address) : buildGoogleMapsUrl("Matbutik");
+	const activeNavigationHref = activeStoreOption ? getStoreNavigationHref(activeStoreOption.name, activeStoreOption.address, isNativePlatform) : null;
 	if (!userEmail || !householdName) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-6 text-center flex flex-col items-center gap-3 max-w-md mx-auto",
 		children: [
@@ -40509,77 +40740,105 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 								className: "flex flex-wrap items-center gap-2",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "relative flex-1 min-w-[190px]",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Store, {
-											className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none",
-											"aria-hidden": "true"
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
-											value: selectedStore,
-											onChange: (e) => setSelectedStore(e.target.value),
-											"aria-label": "Välj eller filtrera butik",
-											className: "w-full h-11 pl-10 pr-8 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] dark:focus:ring-[#8FD4AE] cursor-pointer",
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-												value: ALL_STORES_VALUE,
-												children: "Alla butiker"
-											}), storeOptions.map((store) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-												value: store.name,
-												children: store.address ? `${store.name} (${store.address})` : store.name
-											}, store.name))]
-										})]
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
-										href: mapUrl,
-										target: "_blank",
-										rel: "noopener noreferrer",
-										title: activeStoreOption ? `Öppna ${activeStoreOption.name} i Google Maps` : "Sök matbutiker i Google Maps",
-										className: "h-11 px-3.5 rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] hover:bg-[#C2E2CA] dark:hover:bg-[#235B40] text-[#0D3824] dark:text-[#CBEED9] text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-colors",
-										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MapPin, {
-												className: "w-4 h-4 shrink-0",
-												"aria-hidden": "true"
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Öppna karta" }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExternalLink, {
-												className: "w-3.5 h-3.5 opacity-75 shrink-0",
-												"aria-hidden": "true"
-											})
-										]
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-										type: "button",
-										onClick: () => {
-											if (!showStoreForm && activeStoreOption) {
-												setNewStoreName(activeStoreOption.name);
-												setNewStoreAddress(activeStoreOption.address);
-											} else if (!showStoreForm) {
-												setNewStoreName("");
-												setNewStoreAddress("");
-											}
-											setShowStoreForm((v) => !v);
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "relative flex-1 min-w-[190px]",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Store, {
+										className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none",
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+										value: selectedStore,
+										onChange: (e) => {
+											userManuallyPickedStoreRef.current = true;
+											setSelectedStore(e.target.value);
+											setGpsMatchedStoreName(null);
 										},
-										className: "h-11 px-3.5 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E1E6DE] dark:hover:bg-[#2B322E] text-[#171D19] dark:text-[#E4EBE6] text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap transition-colors",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
-											className: "w-4 h-4 shrink-0",
-											"aria-hidden": "true"
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "+ Lägg till egen butik & plats" })]
-									})
-								]
-							}),
-							activeStoreOption && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center justify-between gap-2 px-1 text-xs text-[#525E56] dark:text-[#9BA79F]",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "truncate",
-									children: activeStoreOption.address ? `Plats: ${activeStoreOption.address}` : `Vald butik: ${activeStoreOption.name} (ingen adress sparad ännu)`
-								}), activeStoreOption.presetId && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										"aria-label": "Välj eller filtrera butik",
+										className: "w-full h-11 pl-10 pr-8 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] dark:focus:ring-[#8FD4AE] cursor-pointer",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: ALL_STORES_VALUE,
+											children: "Alla butiker"
+										}), storeOptions.map((store) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: store.name,
+											children: store.address ? `${store.name} (${store.address})` : store.name
+										}, store.name))]
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 									type: "button",
 									onClick: () => {
+										if (!showStoreForm) {
+											setSearchChain("");
+											setSearchLocation("");
+											setNominatimResults([]);
+											setSearchStoreError(null);
+											if (activeStoreOption) {
+												setNewStoreName(activeStoreOption.name);
+												setNewStoreAddress(activeStoreOption.address);
+												setNewStoreLat(activeStoreOption.lat ?? null);
+												setNewStoreLng(activeStoreOption.lng ?? null);
+											} else {
+												setNewStoreName("");
+												setNewStoreAddress("");
+												setNewStoreLat(null);
+												setNewStoreLng(null);
+											}
+										}
+										setShowStoreForm((v) => !v);
+									},
+									className: "h-11 px-3.5 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E1E6DE] dark:hover:bg-[#2B322E] text-[#171D19] dark:text-[#E4EBE6] text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap transition-colors",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "+ Lägg till egen butik & plats" })
+								})]
+							}),
+							gpsMatchedStoreName && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9] text-xs font-medium",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "truncate",
+									children: [
+										"📍 Du är vid ",
+										gpsMatchedStoreName,
+										" — listan valdes automatiskt"
+									]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setGpsMatchedStoreName(null),
+									"aria-label": "Stäng platsmeddelande",
+									className: "p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 shrink-0 cursor-pointer",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-3.5 h-3.5" })
+								})]
+							}),
+							activeStoreOption && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between gap-2 px-1 text-xs text-[#525E56] dark:text-[#9BA79F] flex-wrap",
+								children: [activeStoreOption.address ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2 min-w-0 flex-1",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+										className: "truncate text-[#171D19] dark:text-[#E4EBE6]",
+										children: ["📍 ", activeStoreOption.address]
+									}), activeNavigationHref && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+										href: activeNavigationHref,
+										target: isNativePlatform ? void 0 : "_blank",
+										rel: isNativePlatform ? void 0 : "noopener noreferrer",
+										title: `Navigera till ${activeStoreOption.name}`,
+										className: "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#D3EBD9] dark:bg-[#1C4A34] hover:bg-[#C2E2CA] dark:hover:bg-[#235B40] text-[#0D3824] dark:text-[#CBEED9] text-[11px] font-semibold shrink-0 whitespace-nowrap transition-colors",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Navigation, {
+											className: "w-3 h-3 shrink-0",
+											"aria-hidden": "true"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Navigera" })]
+									})]
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "truncate",
+									children: [
+										"Vald butik: ",
+										activeStoreOption.name,
+										" (ingen adress sparad ännu)"
+									]
+								}), activeStoreOption.presetId && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: async () => {
 										try {
-											onDeletePreset(activeStoreOption.presetId);
+											await onDeletePreset(activeStoreOption.presetId);
 											setSelectedStore(ALL_STORES_VALUE);
-										} catch (err) {
-											setErrorMsg("Kunde inte ta bort butiken.");
+											setGpsMatchedStoreName(null);
+										} catch (error) {
+											setErrorMsg(getExactErrorMessage(error));
 										}
 									},
 									className: "text-red-700 dark:text-red-300 hover:underline shrink-0 cursor-pointer",
@@ -40594,7 +40853,7 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 										className: "flex items-center justify-between gap-2",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 											className: "text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6]",
-											children: "Spara butik & plats (E2E-krypterat)"
+											children: "Sök eller lägg till butik & plats (E2E-krypterat)"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 											type: "button",
 											onClick: () => setShowStoreForm(false),
@@ -40604,12 +40863,88 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 										})]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-2.5 flex flex-col gap-2",
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+												className: "text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1.5",
+												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, {
+													className: "w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]",
+													"aria-hidden": "true"
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Snabbsök butik i Sverige (hämtar namn, adress & GPS automatiskt)" })]
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: "grid grid-cols-1 sm:grid-cols-3 gap-2",
+												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+													value: searchChain,
+													onChange: (e) => setSearchChain(e.target.value),
+													"aria-label": "Välj butikskedja",
+													className: "h-9 px-2.5 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-xs font-medium text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] cursor-pointer",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+														value: "",
+														children: "Alla kedjor"
+													}), STORE_CHAINS.map((chain) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+														value: chain,
+														children: chain
+													}, chain))]
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "sm:col-span-2 relative",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+														type: "text",
+														value: searchLocation,
+														onChange: (e) => setSearchLocation(e.target.value),
+														placeholder: "Skriv plats/stadsdel (t.ex. Gnista, Stenhagen, Uppsala)...",
+														"aria-label": "Sök plats eller stadsdel för butik",
+														className: "w-full h-9 px-3 pr-8 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-xs text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+													}), searchingStores && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+														className: "w-3.5 h-3.5 animate-spin text-[#2E6B4E] dark:text-[#8FD4AE] absolute right-2.5 top-1/2 -translate-y-1/2",
+														"aria-hidden": "true"
+													})]
+												})]
+											}),
+											searchStoreError && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-[11px] text-red-600 dark:text-red-400",
+												children: searchStoreError
+											}),
+											nominatimResults.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+												className: "divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8 rounded-lg border border-[#18221C]/10 dark:border-[#E3EAE5]/10 bg-[#F6F7F4] dark:bg-[#141816] max-h-48 overflow-y-auto",
+												children: nominatimResults.map((suggestion) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+													type: "button",
+													onClick: () => {
+														setNewStoreName(suggestion.name);
+														setNewStoreAddress(suggestion.address);
+														setNewStoreLat(suggestion.lat);
+														setNewStoreLng(suggestion.lng);
+														setNominatimResults([]);
+													},
+													className: "w-full px-3 py-2 text-left hover:bg-[#D3EBD9]/60 dark:hover:bg-[#1C4A34]/60 transition-colors flex items-start justify-between gap-2 cursor-pointer",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+														className: "min-w-0",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+															className: "text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6] truncate",
+															children: suggestion.name
+														}), suggestion.address && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+															className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate",
+															children: ["📍 ", suggestion.address]
+														})]
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+														className: "text-[10px] font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0 pt-0.5",
+														children: "Välj"
+													})]
+												}) }, suggestion.placeId))
+											}),
+											!searchingStores && !searchStoreError && searchLocation.trim().length >= 2 && nominatimResults.length === 0 && !newStoreName.trim() && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
+												children: "Inga förslag hittades — du kan fylla i butiksnamn och adress manuellt nedan."
+											})
+										]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 										className: "grid grid-cols-1 sm:grid-cols-2 gap-2.5",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
 											type: "text",
 											value: newStoreName,
 											onChange: (e) => setNewStoreName(e.target.value),
-											placeholder: "Butiksnamn (t.ex. ICA Maxi Stenhagen)",
+											placeholder: "Butiksnamn (t.ex. ICA Maxi Stormarknad Gnista)",
 											"aria-label": "Butiksnamn",
 											required: true,
 											className: "h-10 px-3.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
@@ -40617,10 +40952,23 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 											type: "text",
 											value: newStoreAddress,
 											onChange: (e) => setNewStoreAddress(e.target.value),
-											placeholder: "Adress / plats (t.ex. Stenhagen, Uppsala)",
+											placeholder: "Adress / plats (t.ex. Visthusvägen 1, Uppsala)",
 											"aria-label": "Butikens adress eller plats",
 											className: "h-10 px-3.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
 										})]
+									}),
+									newStoreLat !== null && newStoreLng !== null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+										className: "text-[11px] text-[#2E6B4E] dark:text-[#8FD4AE] font-mono-tabular flex items-center gap-1.5",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MapPin, {
+											className: "w-3.5 h-3.5 shrink-0",
+											"aria-hidden": "true"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+											"GPS-koordinater sparade (",
+											newStoreLat.toFixed(5),
+											", ",
+											newStoreLng.toFixed(5),
+											") — möjliggör automatiskt val inom 300 m"
+										] })]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 										className: "flex items-center justify-end gap-2",
@@ -40736,11 +41084,11 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: staple.label })]
 							}), staple.customPresetId && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 								type: "button",
-								onClick: () => {
+								onClick: async () => {
 									try {
-										onDeletePreset(staple.customPresetId);
-									} catch (err) {
-										setErrorMsg("Kunde inte ta bort basvaran.");
+										await onDeletePreset(staple.customPresetId);
+									} catch (error) {
+										setErrorMsg(getExactErrorMessage(error));
 									}
 								},
 								"aria-label": `Ta bort basvaran ${staple.label}`,
@@ -40812,14 +41160,14 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 								})]
 							})]
 						}), storeGroup.storeName && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
-							href: buildGoogleMapsUrl(storeGroup.storeName, storeGroup.storeAddress),
-							target: "_blank",
-							rel: "noopener noreferrer",
+							href: getStoreNavigationHref(storeGroup.storeName, storeGroup.storeAddress, isNativePlatform),
+							target: isNativePlatform ? void 0 : "_blank",
+							rel: isNativePlatform ? void 0 : "noopener noreferrer",
 							className: "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-[11px] font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] hover:opacity-85 whitespace-nowrap",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MapPin, {
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Navigation, {
 								className: "w-3.5 h-3.5",
 								"aria-hidden": "true"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Karta" })]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Navigera" })]
 						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 						className: "divide-y divide-[#18221C]/10 dark:divide-[#E3EAE5]/10",
@@ -40846,8 +41194,8 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 										onClick: async () => {
 											try {
 												await onToggleItem(item);
-											} catch (err) {
-												setErrorMsg("Kunde inte bocka av varan.");
+											} catch (error) {
+												setErrorMsg(getExactErrorMessage(error));
 											}
 										},
 										className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
@@ -40872,8 +41220,8 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 												onChange: async (e) => {
 													try {
 														await onUpdateDepartment(item, e.target.value);
-													} catch (err) {
-														setErrorMsg("Kunde inte uppdatera avdelning.");
+													} catch (error) {
+														setErrorMsg(getExactErrorMessage(error));
 													}
 												},
 												"aria-label": `Byt avdelning för ${item.label}`,
@@ -40900,8 +41248,8 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 												onClick: async () => {
 													try {
 														await onDeleteItem(item.id);
-													} catch (err) {
-														setErrorMsg("Kunde inte ta bort varan.");
+													} catch (error) {
+														setErrorMsg(getExactErrorMessage(error));
 													}
 												},
 												"aria-label": `Ta bort ${item.label}`,
@@ -40950,8 +41298,8 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 								onClick: async () => {
 									try {
 										await onToggleItem(item);
-									} catch (err) {
-										setErrorMsg("Kunde inte återställa varan.");
+									} catch (error) {
+										setErrorMsg(getExactErrorMessage(error));
 									}
 								},
 								className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
@@ -40974,8 +41322,8 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 								onClick: async () => {
 									try {
 										await onDeleteItem(item.id);
-									} catch (err) {
-										setErrorMsg("Kunde inte ta bort varan.");
+									} catch (error) {
+										setErrorMsg(getExactErrorMessage(error));
 									}
 								},
 								"aria-label": `Ta bort ${item.label}`,
@@ -41481,6 +41829,32 @@ async function safeDecryptShoppingField(value, isEncrypted, secret) {
 		return value;
 	}
 }
+var STORE_COORDS_STORAGE_KEY = "betterkeep_store_coords_v1";
+function saveLocalStoreCoords(storeName, lat, lng) {
+	if (!storeName.trim() || typeof lat !== "number" || typeof lng !== "number") return;
+	if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+	try {
+		const raw = localStorage.getItem(STORE_COORDS_STORAGE_KEY);
+		const map = raw ? JSON.parse(raw) : {};
+		map[storeName.trim().toLowerCase()] = {
+			lat,
+			lng
+		};
+		localStorage.setItem(STORE_COORDS_STORAGE_KEY, JSON.stringify(map));
+	} catch {}
+}
+function getLocalStoreCoords(storeName) {
+	if (!storeName.trim()) return null;
+	try {
+		const raw = localStorage.getItem(STORE_COORDS_STORAGE_KEY);
+		if (!raw) return null;
+		const found = JSON.parse(raw)[storeName.trim().toLowerCase()];
+		if (found && typeof found.lat === "number" && typeof found.lng === "number" && Number.isFinite(found.lat) && Number.isFinite(found.lng)) return found;
+		return null;
+	} catch {
+		return null;
+	}
+}
 function App() {
 	const [notes, setNotes] = (0, import_react.useState)([]);
 	const [loading, setLoading] = (0, import_react.useState)(true);
@@ -41555,7 +41929,7 @@ function App() {
 					department,
 					checked: Boolean(raw.checked),
 					is_encrypted: raw.is_encrypted,
-					created_by: raw.created_by,
+					created_by: raw.created_by ?? raw.added_by ?? "",
 					created_at: raw.created_at
 				};
 			}));
@@ -41573,6 +41947,9 @@ function App() {
 				const storeName = await safeDecryptShoppingField(raw.store_name, raw.is_encrypted, encryptionSecret);
 				const storeAddress = await safeDecryptShoppingField(raw.store_address, raw.is_encrypted, encryptionSecret);
 				const department = raw.department ? normalizeDepartment(raw.department) : categorizeShoppingItem(label);
+				const dbLat = typeof raw.lat === "number" && Number.isFinite(raw.lat) ? raw.lat : null;
+				const dbLng = typeof raw.lng === "number" && Number.isFinite(raw.lng) ? raw.lng : null;
+				const fallbackCoords = dbLat === null || dbLng === null ? getLocalStoreCoords(storeName || label) : null;
 				return {
 					id: raw.id,
 					household_id: raw.household_id,
@@ -41581,8 +41958,10 @@ function App() {
 					store_name: storeName,
 					store_address: storeAddress,
 					department,
+					lat: dbLat ?? fallbackCoords?.lat ?? null,
+					lng: dbLng ?? fallbackCoords?.lng ?? null,
 					is_encrypted: raw.is_encrypted,
-					created_by: raw.created_by ?? void 0,
+					created_by: raw.created_by ?? raw.added_by ?? void 0,
 					created_at: raw.created_at
 				};
 			}));
@@ -42001,9 +42380,43 @@ function App() {
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, []);
-	const handleAddShoppingItems = (0, import_react.useCallback)(async (rawText, storeNameOverride, departmentOverride) => {
-		if (!userEmail || !household?.id) return 0;
-		const secret = resolveHouseholdSecret(household);
+	const resolveShoppingContext = (0, import_react.useCallback)(async (context) => {
+		let activeEmail = (context?.userEmail || userEmail || "").trim().toLowerCase();
+		if (!activeEmail) {
+			const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
+			if (sessionError) throw sessionError;
+			activeEmail = sessionData.user?.email?.trim().toLowerCase() ?? "";
+		}
+		if (!activeEmail) throw new Error("Användarens e-post (added_by) saknas.");
+		let activeHouseholdId = (context?.householdId || household?.id || "").trim();
+		let resolvedSecret = (context?.secret || "").trim();
+		if (!activeHouseholdId) {
+			const activeHh = await getUserHousehold(activeEmail);
+			if (activeHh?.id) {
+				activeHouseholdId = activeHh.id;
+				if (!resolvedSecret && activeHh.encryption_secret) resolvedSecret = resolveHouseholdSecret(activeHh);
+			}
+		}
+		if (!activeHouseholdId) throw new Error("Aktivt household_id saknas.");
+		if (!resolvedSecret) {
+			if (household?.id === activeHouseholdId && household.encryption_secret) resolvedSecret = resolveHouseholdSecret(household);
+			else {
+				const { data: hhRow, error: hhError } = await supabase.from("households").select("encryption_secret").eq("id", activeHouseholdId).maybeSingle();
+				if (hhError) throw hhError;
+				resolvedSecret = resolveHouseholdSecret({
+					id: activeHouseholdId,
+					encryption_secret: hhRow?.encryption_secret ?? null
+				});
+			}
+		}
+		return {
+			householdId: activeHouseholdId,
+			userEmail: activeEmail,
+			secret: resolvedSecret
+		};
+	}, [userEmail, household]);
+	const handleAddShoppingItems = (0, import_react.useCallback)(async (rawText, storeNameOverride, departmentOverride, context) => {
+		const { householdId: activeHouseholdId, userEmail: activeEmail, secret } = await resolveShoppingContext(context);
 		const parsed = parseShoppingCommand(rawText, knownStoreNames);
 		if (parsed.items.length === 0) return 0;
 		const resolvedStoreName = (storeNameOverride !== void 0 ? storeNameOverride : parsed.storeName).trim();
@@ -42011,25 +42424,45 @@ function App() {
 		const existingUncheckedKeys = new Set(shoppingItemsRef.current.filter((i) => !i.checked).map((i) => `${i.store_name.trim().toLowerCase()}::${i.label.trim().toLowerCase()}`));
 		const newItems = parsed.items.filter((label) => !existingUncheckedKeys.has(`${resolvedStoreName.toLowerCase()}::${label.trim().toLowerCase()}`));
 		if (newItems.length === 0) return 0;
-		const encStoreName = resolvedStoreName ? await encryptText(resolvedStoreName, secret) : "";
-		const encStoreAddress = resolvedStoreAddress ? await encryptText(resolvedStoreAddress, secret) : "";
-		const toInsert = await Promise.all(newItems.map(async (label) => ({
-			household_id: household.id,
+		const encStoreName = resolvedStoreName ? await encryptText(resolvedStoreName, secret) : null;
+		const encStoreAddress = resolvedStoreAddress ? await encryptText(resolvedStoreAddress, secret) : null;
+		let candidateRows = await Promise.all(newItems.map(async (label) => ({
+			household_id: activeHouseholdId,
 			label: await encryptText(label, secret),
 			store_name: encStoreName,
 			store_address: encStoreAddress,
 			department: departmentOverride ?? categorizeShoppingItem(label),
 			checked: false,
 			is_encrypted: true,
-			created_by: userEmail
+			created_by: activeEmail
 		})));
-		let { data, error } = await supabase.from("household_shopping_items").insert(toInsert).select();
-		if (error && /title/i.test(error.message)) {
-			const withTitle = toInsert.map((row) => ({
-				...row,
-				title: row.label
-			}));
-			const retry = await supabase.from("household_shopping_items").insert(withTitle).select();
+		let { data, error } = await supabase.from("household_shopping_items").insert(candidateRows).select();
+		for (let attempt = 0; attempt < 3 && error; attempt += 1) {
+			const msg = error.message || "";
+			let adjusted = false;
+			if (/title/i.test(msg) && !("title" in candidateRows[0])) {
+				candidateRows = candidateRows.map((row) => ({
+					...row,
+					title: row.label
+				}));
+				adjusted = true;
+			}
+			if (/added_by/i.test(msg) && !("added_by" in candidateRows[0])) {
+				candidateRows = candidateRows.map((row) => ({
+					...row,
+					added_by: activeEmail
+				}));
+				adjusted = true;
+			}
+			if (/created_by/i.test(msg) && "created_by" in candidateRows[0]) {
+				candidateRows = candidateRows.map(({ created_by: _omit, ...rest }) => ({
+					...rest,
+					added_by: activeEmail
+				}));
+				adjusted = true;
+			}
+			if (!adjusted) break;
+			const retry = await supabase.from("household_shopping_items").insert(candidateRows).select();
 			data = retry.data;
 			error = retry.error;
 		}
@@ -42044,8 +42477,7 @@ function App() {
 		}
 		return 0;
 	}, [
-		userEmail,
-		household,
+		resolveShoppingContext,
 		knownStoreNames,
 		shoppingPresets
 	]);
@@ -42113,7 +42545,7 @@ function App() {
 				...i,
 				checked: item.checked
 			} : i));
-			return;
+			throw error;
 		}
 		if (willFinishList) {
 			const actorName = userEmail.split("@")[0];
@@ -42147,12 +42579,14 @@ function App() {
 				...i,
 				department: item.department
 			} : i));
+			throw error;
 		}
 	}, []);
 	const handleDeleteShoppingItem = (0, import_react.useCallback)(async (id) => {
+		const { error } = await supabase.from("household_shopping_items").delete().eq("id", id);
+		if (error) throw error;
 		setShoppingItems((prev) => prev.filter((item) => item.id !== id));
 		setRawShoppingItems((prev) => prev.filter((item) => item.id !== id));
-		await supabase.from("household_shopping_items").delete().eq("id", id);
 	}, []);
 	const handleClearCheckedShoppingItems = (0, import_react.useCallback)(async (storeNameFilter) => {
 		if (!household?.id) return;
@@ -42163,61 +42597,107 @@ function App() {
 			return item.store_name.trim().toLowerCase() === normalizedFilter;
 		}).map((item) => item.id);
 		if (toClearIds.length === 0) return;
+		const { error } = await supabase.from("household_shopping_items").delete().in("id", toClearIds);
+		if (error) throw error;
 		const idSet = new Set(toClearIds);
 		setShoppingItems((prev) => prev.filter((item) => !idSet.has(item.id)));
 		setRawShoppingItems((prev) => prev.filter((item) => !idSet.has(item.id)));
-		await supabase.from("household_shopping_items").delete().in("id", toClearIds);
 	}, [household]);
-	const handleSaveShoppingPreset = (0, import_react.useCallback)(async (draft) => {
-		if (!userEmail || !household?.id) return;
-		const secret = resolveHouseholdSecret(household);
+	const handleSaveShoppingPreset = (0, import_react.useCallback)(async (draft, context) => {
+		const { householdId: activeHouseholdId, userEmail: activeEmail, secret } = await resolveShoppingContext(context);
 		const cleanLabel = draft.label.trim();
 		if (!cleanLabel) return;
 		const cleanStoreName = (draft.storeName ?? (draft.presetType === "store" ? cleanLabel : "")).trim();
 		const cleanStoreAddress = (draft.storeAddress ?? "").trim();
 		const department = draft.department ?? categorizeShoppingItem(cleanLabel);
+		const validLat = typeof draft.lat === "number" && Number.isFinite(draft.lat) ? draft.lat : null;
+		const validLng = typeof draft.lng === "number" && Number.isFinite(draft.lng) ? draft.lng : null;
+		if (draft.presetType === "store" && validLat !== null && validLng !== null) saveLocalStoreCoords(cleanStoreName || cleanLabel, validLat, validLng);
 		const encLabel = await encryptText(cleanLabel, secret);
-		const encStoreName = cleanStoreName ? await encryptText(cleanStoreName, secret) : "";
-		const encStoreAddress = cleanStoreAddress ? await encryptText(cleanStoreAddress, secret) : "";
+		const encStoreName = cleanStoreName ? await encryptText(cleanStoreName, secret) : null;
+		const encStoreAddress = cleanStoreAddress ? await encryptText(cleanStoreAddress, secret) : null;
 		const existing = shoppingPresets.find((p) => p.preset_type === draft.presetType && p.label.trim().toLowerCase() === cleanLabel.toLowerCase());
 		if (existing) {
-			const { data, error } = await supabase.from("household_shopping_presets").update({
+			let updatePayload = {
 				label: encLabel,
 				store_name: encStoreName,
 				store_address: encStoreAddress,
 				department,
-				is_encrypted: true
-			}).eq("id", existing.id).select().single();
-			if (!error && data) {
+				is_encrypted: true,
+				...validLat !== null && validLng !== null ? {
+					lat: validLat,
+					lng: validLng
+				} : {}
+			};
+			let { data, error } = await supabase.from("household_shopping_presets").update(updatePayload).eq("id", existing.id).select().single();
+			if (error && (/\blat\b/i.test(error.message) || /\blng\b/i.test(error.message))) {
+				const { lat: _l1, lng: _l2, ...restUpdate } = updatePayload;
+				updatePayload = restUpdate;
+				const retryUpdate = await supabase.from("household_shopping_presets").update(updatePayload).eq("id", existing.id).select().single();
+				data = retryUpdate.data;
+				error = retryUpdate.error;
+			}
+			if (error) throw error;
+			if (data) {
 				const updated = data;
 				setRawShoppingPresets((prev) => prev.map((p) => p.id === updated.id ? updated : p));
 			}
 			return;
 		}
-		const { data, error } = await supabase.from("household_shopping_presets").insert({
-			household_id: household.id,
+		let candidatePreset = {
+			household_id: activeHouseholdId,
 			preset_type: draft.presetType,
 			label: encLabel,
 			store_name: encStoreName,
 			store_address: encStoreAddress,
 			department,
 			is_encrypted: true,
-			created_by: userEmail
-		}).select().single();
+			created_by: activeEmail,
+			...validLat !== null && validLng !== null ? {
+				lat: validLat,
+				lng: validLng
+			} : {}
+		};
+		let { data, error } = await supabase.from("household_shopping_presets").insert(candidatePreset).select().single();
+		for (let attempt = 0; attempt < 3 && error; attempt += 1) {
+			const msg = error.message || "";
+			let adjusted = false;
+			if (/\blat\b/i.test(msg) || /\blng\b/i.test(msg)) {
+				const { lat: _l1, lng: _l2, ...rest } = candidatePreset;
+				candidatePreset = rest;
+				adjusted = true;
+			}
+			if (/added_by/i.test(msg) && !("added_by" in candidatePreset)) {
+				candidatePreset = {
+					...candidatePreset,
+					added_by: activeEmail
+				};
+				adjusted = true;
+			}
+			if (/created_by/i.test(msg) && "created_by" in candidatePreset) {
+				const { created_by: _omit, ...rest } = candidatePreset;
+				candidatePreset = {
+					...rest,
+					added_by: activeEmail
+				};
+				adjusted = true;
+			}
+			if (!adjusted) break;
+			const retry = await supabase.from("household_shopping_presets").insert(candidatePreset).select().single();
+			data = retry.data;
+			error = retry.error;
+		}
 		if (error) throw error;
 		if (data) {
 			const created = data;
 			setRawShoppingPresets((prev) => prev.some((p) => p.id === created.id) ? prev : [...prev, created]);
 		}
-	}, [
-		userEmail,
-		household,
-		shoppingPresets
-	]);
+	}, [resolveShoppingContext, shoppingPresets]);
 	const handleDeleteShoppingPreset = (0, import_react.useCallback)(async (id) => {
+		const { error } = await supabase.from("household_shopping_presets").delete().eq("id", id);
+		if (error) throw error;
 		setShoppingPresets((prev) => prev.filter((p) => p.id !== id));
 		setRawShoppingPresets((prev) => prev.filter((p) => p.id !== id));
-		await supabase.from("household_shopping_presets").delete().eq("id", id);
 	}, []);
 	const handleAddCalendarEvent = (0, import_react.useCallback)(async (draft) => {
 		if (!userEmail || !household?.id) return null;
@@ -42857,7 +43337,9 @@ function App() {
 					}) : activeTab === "shopping" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingList, {
 						items: shoppingItems,
 						presets: shoppingPresets,
+						householdId: household?.id,
 						householdName: household?.name,
+						encryptionSecret,
 						userEmail,
 						onAddItems: handleAddShoppingItems,
 						onToggleItem: handleToggleShoppingItem,
