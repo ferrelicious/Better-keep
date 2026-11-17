@@ -18,6 +18,7 @@ export interface ActionData {
   action_type: 'reminder' | 'shopping' | 'calendar';
   title?: string;
   store_or_location?: string;
+  candidate_stores?: string[];
   resolved_date?: string;
   resolved_time?: string;
   notes?: string;
@@ -140,10 +141,18 @@ export async function analyzeSmartIntent(
         }
       }
     }
+    const candidateStores: string[] = [];
+    if (Array.isArray(ad.candidate_stores)) {
+      for (const cs of ad.candidate_stores) {
+        const s = String(cs || '').trim();
+        if (s) candidateStores.push(s);
+      }
+    }
     action_data = {
       action_type,
       title: String(ad.title || '').trim(),
       store_or_location: String(ad.store_or_location || '').trim(),
+      candidate_stores: candidateStores,
       resolved_date: String(ad.resolved_date || '').trim(),
       resolved_time: String(ad.resolved_time || '').trim(),
       notes: String(ad.notes || '').trim(),

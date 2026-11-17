@@ -556,8 +556,9 @@ async function startServer() {
         '',
         'VIKTIGA REGLER:',
         '1. IGNORERA SMÅPRAT OCH FRISTÅENDE EMOJIS: Om meddelandet endast är rent småprat, hälsningar, bekräftelser eller fristående emojis (t.ex. "🥰", "Okej", "Hej", "Tack", "Ja"), sök inte skapa någon anteckning eller inköpsvara. Sätt intent till "chat" och låt duplicate_match vara null.',
-        '2. Om meddelandet däremot innehåller ett faktiskt ärende, en vara, en uppgift eller en tid (t.ex. "Köpa slips imorgon på H&M i Gränbystaden", "Tandläkare på torsdag kl 10"), extrahera struktur och jämför noggrant mot befintliga poster ovan.',
-        '3. DUPLICATE MATCHNING: Jämför om det redan finns en liknande aktiv post (anteckning, påminnelse, inköpsvara eller kalenderhändelse) bland befintliga poster. Om en liknande post hittas, fyll i "duplicate_match" med { id, type, title, details }, annars null.',
+        '2. Om meddelandet däremot innehåller ett faktiskt ärende, en vara, en uppgift eller en tid (t.ex. "Köpa slips imorgon på H&M eller Dressmann", "Tandläkare på torsdag kl 10"), extrahera struktur och jämför noggrant mot befintliga poster ovan.',
+        '3. ALTERNATIVA / OSÄGRA BUTIKER: Om användaren nämner flera alternativa butiker eller osäkra platser (t.ex. "på H&M eller Dressmann" eller "någon sportbutik"), fyll i "candidate_stores" med en array av namnen (t.ex. ["H&M", "Dressmann"]), och sätt "store_or_location" till en snygg sammanställning (t.ex. "H&M eller Dressmann").',
+        '4. DUPLICATE MATCHNING: Jämför om det redan finns en liknande aktiv post (anteckning, påminnelse, inköpsvara eller kalenderhändelse) bland befintliga poster. Om en liknande post hittas, fyll i "duplicate_match" med { id, type, title, details }, annars null.',
         'Returnera strukturerad JSON.',
       ]
         .filter(Boolean)
@@ -591,6 +592,11 @@ async function startServer() {
                   },
                   title: { type: Type.STRING },
                   store_or_location: { type: Type.STRING },
+                  candidate_stores: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: 'Om flera alternativa butiker eller osäkra platser nämns (t.ex. ["H&M", "Dressmann"])',
+                  },
                   resolved_date: { type: Type.STRING },
                   resolved_time: { type: Type.STRING },
                   notes: { type: Type.STRING },
