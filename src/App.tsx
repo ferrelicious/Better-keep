@@ -28,7 +28,7 @@ import { MailManager } from './components/MailManager';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
 import { SettingsModal } from './components/SettingsModal';
-import { ShoppingList } from './components/ShoppingList';
+import { ShoppingList, ShoppingWriteContext } from './components/ShoppingList';
 import { TopBar } from './components/TopBar';
 import { UpdateBanner } from './components/UpdateBanner';
 import {
@@ -237,7 +237,7 @@ export default function App() {
             department,
             checked: Boolean(raw.checked),
             is_encrypted: raw.is_encrypted,
-            created_by: raw.created_by,
+            created_by: raw.created_by ?? raw.added_by ?? '',
             created_at: raw.created_at,
           } satisfies ShoppingItem;
         })
@@ -282,7 +282,7 @@ export default function App() {
             store_address: storeAddress,
             department,
             is_encrypted: raw.is_encrypted,
-            created_by: raw.created_by ?? undefined,
+            created_by: raw.created_by ?? raw.added_by ?? undefined,
             created_at: raw.created_at,
           } satisfies ShoppingPreset;
         })
@@ -897,14 +897,74 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  const resolveShoppingContext = useCallback(
+    async (context?: ShoppingWriteContext): Promise<ShoppingWriteContext> => {
+      let activeEmail = (context?.userEmail || userEmail || '').trim().toLowerCase();
+      if (!activeEmail) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
+        if (sessionError) throw sessionError;
+        activeEmail = sessionData.user?.email?.trim().toLowerCase() ?? '';
+      }
+      if (!activeEmail) {
+        throw new Error('Användarens e-post (added_by) saknas.');
+      }
+
+      let activeHouseholdId = (context?.householdId || household?.id || '').trim();
+      let resolvedSecret = (context?.secret || '').trim();
+
+      if (!activeHouseholdId) {
+        const activeHh = await getUserHousehold(activeEmail);
+        if (activeHh?.id) {
+          activeHouseholdId = activeHh.id;
+          if (!resolvedSecret && activeHh.encryption_secret) {
+            resolvedSecret = resolveHouseholdSecret(activeHh);
+          }
+        }
+      }
+
+      if (!activeHouseholdId) {
+        throw new Error('Aktivt household_id saknas.');
+      }
+
+      if (!resolvedSecret) {
+        if (household?.id === activeHouseholdId && household.encryption_secret) {
+          resolvedSecret = resolveHouseholdSecret(household);
+        } else {
+          const { data: hhRow, error: hhError } = await supabase
+            .from('households')
+            .select('encryption_secret')
+            .eq('id', activeHouseholdId)
+            .maybeSingle();
+          if (hhError) throw hhError;
+          resolvedSecret = resolveHouseholdSecret({
+            id: activeHouseholdId,
+            encryption_secret: hhRow?.encryption_secret ?? null,
+          });
+        }
+      }
+
+      return {
+        householdId: activeHouseholdId,
+        userEmail: activeEmail,
+        secret: resolvedSecret,
+      };
+    },
+    [userEmail, household]
+  );
+
   const handleAddShoppingItems = useCallback(
     async (
       rawText: string,
       storeNameOverride?: string,
-      departmentOverride?: ShoppingDepartment
+      departmentOverride?: ShoppingDepartment,
+      context?: ShoppingWriteContext
     ): Promise<number> => {
-      if (!userEmail || !household?.id) return 0;
-      const secret = resolveHouseholdSecret(household);
+      const {
+        householdId: activeHouseholdId,
+        userEmail: activeEmail,
+        secret,
+      } = await resolveShoppingContext(context);
+
       const parsed = parseShoppingCommand(rawText, knownStoreNames);
       if (parsed.items.length === 0) return 0;
 
@@ -939,35 +999,55 @@ export default function App() {
 
       const encStoreName = resolvedStoreName
         ? await encryptText(resolvedStoreName, secret)
-        : '';
+        : null;
       const encStoreAddress = resolvedStoreAddress
         ? await encryptText(resolvedStoreAddress, secret)
-        : '';
+        : null;
 
-      const toInsert = await Promise.all(
+      let candidateRows: Array<Record<string, unknown>> = await Promise.all(
         newItems.map(async (label) => ({
-          household_id: household.id,
+          household_id: activeHouseholdId,
           label: await encryptText(label, secret),
           store_name: encStoreName,
           store_address: encStoreAddress,
           department: departmentOverride ?? categorizeShoppingItem(label),
           checked: false,
           is_encrypted: true,
-          created_by: userEmail,
+          created_by: activeEmail,
         }))
       );
 
       let { data, error } = await supabase
         .from('household_shopping_items')
-        .insert(toInsert)
+        .insert(candidateRows)
         .select();
 
-      // Compatibility fallback if legacy `title` NOT NULL column exists alongside `label`
-      if (error && /title/i.test(error.message)) {
-        const withTitle = toInsert.map((row) => ({ ...row, title: row.label }));
+      // Compatibility retries for legacy/variant schema columns (title, added_by, created_by)
+      for (let attempt = 0; attempt < 3 && error; attempt += 1) {
+        const msg = error.message || '';
+        let adjusted = false;
+
+        if (/title/i.test(msg) && !('title' in candidateRows[0])) {
+          candidateRows = candidateRows.map((row) => ({ ...row, title: row.label }));
+          adjusted = true;
+        }
+        if (/added_by/i.test(msg) && !('added_by' in candidateRows[0])) {
+          candidateRows = candidateRows.map((row) => ({ ...row, added_by: activeEmail }));
+          adjusted = true;
+        }
+        if (/created_by/i.test(msg) && 'created_by' in candidateRows[0]) {
+          candidateRows = candidateRows.map(({ created_by: _omit, ...rest }) => ({
+            ...rest,
+            added_by: activeEmail,
+          }));
+          adjusted = true;
+        }
+
+        if (!adjusted) break;
+
         const retry = await supabase
           .from('household_shopping_items')
-          .insert(withTitle)
+          .insert(candidateRows)
           .select();
         data = retry.data;
         error = retry.error;
@@ -985,7 +1065,7 @@ export default function App() {
       }
       return 0;
     },
-    [userEmail, household, knownStoreNames, shoppingPresets]
+    [resolveShoppingContext, knownStoreNames, shoppingPresets]
   );
 
   const handleSendChatMessage = useCallback(
@@ -1081,7 +1161,7 @@ export default function App() {
         setRawShoppingItems((prev) =>
           prev.map((i) => (i.id === item.id ? { ...i, checked: item.checked } : i))
         );
-        return;
+        throw error;
       }
 
       if (willFinishList) {
@@ -1120,15 +1200,20 @@ export default function App() {
             i.id === item.id ? { ...i, department: item.department } : i
           )
         );
+        throw error;
       }
     },
     []
   );
 
   const handleDeleteShoppingItem = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('household_shopping_items')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
     setShoppingItems((prev) => prev.filter((item) => item.id !== id));
     setRawShoppingItems((prev) => prev.filter((item) => item.id !== id));
-    await supabase.from('household_shopping_items').delete().eq('id', id);
   }, []);
 
   const handleClearCheckedShoppingItems = useCallback(
@@ -1145,28 +1230,36 @@ export default function App() {
 
       if (toClearIds.length === 0) return;
 
-      const idSet = new Set(toClearIds);
-      setShoppingItems((prev) => prev.filter((item) => !idSet.has(item.id)));
-      setRawShoppingItems((prev) => prev.filter((item) => !idSet.has(item.id)));
-
-      await supabase
+      const { error } = await supabase
         .from('household_shopping_items')
         .delete()
         .in('id', toClearIds);
+      if (error) throw error;
+
+      const idSet = new Set(toClearIds);
+      setShoppingItems((prev) => prev.filter((item) => !idSet.has(item.id)));
+      setRawShoppingItems((prev) => prev.filter((item) => !idSet.has(item.id)));
     },
     [household]
   );
 
   const handleSaveShoppingPreset = useCallback(
-    async (draft: {
-      presetType: 'store' | 'staple';
-      label: string;
-      storeName?: string;
-      storeAddress?: string;
-      department?: ShoppingDepartment;
-    }) => {
-      if (!userEmail || !household?.id) return;
-      const secret = resolveHouseholdSecret(household);
+    async (
+      draft: {
+        presetType: 'store' | 'staple';
+        label: string;
+        storeName?: string;
+        storeAddress?: string;
+        department?: ShoppingDepartment;
+      },
+      context?: ShoppingWriteContext
+    ) => {
+      const {
+        householdId: activeHouseholdId,
+        userEmail: activeEmail,
+        secret,
+      } = await resolveShoppingContext(context);
+
       const cleanLabel = draft.label.trim();
       if (!cleanLabel) return;
 
@@ -1177,10 +1270,12 @@ export default function App() {
       const department = draft.department ?? categorizeShoppingItem(cleanLabel);
 
       const encLabel = await encryptText(cleanLabel, secret);
-      const encStoreName = cleanStoreName ? await encryptText(cleanStoreName, secret) : '';
+      const encStoreName = cleanStoreName
+        ? await encryptText(cleanStoreName, secret)
+        : null;
       const encStoreAddress = cleanStoreAddress
         ? await encryptText(cleanStoreAddress, secret)
-        : '';
+        : null;
 
       // If updating an existing store or staple preset with the same name
       const existing = shoppingPresets.find(
@@ -1203,7 +1298,8 @@ export default function App() {
           .select()
           .single();
 
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           const updated = data as RawShoppingPreset;
           setRawShoppingPresets((prev) =>
             prev.map((p) => (p.id === updated.id ? updated : p))
@@ -1212,20 +1308,47 @@ export default function App() {
         return;
       }
 
-      const { data, error } = await supabase
+      let candidatePreset: Record<string, unknown> = {
+        household_id: activeHouseholdId,
+        preset_type: draft.presetType,
+        label: encLabel,
+        store_name: encStoreName,
+        store_address: encStoreAddress,
+        department,
+        is_encrypted: true,
+        created_by: activeEmail,
+      };
+
+      let { data, error } = await supabase
         .from('household_shopping_presets')
-        .insert({
-          household_id: household.id,
-          preset_type: draft.presetType,
-          label: encLabel,
-          store_name: encStoreName,
-          store_address: encStoreAddress,
-          department,
-          is_encrypted: true,
-          created_by: userEmail,
-        })
+        .insert(candidatePreset)
         .select()
         .single();
+
+      for (let attempt = 0; attempt < 2 && error; attempt += 1) {
+        const msg = error.message || '';
+        let adjusted = false;
+
+        if (/added_by/i.test(msg) && !('added_by' in candidatePreset)) {
+          candidatePreset = { ...candidatePreset, added_by: activeEmail };
+          adjusted = true;
+        }
+        if (/created_by/i.test(msg) && 'created_by' in candidatePreset) {
+          const { created_by: _omit, ...rest } = candidatePreset;
+          candidatePreset = { ...rest, added_by: activeEmail };
+          adjusted = true;
+        }
+
+        if (!adjusted) break;
+
+        const retry = await supabase
+          .from('household_shopping_presets')
+          .insert(candidatePreset)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) throw error;
       if (data) {
@@ -1235,13 +1358,17 @@ export default function App() {
         );
       }
     },
-    [userEmail, household, shoppingPresets]
+    [resolveShoppingContext, shoppingPresets]
   );
 
   const handleDeleteShoppingPreset = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('household_shopping_presets')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
     setShoppingPresets((prev) => prev.filter((p) => p.id !== id));
     setRawShoppingPresets((prev) => prev.filter((p) => p.id !== id));
-    await supabase.from('household_shopping_presets').delete().eq('id', id);
   }, []);
 
   const handleAddCalendarEvent = useCallback(
@@ -2064,7 +2191,9 @@ export default function App() {
           <ShoppingList
             items={shoppingItems}
             presets={shoppingPresets}
+            householdId={household?.id}
             householdName={household?.name}
+            encryptionSecret={encryptionSecret}
             userEmail={userEmail}
             onAddItems={handleAddShoppingItems}
             onToggleItem={handleToggleShoppingItem}

@@ -25,6 +25,31 @@ import {
   ShoppingPreset,
   buildGoogleMapsUrl,
 } from '../services/shoppingParser';
+import { resolveHouseholdSecret } from '../services/crypto';
+import { getUserHousehold, supabase } from '../services/supabase';
+
+export interface ShoppingWriteContext {
+  householdId: string;
+  userEmail: string;
+  secret: string;
+}
+
+function getExactErrorMessage(error: unknown): string {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const msg = (error as { message?: unknown }).message;
+    if (typeof msg === 'string' && msg.trim()) {
+      return msg;
+    }
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
 
 const ALL_STORES_VALUE = '__ALL__';
 
@@ -37,24 +62,30 @@ interface StoreOption {
 interface ShoppingListProps {
   items: ShoppingItem[];
   presets: ShoppingPreset[];
+  householdId?: string | null;
   householdName?: string;
+  encryptionSecret?: string | null;
   userEmail: string | null;
   onAddItems: (
     rawText: string,
     storeName?: string,
-    departmentOverride?: ShoppingDepartment
+    departmentOverride?: ShoppingDepartment,
+    context?: ShoppingWriteContext
   ) => Promise<number>;
   onToggleItem: (item: ShoppingItem) => Promise<void>;
   onUpdateDepartment: (item: ShoppingItem, department: ShoppingDepartment) => Promise<void>;
   onDeleteItem: (id: string) => Promise<void>;
   onClearChecked: (storeNameFilter?: string) => Promise<void>;
-  onSavePreset: (draft: {
-    presetType: 'store' | 'staple';
-    label: string;
-    storeName?: string;
-    storeAddress?: string;
-    department?: ShoppingDepartment;
-  }) => Promise<void>;
+  onSavePreset: (
+    draft: {
+      presetType: 'store' | 'staple';
+      label: string;
+      storeName?: string;
+      storeAddress?: string;
+      department?: ShoppingDepartment;
+    },
+    context?: ShoppingWriteContext
+  ) => Promise<void>;
   onDeletePreset: (id: string) => Promise<void>;
   onOpenHouseholdModal: () => void;
 }
@@ -62,7 +93,9 @@ interface ShoppingListProps {
 export function ShoppingList({
   items,
   presets,
+  householdId,
   householdName,
+  encryptionSecret,
   userEmail,
   onAddItems,
   onToggleItem,
@@ -277,6 +310,54 @@ export function ShoppingList({
     );
   }, [items, activeStoreNameForNewItems]);
 
+  const resolveWriteContext = async (): Promise<ShoppingWriteContext> => {
+    let activeEmail = userEmail?.trim().toLowerCase() ?? '';
+    if (!activeEmail) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
+      if (sessionError) throw sessionError;
+      activeEmail = sessionData.user?.email?.trim().toLowerCase() ?? '';
+    }
+    if (!activeEmail) {
+      throw new Error('Användarens e-post (added_by) saknas.');
+    }
+
+    let activeHouseholdId = householdId?.trim() ?? '';
+    let resolvedSecret = encryptionSecret?.trim() ?? '';
+
+    if (!activeHouseholdId) {
+      const activeHousehold = await getUserHousehold(activeEmail);
+      if (activeHousehold?.id) {
+        activeHouseholdId = activeHousehold.id;
+        if (!resolvedSecret) {
+          resolvedSecret = resolveHouseholdSecret(activeHousehold);
+        }
+      }
+    }
+
+    if (!activeHouseholdId) {
+      throw new Error('Aktivt household_id saknas.');
+    }
+
+    if (!resolvedSecret) {
+      const { data: hhRow, error: hhError } = await supabase
+        .from('households')
+        .select('encryption_secret')
+        .eq('id', activeHouseholdId)
+        .maybeSingle();
+      if (hhError) throw hhError;
+      resolvedSecret = resolveHouseholdSecret({
+        id: activeHouseholdId,
+        encryption_secret: hhRow?.encryption_secret ?? null,
+      });
+    }
+
+    return {
+      householdId: activeHouseholdId,
+      userEmail: activeEmail,
+      secret: resolvedSecret,
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = input.trim();
@@ -284,12 +365,11 @@ export function ShoppingList({
     setAdding(true);
     setErrorMsg(null);
     try {
-      await onAddItems(clean, activeStoreNameForNewItems);
+      const context = await resolveWriteContext();
+      await onAddItems(clean, activeStoreNameForNewItems, undefined, context);
       setInput('');
-    } catch (err) {
-      setErrorMsg(
-        err instanceof Error ? err.message : 'Kunde inte lägga till vara.'
-      );
+    } catch (error) {
+      setErrorMsg(getExactErrorMessage(error));
     } finally {
       setAdding(false);
     }
@@ -315,20 +395,22 @@ export function ShoppingList({
     setSavingStore(true);
     setErrorMsg(null);
     try {
-      await onSavePreset({
-        presetType: 'store',
-        label: cleanName,
-        storeName: cleanName,
-        storeAddress: newStoreAddress.trim(),
-      });
+      const context = await resolveWriteContext();
+      await onSavePreset(
+        {
+          presetType: 'store',
+          label: cleanName,
+          storeName: cleanName,
+          storeAddress: newStoreAddress.trim(),
+        },
+        context
+      );
       setSelectedStore(cleanName);
       setNewStoreName('');
       setNewStoreAddress('');
       setShowStoreForm(false);
-    } catch (err) {
-      setErrorMsg(
-        err instanceof Error ? err.message : 'Kunde inte spara butik.'
-      );
+    } catch (error) {
+      setErrorMsg(getExactErrorMessage(error));
     } finally {
       setSavingStore(false);
     }
@@ -343,11 +425,10 @@ export function ShoppingList({
     setBusyStapleKey(key);
     setErrorMsg(null);
     try {
-      await onAddItems(label, activeStoreNameForNewItems, department);
-    } catch (err) {
-      setErrorMsg(
-        err instanceof Error ? err.message : 'Kunde inte lägga till basvara.'
-      );
+      const context = await resolveWriteContext();
+      await onAddItems(label, activeStoreNameForNewItems, department, context);
+    } catch (error) {
+      setErrorMsg(getExactErrorMessage(error));
     } finally {
       setBusyStapleKey(null);
     }
@@ -365,15 +446,17 @@ export function ShoppingList({
       if (DEFAULT_STAPLES.some((d) => d.label.toLowerCase() === key)) {
         return;
       }
-      await onSavePreset({
-        presetType: 'staple',
-        label: item.label,
-        department: item.department,
-      });
-    } catch (err) {
-      setErrorMsg(
-        err instanceof Error ? err.message : 'Kunde inte spara/ta bort basvara.'
+      const context = await resolveWriteContext();
+      await onSavePreset(
+        {
+          presetType: 'staple',
+          label: item.label,
+          department: item.department,
+        },
+        context
       );
+    } catch (error) {
+      setErrorMsg(getExactErrorMessage(error));
     }
   };
 
@@ -385,10 +468,8 @@ export function ShoppingList({
       await onClearChecked(
         selectedStore === ALL_STORES_VALUE ? undefined : activeStoreNameForNewItems
       );
-    } catch (err) {
-      setErrorMsg(
-        err instanceof Error ? err.message : 'Kunde inte rensa avbockade varor.'
-      );
+    } catch (error) {
+      setErrorMsg(getExactErrorMessage(error));
     } finally {
       setClearing(false);
     }
@@ -513,7 +594,6 @@ export function ShoppingList({
               }}
               className="h-11 px-3.5 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E1E6DE] dark:hover:bg-[#2B322E] text-[#171D19] dark:text-[#E4EBE6] text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap transition-colors"
             >
-              <Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>+ Lägg till egen butik & plats</span>
             </button>
           </div>
@@ -528,12 +608,12 @@ export function ShoppingList({
               {activeStoreOption.presetId && (
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     try {
-                      onDeletePreset(activeStoreOption.presetId!);
+                      await onDeletePreset(activeStoreOption.presetId!);
                       setSelectedStore(ALL_STORES_VALUE);
-                    } catch (err) {
-                      setErrorMsg('Kunde inte ta bort butiken.');
+                    } catch (error) {
+                      setErrorMsg(getExactErrorMessage(error));
                     }
                   }}
                   className="text-red-700 dark:text-red-300 hover:underline shrink-0 cursor-pointer"
@@ -707,11 +787,11 @@ export function ShoppingList({
                   {staple.customPresetId && (
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         try {
-                          onDeletePreset(staple.customPresetId!);
-                        } catch (err) {
-                          setErrorMsg('Kunde inte ta bort basvaran.');
+                          await onDeletePreset(staple.customPresetId!);
+                        } catch (error) {
+                          setErrorMsg(getExactErrorMessage(error));
                         }
                       }}
                       aria-label={`Ta bort basvaran ${staple.label}`}
@@ -828,8 +908,8 @@ export function ShoppingList({
                                 onClick={async () => {
                                   try {
                                     await onToggleItem(item);
-                                  } catch (err) {
-                                    setErrorMsg('Kunde inte bocka av varan.');
+                                  } catch (error) {
+                                    setErrorMsg(getExactErrorMessage(error));
                                   }
                                 }}
                                 className="flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer"
@@ -859,8 +939,8 @@ export function ShoppingList({
                                         item,
                                         e.target.value as ShoppingDepartment
                                       );
-                                    } catch (err) {
-                                      setErrorMsg('Kunde inte uppdatera avdelning.');
+                                    } catch (error) {
+                                      setErrorMsg(getExactErrorMessage(error));
                                     }
                                   }}
                                   aria-label={`Byt avdelning för ${item.label}`}
@@ -910,8 +990,8 @@ export function ShoppingList({
                                   onClick={async () => {
                                     try {
                                       await onDeleteItem(item.id);
-                                    } catch (err) {
-                                      setErrorMsg('Kunde inte ta bort varan.');
+                                    } catch (error) {
+                                      setErrorMsg(getExactErrorMessage(error));
                                     }
                                   }}
                                   aria-label={`Ta bort ${item.label}`}
@@ -964,8 +1044,8 @@ export function ShoppingList({
                       onClick={async () => {
                         try {
                           await onToggleItem(item);
-                        } catch (err) {
-                          setErrorMsg('Kunde inte återställa varan.');
+                        } catch (error) {
+                          setErrorMsg(getExactErrorMessage(error));
                         }
                       }}
                       className="flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer"
@@ -992,8 +1072,8 @@ export function ShoppingList({
                       onClick={async () => {
                         try {
                           await onDeleteItem(item.id);
-                        } catch (err) {
-                          setErrorMsg('Kunde inte ta bort varan.');
+                        } catch (error) {
+                          setErrorMsg(getExactErrorMessage(error));
                         }
                       }}
                       aria-label={`Ta bort ${item.label}`}

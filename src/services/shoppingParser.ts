@@ -39,7 +39,8 @@ export interface RawShoppingItem {
   department?: string | null;
   checked: boolean;
   is_encrypted?: boolean;
-  created_by: string;
+  created_by?: string | null;
+  added_by?: string | null;
   created_at?: string;
 }
 
@@ -68,6 +69,7 @@ export interface RawShoppingPreset {
   department?: string | null;
   is_encrypted?: boolean;
   created_by?: string | null;
+  added_by?: string | null;
   created_at?: string;
 }
 
