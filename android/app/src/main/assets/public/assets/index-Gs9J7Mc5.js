@@ -13650,6 +13650,7 @@ function setHouseholdPassphrase(householdId, passphrase) {
 	} catch {}
 }
 function resolveHouseholdSecret(household) {
+	if (!household?.id) return "betterkeep_fallback_secret";
 	const baseSecret = household.encryption_secret?.trim() || household.id;
 	const personalPassphrase = getHouseholdPassphrase(household.id).trim();
 	if (personalPassphrase) return `${baseSecret}::${personalPassphrase}`;
@@ -37244,7 +37245,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	});
 };
 // node_modules/@capacitor/filesystem/dist/esm/index.js
-var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-DhsJ6y_Y.js").then((m) => new m.FilesystemWeb()), []) });
+var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-GwsNM8HN.js").then((m) => new m.FilesystemWeb()), []) });
 f();
 // node_modules/@capacitor-community/file-opener/dist/esm/index.js
 var FileOpener = registerPlugin("FileOpener");
@@ -39004,7 +39005,7 @@ var Weekday;
 	Weekday[Weekday["Saturday"] = 7] = "Saturday";
 })(Weekday || (Weekday = {}));
 // node_modules/@capacitor/local-notifications/dist/esm/index.js
-var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-C1p_PfAD.js").then((m) => new m.LocalNotificationsWeb()), []) });
+var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-DLskBG18.js").then((m) => new m.LocalNotificationsWeb()), []) });
 // src/services/notifications.ts
 var URGENT_CHANNEL_ID = "betterkeep-urgent";
 var channelCreated = false;
@@ -40212,6 +40213,7 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 	const [input, setInput] = (0, import_react.useState)("");
 	const [adding, setAdding] = (0, import_react.useState)(false);
 	const [clearing, setClearing] = (0, import_react.useState)(false);
+	const [errorMsg, setErrorMsg] = (0, import_react.useState)(null);
 	const [showStoreForm, setShowStoreForm] = (0, import_react.useState)(false);
 	const [newStoreName, setNewStoreName] = (0, import_react.useState)("");
 	const [newStoreAddress, setNewStoreAddress] = (0, import_react.useState)("");
@@ -40231,7 +40233,7 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 			if (!cleanName) continue;
 			map.set(cleanName.toLowerCase(), {
 				name: cleanName,
-				address: preset.store_address.trim(),
+				address: (preset.store_address || "").trim(),
 				presetId: preset.id
 			});
 		}
@@ -40241,7 +40243,7 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 			const key = cleanName.toLowerCase();
 			if (!map.has(key)) map.set(key, {
 				name: cleanName,
-				address: item.store_address.trim()
+				address: (item.store_address || "").trim()
 			});
 		}
 		return Array.from(map.values());
@@ -40267,7 +40269,7 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 			const rawStore = item.store_name.trim();
 			const storeKey = rawStore ? rawStore.toLowerCase() : "__none__";
 			const displayStore = rawStore || "Övriga varor (ej vald butik)";
-			const address = (rawStore ? storeOptions.find((s) => s.name.toLowerCase() === rawStore.toLowerCase()) : void 0)?.address || item.store_address.trim();
+			const address = (rawStore ? storeOptions.find((s) => s.name.toLowerCase() === rawStore.toLowerCase()) : void 0)?.address || (item.store_address || "").trim();
 			if (!storeGroups.has(storeKey)) storeGroups.set(storeKey, {
 				storeName: rawStore ? displayStore : "",
 				storeAddress: address,
@@ -40331,9 +40333,12 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		const clean = input.trim();
 		if (!clean || adding) return;
 		setAdding(true);
+		setErrorMsg(null);
 		try {
 			await onAddItems(clean, activeStoreNameForNewItems);
 			setInput("");
+		} catch (err) {
+			setErrorMsg(err instanceof Error ? err.message : "Kunde inte lägga till vara.");
 		} finally {
 			setAdding(false);
 		}
@@ -40351,6 +40356,7 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		const cleanName = newStoreName.trim();
 		if (!cleanName || savingStore) return;
 		setSavingStore(true);
+		setErrorMsg(null);
 		try {
 			await onSavePreset({
 				presetType: "store",
@@ -40362,6 +40368,8 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 			setNewStoreName("");
 			setNewStoreAddress("");
 			setShowStoreForm(false);
+		} catch (err) {
+			setErrorMsg(err instanceof Error ? err.message : "Kunde inte spara butik.");
 		} finally {
 			setSavingStore(false);
 		}
@@ -40370,31 +40378,42 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 		const key = label.toLowerCase();
 		if (busyStapleKey === key) return;
 		setBusyStapleKey(key);
+		setErrorMsg(null);
 		try {
 			await onAddItems(label, activeStoreNameForNewItems, department);
+		} catch (err) {
+			setErrorMsg(err instanceof Error ? err.message : "Kunde inte lägga till basvara.");
 		} finally {
 			setBusyStapleKey(null);
 		}
 	};
 	const handleToggleStarItem = async (item) => {
-		const key = item.label.trim().toLowerCase();
-		const existingCustom = customStapleByLabel.get(key);
-		if (existingCustom) {
-			await onDeletePreset(existingCustom.id);
-			return;
+		setErrorMsg(null);
+		try {
+			const key = item.label.trim().toLowerCase();
+			const existingCustom = customStapleByLabel.get(key);
+			if (existingCustom) {
+				await onDeletePreset(existingCustom.id);
+				return;
+			}
+			if (DEFAULT_STAPLES.some((d) => d.label.toLowerCase() === key)) return;
+			await onSavePreset({
+				presetType: "staple",
+				label: item.label,
+				department: item.department
+			});
+		} catch (err) {
+			setErrorMsg(err instanceof Error ? err.message : "Kunde inte spara/ta bort basvara.");
 		}
-		if (DEFAULT_STAPLES.some((d) => d.label.toLowerCase() === key)) return;
-		await onSavePreset({
-			presetType: "staple",
-			label: item.label,
-			department: item.department
-		});
 	};
 	const handleClear = async () => {
 		if (checkedItems.length === 0 || clearing) return;
 		setClearing(true);
+		setErrorMsg(null);
 		try {
 			await onClearChecked(selectedStore === ALL_STORES_VALUE ? void 0 : activeStoreNameForNewItems);
+		} catch (err) {
+			setErrorMsg(err instanceof Error ? err.message : "Kunde inte rensa avbockade varor.");
 		} finally {
 			setClearing(false);
 		}
@@ -40429,6 +40448,16 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "max-w-3xl w-full mx-auto flex flex-col gap-5",
 		children: [
+			errorMsg && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "rounded-2xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-xs sm:text-sm text-red-700 dark:text-red-300 flex items-center justify-between gap-3",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: errorMsg }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					onClick: () => setErrorMsg(null),
+					"aria-label": "Stäng felmeddelande",
+					className: "p-1 cursor-pointer",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-4 h-4" })
+				})]
+			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-4",
 				children: [
@@ -40546,8 +40575,12 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 								}), activeStoreOption.presetId && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 									type: "button",
 									onClick: () => {
-										onDeletePreset(activeStoreOption.presetId);
-										setSelectedStore(ALL_STORES_VALUE);
+										try {
+											onDeletePreset(activeStoreOption.presetId);
+											setSelectedStore(ALL_STORES_VALUE);
+										} catch (err) {
+											setErrorMsg("Kunde inte ta bort butiken.");
+										}
 									},
 									className: "text-red-700 dark:text-red-300 hover:underline shrink-0 cursor-pointer",
 									children: "Ta bort sparad butik"
@@ -40703,7 +40736,13 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: staple.label })]
 							}), staple.customPresetId && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 								type: "button",
-								onClick: () => onDeletePreset(staple.customPresetId),
+								onClick: () => {
+									try {
+										onDeletePreset(staple.customPresetId);
+									} catch (err) {
+										setErrorMsg("Kunde inte ta bort basvaran.");
+									}
+								},
 								"aria-label": `Ta bort basvaran ${staple.label}`,
 								title: "Ta bort sparad basvara",
 								className: "h-9 w-7 flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 border-l border-[#18221C]/10 dark:border-[#E3EAE5]/10 cursor-pointer",
@@ -40804,7 +40843,13 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 									className: "flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 hover:bg-[#F6F7F4]/70 dark:hover:bg-[#212723]/50 transition-colors",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 										type: "button",
-										onClick: () => onToggleItem(item),
+										onClick: async () => {
+											try {
+												await onToggleItem(item);
+											} catch (err) {
+												setErrorMsg("Kunde inte bocka av varan.");
+											}
+										},
 										className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 											className: "w-6 h-6 rounded-lg border-2 border-[#2E6B4E] dark:border-[#8FD4AE] flex items-center justify-center shrink-0 transition-colors",
@@ -40824,7 +40869,13 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 										children: [
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("select", {
 												value: item.department,
-												onChange: (e) => onUpdateDepartment(item, e.target.value),
+												onChange: async (e) => {
+													try {
+														await onUpdateDepartment(item, e.target.value);
+													} catch (err) {
+														setErrorMsg("Kunde inte uppdatera avdelning.");
+													}
+												},
 												"aria-label": `Byt avdelning för ${item.label}`,
 												className: "h-8 max-w-[116px] sm:max-w-[140px] px-2 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] cursor-pointer truncate",
 												children: SHOPPING_DEPARTMENTS.map((dept) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
@@ -40846,7 +40897,13 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 											}),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 												type: "button",
-												onClick: () => onDeleteItem(item.id),
+												onClick: async () => {
+													try {
+														await onDeleteItem(item.id);
+													} catch (err) {
+														setErrorMsg("Kunde inte ta bort varan.");
+													}
+												},
 												"aria-label": `Ta bort ${item.label}`,
 												className: "w-9 h-9 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
 												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
@@ -40890,7 +40947,13 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 							className: "flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 opacity-75",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								type: "button",
-								onClick: () => onToggleItem(item),
+								onClick: async () => {
+									try {
+										await onToggleItem(item);
+									} catch (err) {
+										setErrorMsg("Kunde inte återställa varan.");
+									}
+								},
 								className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 									className: "w-6 h-6 rounded-lg bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shrink-0",
@@ -40908,7 +40971,13 @@ function ShoppingList({ items, presets, householdName, userEmail, onAddItems, on
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 								type: "button",
-								onClick: () => onDeleteItem(item.id),
+								onClick: async () => {
+									try {
+										await onDeleteItem(item.id);
+									} catch (err) {
+										setErrorMsg("Kunde inte ta bort varan.");
+									}
+								},
 								"aria-label": `Ta bort ${item.label}`,
 								className: "w-10 h-10 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {

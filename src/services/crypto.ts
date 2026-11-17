@@ -27,7 +27,8 @@ export function setHouseholdPassphrase(householdId: string, passphrase: string):
 export function resolveHouseholdSecret(household: {
   id: string;
   encryption_secret?: string | null;
-}): string {
+} | null | undefined): string {
+  if (!household?.id) return 'betterkeep_fallback_secret';
   const baseSecret = household.encryption_secret?.trim() || household.id;
   const personalPassphrase = getHouseholdPassphrase(household.id).trim();
   if (personalPassphrase) {

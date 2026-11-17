@@ -1,4 +1,4 @@
-import { n as WebPlugin, r as buildRequestInit, t as Encoding } from "./index-0jf82XvX.js";
+import { n as WebPlugin, r as buildRequestInit, t as Encoding } from "./index-Gs9J7Mc5.js";
 // node_modules/@capacitor/filesystem/dist/esm/web.js
 function resolve(path) {
 	const posix = path.split("/").filter((item) => item !== ".");

@@ -77,6 +77,7 @@ export function ShoppingList({
   const [input, setInput] = useState('');
   const [adding, setAdding] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Add custom store inline form
   const [showStoreForm, setShowStoreForm] = useState(false);
@@ -111,7 +112,7 @@ export function ShoppingList({
       if (!cleanName) continue;
       map.set(cleanName.toLowerCase(), {
         name: cleanName,
-        address: preset.store_address.trim(),
+        address: (preset.store_address || '').trim(),
         presetId: preset.id,
       });
     }
@@ -123,7 +124,7 @@ export function ShoppingList({
       if (!map.has(key)) {
         map.set(key, {
           name: cleanName,
-          address: item.store_address.trim(),
+          address: (item.store_address || '').trim(),
         });
       }
     }
@@ -178,7 +179,7 @@ export function ShoppingList({
       const presetStore = rawStore
         ? storeOptions.find((s) => s.name.toLowerCase() === rawStore.toLowerCase())
         : undefined;
-      const address = presetStore?.address || item.store_address.trim();
+      const address = presetStore?.address || (item.store_address || '').trim();
 
       if (!storeGroups.has(storeKey)) {
         storeGroups.set(storeKey, {
@@ -281,9 +282,14 @@ export function ShoppingList({
     const clean = input.trim();
     if (!clean || adding) return;
     setAdding(true);
+    setErrorMsg(null);
     try {
       await onAddItems(clean, activeStoreNameForNewItems);
       setInput('');
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Kunde inte lägga till vara.'
+      );
     } finally {
       setAdding(false);
     }
@@ -307,6 +313,7 @@ export function ShoppingList({
     const cleanName = newStoreName.trim();
     if (!cleanName || savingStore) return;
     setSavingStore(true);
+    setErrorMsg(null);
     try {
       await onSavePreset({
         presetType: 'store',
@@ -318,6 +325,10 @@ export function ShoppingList({
       setNewStoreName('');
       setNewStoreAddress('');
       setShowStoreForm(false);
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Kunde inte spara butik.'
+      );
     } finally {
       setSavingStore(false);
     }
@@ -330,36 +341,53 @@ export function ShoppingList({
     const key = label.toLowerCase();
     if (busyStapleKey === key) return;
     setBusyStapleKey(key);
+    setErrorMsg(null);
     try {
       await onAddItems(label, activeStoreNameForNewItems, department);
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Kunde inte lägga till basvara.'
+      );
     } finally {
       setBusyStapleKey(null);
     }
   };
 
   const handleToggleStarItem = async (item: ShoppingItem) => {
-    const key = item.label.trim().toLowerCase();
-    const existingCustom = customStapleByLabel.get(key);
-    if (existingCustom) {
-      await onDeletePreset(existingCustom.id);
-      return;
+    setErrorMsg(null);
+    try {
+      const key = item.label.trim().toLowerCase();
+      const existingCustom = customStapleByLabel.get(key);
+      if (existingCustom) {
+        await onDeletePreset(existingCustom.id);
+        return;
+      }
+      if (DEFAULT_STAPLES.some((d) => d.label.toLowerCase() === key)) {
+        return;
+      }
+      await onSavePreset({
+        presetType: 'staple',
+        label: item.label,
+        department: item.department,
+      });
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Kunde inte spara/ta bort basvara.'
+      );
     }
-    if (DEFAULT_STAPLES.some((d) => d.label.toLowerCase() === key)) {
-      return;
-    }
-    await onSavePreset({
-      presetType: 'staple',
-      label: item.label,
-      department: item.department,
-    });
   };
 
   const handleClear = async () => {
     if (checkedItems.length === 0 || clearing) return;
     setClearing(true);
+    setErrorMsg(null);
     try {
       await onClearChecked(
         selectedStore === ALL_STORES_VALUE ? undefined : activeStoreNameForNewItems
+      );
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Kunde inte rensa avbockade varor.'
       );
     } finally {
       setClearing(false);
@@ -393,6 +421,20 @@ export function ShoppingList({
 
   return (
     <div className="max-w-3xl w-full mx-auto flex flex-col gap-5">
+      {errorMsg && (
+        <div className="rounded-2xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-xs sm:text-sm text-red-700 dark:text-red-300 flex items-center justify-between gap-3">
+          <span>{errorMsg}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMsg(null)}
+            aria-label="Stäng felmeddelande"
+            className="p-1 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header, Store Selector & Quick Add */}
       <div className="rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -487,8 +529,12 @@ export function ShoppingList({
                 <button
                   type="button"
                   onClick={() => {
-                    onDeletePreset(activeStoreOption.presetId!);
-                    setSelectedStore(ALL_STORES_VALUE);
+                    try {
+                      onDeletePreset(activeStoreOption.presetId!);
+                      setSelectedStore(ALL_STORES_VALUE);
+                    } catch (err) {
+                      setErrorMsg('Kunde inte ta bort butiken.');
+                    }
                   }}
                   className="text-red-700 dark:text-red-300 hover:underline shrink-0 cursor-pointer"
                 >
@@ -661,7 +707,13 @@ export function ShoppingList({
                   {staple.customPresetId && (
                     <button
                       type="button"
-                      onClick={() => onDeletePreset(staple.customPresetId!)}
+                      onClick={() => {
+                        try {
+                          onDeletePreset(staple.customPresetId!);
+                        } catch (err) {
+                          setErrorMsg('Kunde inte ta bort basvaran.');
+                        }
+                      }}
                       aria-label={`Ta bort basvaran ${staple.label}`}
                       title="Ta bort sparad basvara"
                       className="h-9 w-7 flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 border-l border-[#18221C]/10 dark:border-[#E3EAE5]/10 cursor-pointer"
@@ -773,7 +825,13 @@ export function ShoppingList({
                             >
                               <button
                                 type="button"
-                                onClick={() => onToggleItem(item)}
+                                onClick={async () => {
+                                  try {
+                                    await onToggleItem(item);
+                                  } catch (err) {
+                                    setErrorMsg('Kunde inte bocka av varan.');
+                                  }
+                                }}
                                 className="flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer"
                               >
                                 <span
@@ -795,12 +853,16 @@ export function ShoppingList({
                               <div className="flex items-center gap-1 shrink-0">
                                 <select
                                   value={item.department}
-                                  onChange={(e) =>
-                                    onUpdateDepartment(
-                                      item,
-                                      e.target.value as ShoppingDepartment
-                                    )
-                                  }
+                                  onChange={async (e) => {
+                                    try {
+                                      await onUpdateDepartment(
+                                        item,
+                                        e.target.value as ShoppingDepartment
+                                      );
+                                    } catch (err) {
+                                      setErrorMsg('Kunde inte uppdatera avdelning.');
+                                    }
+                                  }}
                                   aria-label={`Byt avdelning för ${item.label}`}
                                   className="h-8 max-w-[116px] sm:max-w-[140px] px-2 rounded-lg bg-[#ECEFE9] dark:bg-[#212723] text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] cursor-pointer truncate"
                                 >
@@ -845,7 +907,13 @@ export function ShoppingList({
 
                                 <button
                                   type="button"
-                                  onClick={() => onDeleteItem(item.id)}
+                                  onClick={async () => {
+                                    try {
+                                      await onDeleteItem(item.id);
+                                    } catch (err) {
+                                      setErrorMsg('Kunde inte ta bort varan.');
+                                    }
+                                  }}
                                   aria-label={`Ta bort ${item.label}`}
                                   className="w-9 h-9 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer"
                                 >
@@ -893,7 +961,13 @@ export function ShoppingList({
                   >
                     <button
                       type="button"
-                      onClick={() => onToggleItem(item)}
+                      onClick={async () => {
+                        try {
+                          await onToggleItem(item);
+                        } catch (err) {
+                          setErrorMsg('Kunde inte återställa varan.');
+                        }
+                      }}
                       className="flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer"
                     >
                       <span
@@ -915,7 +989,13 @@ export function ShoppingList({
                     </button>
                     <button
                       type="button"
-                      onClick={() => onDeleteItem(item.id)}
+                      onClick={async () => {
+                        try {
+                          await onDeleteItem(item.id);
+                        } catch (err) {
+                          setErrorMsg('Kunde inte ta bort varan.');
+                        }
+                      }}
                       aria-label={`Ta bort ${item.label}`}
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer"
                     >
