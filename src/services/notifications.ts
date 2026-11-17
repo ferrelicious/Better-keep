@@ -177,9 +177,11 @@ export async function scheduleCalendarEventNotifications(
     is_private?: boolean;
   },
   immediateFromPartner = false,
-  currentUserEmail?: string | null
+  currentUserEmail?: string | null,
+  creatorDisplayName?: string
 ): Promise<void> {
   try {
+    const creatorLabel = creatorDisplayName?.trim() || ev.created_by.split('@')[0];
     // Private events must only ever schedule notifications on the creator's device
     if (ev.is_private) {
       if (
@@ -206,7 +208,7 @@ export async function scheduleCalendarEventNotifications(
             {
               id: eventNotificationId(ev.id, 1),
               channelId: URGENT_CHANNEL_ID,
-              title: `Ny kalenderbokning från ${ev.created_by.split('@')[0]}`,
+              title: `Ny kalenderbokning från ${creatorLabel}`,
               body: `${ev.title} (${ev.event_date}${ev.event_time ? ` kl. ${ev.event_time}` : ''})`,
               schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
             },
@@ -265,7 +267,7 @@ export async function scheduleCalendarEventNotifications(
       'Notification' in window &&
       Notification.permission === 'granted'
     ) {
-      new Notification(`Ny kalenderbokning från ${ev.created_by.split('@')[0]}`, {
+      new Notification(`Ny kalenderbokning från ${creatorLabel}`, {
         body: `${ev.title} (${ev.event_date}${ev.event_time ? ` kl. ${ev.event_time}` : ''})`,
         tag: `betterkeep-cal-${ev.id}`,
       });
@@ -291,11 +293,15 @@ export async function cancelCalendarEventNotifications(eventId: string): Promise
   }
 }
 
-export async function notifyIncomingChatMessage(msg: {
-  id: string;
-  sender_email: string;
-  body: string;
-}): Promise<void> {
+export async function notifyIncomingChatMessage(
+  msg: {
+    id: string;
+    sender_email: string;
+    body: string;
+  },
+  senderDisplayName?: string
+): Promise<void> {
+  const senderLabel = senderDisplayName?.trim() || msg.sender_email.split('@')[0];
   try {
     await ensureHighPriorityNotificationChannel();
 
@@ -305,7 +311,7 @@ export async function notifyIncomingChatMessage(msg: {
           {
             id: eventNotificationId(msg.id, 3),
             channelId: URGENT_CHANNEL_ID,
-            title: `Nytt meddelande från ${msg.sender_email.split('@')[0]}`,
+            title: `Nytt meddelande från ${senderLabel}`,
             body: msg.body,
             schedule: { at: new Date(Date.now() + 500), allowWhileIdle: true },
           },
@@ -316,9 +322,49 @@ export async function notifyIncomingChatMessage(msg: {
       'Notification' in window &&
       Notification.permission === 'granted'
     ) {
-      new Notification(`Nytt meddelande från ${msg.sender_email.split('@')[0]}`, {
+      new Notification(`Nytt meddelande från ${senderLabel}`, {
         body: msg.body,
         tag: `betterkeep-chat-${msg.id}`,
+      });
+    }
+  } catch {
+    // Fallback on web preview
+  }
+}
+
+export async function notifyChatMention(
+  msg: {
+    id: string;
+    sender_email: string;
+    body: string;
+  },
+  senderDisplayName?: string
+): Promise<void> {
+  const senderLabel = senderDisplayName?.trim() || msg.sender_email.split('@')[0];
+  const title = `💬 ${senderLabel} nämnde dig i familjechatten`;
+  try {
+    await ensureHighPriorityNotificationChannel();
+
+    if (Capacitor.isNativePlatform()) {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: eventNotificationId(msg.id, 6),
+            channelId: URGENT_CHANNEL_ID,
+            title,
+            body: msg.body,
+            schedule: { at: new Date(Date.now() + 300), allowWhileIdle: true },
+          },
+        ],
+      });
+    } else if (
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      Notification.permission === 'granted'
+    ) {
+      new Notification(title, {
+        body: msg.body,
+        tag: `betterkeep-mention-${msg.id}`,
       });
     }
   } catch {

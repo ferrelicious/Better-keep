@@ -34,7 +34,9 @@ import {
   searchNominatimStores,
 } from '../services/shoppingParser';
 import { resolveHouseholdSecret } from '../services/crypto';
-import { getUserHousehold, supabase } from '../services/supabase';
+import { getMemberAvatarUrl, getMemberDisplayName } from '../services/profiles';
+import { HouseholdMember, getUserHousehold, supabase } from '../services/supabase';
+import { MemberAvatar } from './MemberAvatar';
 
 export interface ShoppingWriteContext {
   householdId: string;
@@ -74,6 +76,7 @@ interface ShoppingListProps {
   presets: ShoppingPreset[];
   householdId?: string | null;
   householdName?: string;
+  members?: HouseholdMember[];
   encryptionSecret?: string | null;
   userEmail: string | null;
   storePlannedDates?: Record<string, string>;
@@ -111,6 +114,7 @@ export function ShoppingList({
   presets,
   householdId,
   householdName,
+  members = [],
   encryptionSecret,
   userEmail,
   storePlannedDates,
@@ -1309,9 +1313,16 @@ export function ShoppingList({
                                     {item.label}
                                   </p>
                                   {item.created_by && (
-                                    <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
-                                      Tillagd av {item.created_by.split('@')[0]}
-                                    </p>
+                                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                                      <MemberAvatar
+                                        size="xs"
+                                        name={getMemberDisplayName(item.created_by, members)}
+                                        avatarUrl={getMemberAvatarUrl(item.created_by, members)}
+                                      />
+                                      <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
+                                        Tillagd av {getMemberDisplayName(item.created_by, members)}
+                                      </p>
+                                    </div>
                                   )}
                                 </div>
                               </button>

@@ -25,12 +25,18 @@ import {
 } from './components/HouseholdChat';
 import { HouseholdModal } from './components/HouseholdModal';
 import { MailManager } from './components/MailManager';
+import { MemberAvatar } from './components/MemberAvatar';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
 import { SettingsModal } from './components/SettingsModal';
 import { ShoppingList, ShoppingWriteContext } from './components/ShoppingList';
 import { TopBar } from './components/TopBar';
 import { UpdateBanner } from './components/UpdateBanner';
+import {
+  doesTextMentionUser,
+  getMemberAvatarUrl,
+  getMemberDisplayName,
+} from './services/profiles';
 import {
   decryptText,
   encryptBlob,
@@ -66,6 +72,7 @@ import {
   computeSnoozeDate,
   ensureHighPriorityNotificationChannel,
   formatReminderDateTime,
+  notifyChatMention,
   notifyIncomingChatMessage,
   notifyShoppingListCompleted,
   scheduleCalendarEventNotifications,
@@ -815,7 +822,12 @@ export default function App() {
             if (isFromPartner) {
               setCalendarBanner(ev);
             }
-            await scheduleCalendarEventNotifications(ev, isFromPartner, userEmail);
+            await scheduleCalendarEventNotifications(
+              ev,
+              isFromPartner,
+              userEmail,
+              getMemberDisplayName(ev.created_by, householdRef.current?.members)
+            );
           }
         }
       )
@@ -859,12 +871,22 @@ export default function App() {
                     ? 'Skickade ett röstmeddelande'
                     : 'Skickade en fil';
             }
+            const currentMembers = householdRef.current?.members ?? [];
+            const senderDisplayName = getMemberDisplayName(
+              msg.sender_email,
+              currentMembers
+            );
+            const mentionsMe = doesTextMentionUser(
+              previewBody,
+              currentMembers,
+              userEmail
+            );
             const notificationMsg: HouseholdMessage = { ...msg, body: previewBody };
             const completedMatch = previewBody.match(
               /^✅\s*Inköpslistan är klar!\s*\(Utfört av ([^)]+)\)/i
             );
             if (completedMatch) {
-              const actorName = completedMatch[1].trim() || msg.sender_email.split('@')[0];
+              const actorName = completedMatch[1].trim() || senderDisplayName;
               setShoppingDoneBanner({ actorName, at: msg.created_at });
               if (activeTabRef.current !== 'chat') {
                 setUnreadChatCount((c) => c + 1);
@@ -875,7 +897,11 @@ export default function App() {
                 setUnreadChatCount((c) => c + 1);
                 setChatBanner(notificationMsg);
               }
-              await notifyIncomingChatMessage(notificationMsg);
+              if (mentionsMe) {
+                await notifyChatMention(notificationMsg, senderDisplayName);
+              } else {
+                await notifyIncomingChatMessage(notificationMsg, senderDisplayName);
+              }
             }
           }
         }
@@ -1554,7 +1580,7 @@ export default function App() {
       }
 
       if (willFinishList) {
-        const actorName = userEmail.split('@')[0];
+        const actorName = getMemberDisplayName(userEmail, household.members);
         setShoppingDoneBanner({ actorName, at: new Date().toISOString() });
         await handleSendChatMessage({
           text: `✅ Inköpslistan är klar! (Utfört av ${actorName})`,
@@ -1997,7 +2023,7 @@ export default function App() {
       }
 
       if (nextCompleted && !item.is_private) {
-        const actorName = userEmail.split('@')[0];
+        const actorName = getMemberDisplayName(userEmail, household.members);
         const actionLabel =
           item.item_category === 'package'
             ? 'Paket hämtat'
@@ -2456,15 +2482,38 @@ export default function App() {
 
         <div className="flex items-center justify-between gap-3 rounded-2xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 px-4 py-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0">
-              <Users className="w-4 h-4" />
-            </div>
+            {userEmail && household && household.members.length > 0 ? (
+              <div className="flex items-center -space-x-2 shrink-0">
+                {household.members.slice(0, 4).map((member) => (
+                  <span
+                    key={member.id || member.member_email}
+                    className="inline-flex rounded-full ring-2 ring-white dark:ring-[#191D1A]"
+                  >
+                    <MemberAvatar
+                      size="sm"
+                      name={getMemberDisplayName(member.member_email, household.members)}
+                      avatarUrl={member.avatar_url}
+                    />
+                  </span>
+                ))}
+              </div>
+            ) : userEmail ? (
+              <MemberAvatar
+                size="sm"
+                name={getMemberDisplayName(userEmail)}
+                avatarUrl={null}
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4" />
+              </div>
+            )}
             <div className="min-w-0">
               <p className="text-xs font-semibold truncate">
                 {userEmail
                   ? household
                     ? household.name + ' (' + household.members.length + ' medlemmar)'
-                    : 'Inloggad: ' + userEmail
+                    : 'Inloggad: ' + getMemberDisplayName(userEmail)
                   : 'Synka med familjen (Hushåll)'}
               </p>
               <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
@@ -2614,10 +2663,15 @@ export default function App() {
             className="rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] border border-[#2E6B4E]/25 dark:border-[#8FD4AE]/25 text-[#0D3824] dark:text-[#CBEED9] p-4 flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <MessageCircle className="w-5 h-5 shrink-0" />
+              <MemberAvatar
+                size="sm"
+                name={getMemberDisplayName(chatBanner.sender_email, household?.members)}
+                avatarUrl={getMemberAvatarUrl(chatBanner.sender_email, household?.members)}
+              />
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate">
-                  Nytt meddelande från {chatBanner.sender_email.split('@')[0]}
+                  Nytt meddelande från{' '}
+                  {getMemberDisplayName(chatBanner.sender_email, household?.members)}
                 </p>
                 <p className="text-xs opacity-85 truncate">{chatBanner.body}</p>
               </div>
@@ -2651,10 +2705,16 @@ export default function App() {
             className="rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] border border-[#2E6B4E]/25 dark:border-[#8FD4AE]/25 text-[#0D3824] dark:text-[#CBEED9] p-4 flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <CalendarIcon className="w-5 h-5 shrink-0" />
+              <MemberAvatar
+                size="sm"
+                name={getMemberDisplayName(calendarBanner.created_by, household?.members)}
+                avatarUrl={getMemberAvatarUrl(calendarBanner.created_by, household?.members)}
+              />
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate">
-                  Ny bokning från {calendarBanner.created_by.split('@')[0]}: {calendarBanner.title}
+                  Ny bokning från{' '}
+                  {getMemberDisplayName(calendarBanner.created_by, household?.members)}:{' '}
+                  {calendarBanner.title}
                 </p>
                 <p className="text-xs opacity-85 font-mono-tabular">
                   {calendarBanner.event_date}
@@ -2691,6 +2751,7 @@ export default function App() {
             shoppingItems={shoppingItems}
             knownStoreNames={knownStoreNames}
             householdName={household?.name}
+            members={household?.members}
             encryptionSecret={encryptionSecret}
             userEmail={userEmail}
             onSendMessage={handleSendChatMessage}
@@ -2706,6 +2767,7 @@ export default function App() {
             presets={shoppingPresets}
             householdId={household?.id}
             householdName={household?.name}
+            members={household?.members}
             encryptionSecret={encryptionSecret}
             userEmail={userEmail}
             storePlannedDates={storePlannedDates}
@@ -2724,6 +2786,7 @@ export default function App() {
           <MailManager
             items={mailItems}
             householdName={household?.name}
+            members={household?.members}
             userEmail={userEmail}
             pendingSharedContent={pendingSharedContent}
             highlightedMailRequest={highlightedMailRequest}
@@ -2738,6 +2801,7 @@ export default function App() {
           <HouseholdCalendar
             events={householdEvents}
             householdName={household?.name}
+            members={household?.members}
             userEmail={userEmail}
             onAddEvent={handleAddCalendarEvent}
             onDeleteEvent={handleDeleteCalendarEvent}
@@ -3045,6 +3109,12 @@ export default function App() {
         household={household}
         onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
         onPassphraseChanged={() => setPassphraseVersion((v) => v + 1)}
+        onProfileUpdated={async () => {
+          if (userEmail) {
+            const hh = await getUserHousehold(userEmail);
+            setHousehold(hh);
+          }
+        }}
         initialUpdateResult={latestRelease}
         onUpdateChecked={setLatestRelease}
       />

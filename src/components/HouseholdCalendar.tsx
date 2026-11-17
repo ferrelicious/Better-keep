@@ -13,6 +13,9 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
+import { getMemberAvatarUrl, getMemberDisplayName } from '../services/profiles';
+import { HouseholdMember } from '../services/supabase';
+import { MemberAvatar } from './MemberAvatar';
 
 export interface HouseholdEvent {
   id: string;
@@ -32,6 +35,7 @@ type CalendarFilter = 'all' | 'shared' | 'private';
 interface HouseholdCalendarProps {
   events: HouseholdEvent[];
   householdName?: string;
+  members?: HouseholdMember[];
   userEmail: string | null;
   onAddEvent: (draft: {
     title: string;
@@ -96,7 +100,7 @@ function getISOWeek(dateStr: string): number {
   return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
-function exportToPhoneCalendar(ev: HouseholdEvent) {
+function exportToPhoneCalendar(ev: HouseholdEvent, members: HouseholdMember[] = []) {
   const cleanDate = ev.event_date.replace(/-/g, '');
   const cleanTime = (ev.event_time || '09:00').replace(':', '') + '00';
   const startStamp = `${cleanDate}T${cleanTime}`;
@@ -104,6 +108,8 @@ function exportToPhoneCalendar(ev: HouseholdEvent) {
   const [hh, mm] = (ev.event_time || '09:00').split(':').map(Number);
   const endHour = String((hh + 1) % 24).padStart(2, '0');
   const endStamp = `${cleanDate}T${endHour}${String(mm).padStart(2, '0')}00`;
+
+  const creatorName = getMemberDisplayName(ev.created_by, members);
 
   const icsLines = [
     'BEGIN:VCALENDAR',
@@ -115,7 +121,7 @@ function exportToPhoneCalendar(ev: HouseholdEvent) {
     `DTSTART:${startStamp}`,
     `DTEND:${endStamp}`,
     `SUMMARY:${ev.title}`,
-    `DESCRIPTION:${(ev.notes || '').replace(/\n/g, '\\n')} (Inlagd av ${ev.created_by})`,
+    `DESCRIPTION:${(ev.notes || '').replace(/\n/g, '\\n')} (Inlagd av ${creatorName})`,
     'END:VEVENT',
     'END:VCALENDAR',
   ].join('\r\n');
@@ -134,6 +140,7 @@ function exportToPhoneCalendar(ev: HouseholdEvent) {
 export function HouseholdCalendar({
   events,
   householdName,
+  members = [],
   userEmail,
   onAddEvent,
   onDeleteEvent,
@@ -636,13 +643,24 @@ export function HouseholdCalendar({
                             </span>
                             <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
                           </span>
-                          <span className="text-[11px] text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1">
-                            <Bell className="w-3 h-3" />
-                            <span>
-                              {ev.is_private
-                                ? 'Privat bokning (visas bara för dig)'
-                                : `Inlagd av ${ev.created_by.split('@')[0]}`}
-                            </span>
+                          <span className="text-[11px] text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1.5">
+                            {ev.is_private ? (
+                              <>
+                                <Bell className="w-3 h-3" />
+                                <span>Privat bokning (visas bara för dig)</span>
+                              </>
+                            ) : (
+                              <>
+                                <MemberAvatar
+                                  size="xs"
+                                  name={getMemberDisplayName(ev.created_by, members)}
+                                  avatarUrl={getMemberAvatarUrl(ev.created_by, members)}
+                                />
+                                <span>
+                                  Inlagd av {getMemberDisplayName(ev.created_by, members)}
+                                </span>
+                              </>
+                            )}
                           </span>
                         </div>
                       </button>
@@ -675,19 +693,30 @@ export function HouseholdCalendar({
                           </p>
                         )}
                         <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] mt-1.5 flex items-center gap-1.5">
-                          <Bell className="w-3 h-3" />
-                          <span>
-                            {ev.is_private
-                              ? 'Privat bokning (visas bara för dig)'
-                              : `Inlagd av ${ev.created_by.split('@')[0]}`}
-                          </span>
+                          {ev.is_private ? (
+                            <>
+                              <Bell className="w-3 h-3" />
+                              <span>Privat bokning (visas bara för dig)</span>
+                            </>
+                          ) : (
+                            <>
+                              <MemberAvatar
+                                size="xs"
+                                name={getMemberDisplayName(ev.created_by, members)}
+                                avatarUrl={getMemberAvatarUrl(ev.created_by, members)}
+                              />
+                              <span>
+                                Inlagd av {getMemberDisplayName(ev.created_by, members)}
+                              </span>
+                            </>
+                          )}
                         </p>
                       </div>
                     )}
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
-                        onClick={() => exportToPhoneCalendar(ev)}
+                        onClick={() => exportToPhoneCalendar(ev, members)}
                         title="Lägg i telefonens kalender (Samsung/Google)"
                         aria-label="Lägg i telefonens kalender"
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-[#2E6B4E] dark:text-[#8FD4AE] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"

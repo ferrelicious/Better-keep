@@ -33,10 +33,14 @@ import {
   parseMailWithAI,
 } from '../services/mailService';
 import { buildGoogleMapsUrl } from '../services/shoppingParser';
+import { getMemberAvatarUrl, getMemberDisplayName } from '../services/profiles';
+import { HouseholdMember } from '../services/supabase';
+import { MemberAvatar } from './MemberAvatar';
 
 interface MailManagerProps {
   items: MailItem[];
   householdName?: string;
+  members?: HouseholdMember[];
   userEmail: string | null;
   pendingSharedContent: SharedContentPayload | null;
   highlightedMailRequest?: { mailId: string; nonce: number } | null;
@@ -79,6 +83,7 @@ function getDueUrgency(dueDate: string): 'overdue' | 'soon' | 'normal' | 'none' 
 export function MailManager({
   items,
   householdName,
+  members = [],
   userEmail,
   pendingSharedContent,
   highlightedMailRequest,
@@ -1133,8 +1138,15 @@ export function MailManager({
 
                 {/* Card Footer Actions */}
                 <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
-                  <span className="text-[11px] text-[#525E56] dark:text-[#9BA79F]">
-                    Tillagd av {item.created_by.split('@')[0]}
+                  <span className="inline-flex items-center gap-1.5 text-[11px] text-[#525E56] dark:text-[#9BA79F]">
+                    <MemberAvatar
+                      size="xs"
+                      name={getMemberDisplayName(item.created_by, members)}
+                      avatarUrl={getMemberAvatarUrl(item.created_by, members)}
+                    />
+                    <span>
+                      Tillagd av {getMemberDisplayName(item.created_by, members)}
+                    </span>
                   </span>
                   <button
                     type="button"
@@ -1213,6 +1225,9 @@ export function MailManager({
                             item.carrier,
                             item.is_private ? 'Privat' : 'Delad',
                             item.due_date,
+                            item.created_by
+                              ? `Av ${getMemberDisplayName(item.created_by, members)}`
+                              : '',
                           ]
                             .filter(Boolean)
                             .join(' · ')}

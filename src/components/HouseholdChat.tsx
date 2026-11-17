@@ -16,11 +16,17 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { MemberAvatar } from './MemberAvatar';
 import {
   decryptBlob,
   decryptText,
   inferMimeTypeFromFilename,
 } from '../services/crypto';
+import {
+  getMemberAvatarUrl,
+  getMemberDisplayName,
+  segmentTextWithMentions,
+} from '../services/profiles';
 import {
   ShoppingDepartment,
   ShoppingItem,
@@ -28,7 +34,7 @@ import {
   parseShoppingCommand,
 } from '../services/shoppingParser';
 import type { ShoppingWriteContext } from './ShoppingList';
-import { supabase } from '../services/supabase';
+import { HouseholdMember, supabase } from '../services/supabase';
 
 export interface HouseholdMessage {
   id: string;
@@ -54,6 +60,7 @@ interface HouseholdChatProps {
   shoppingItems: ShoppingItem[];
   knownStoreNames: string[];
   householdName?: string;
+  members?: HouseholdMember[];
   encryptionSecret: string | null;
   userEmail: string | null;
   onSendMessage: (payload: OutgoingChatPayload) => Promise<void>;
@@ -85,6 +92,8 @@ function formatDuration(sec: number): string {
 interface EncryptedMessageBubbleProps {
   msg: HouseholdMessage;
   isMine: boolean;
+  currentUserEmail: string | null;
+  members: HouseholdMember[];
   encryptionSecret: string | null;
   shoppingItems: ShoppingItem[];
   knownStoreNames: string[];
@@ -104,6 +113,8 @@ interface EncryptedMessageBubbleProps {
 function EncryptedMessageBubble({
   msg,
   isMine,
+  currentUserEmail,
+  members,
   encryptionSecret,
   shoppingItems,
   knownStoreNames,
@@ -260,11 +271,38 @@ function EncryptedMessageBubble({
 
   const checkedInBubbleCount = checklistTitles.filter((t) => findShoppingMatch(t)?.checked).length;
 
+  const senderDisplayName = getMemberDisplayName(msg.sender_email, members);
+  const senderAvatarUrl = getMemberAvatarUrl(msg.sender_email, members);
+
+  const mentionSegments =
+    decryptedBody && !decryptFailed
+      ? segmentTextWithMentions(decryptedBody, members, currentUserEmail)
+      : [];
+  const mentionsMe =
+    !isMine && mentionSegments.some((seg) => seg.isMention && seg.isCurrentUser);
+
   return (
     <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-      <span className="text-[10px] text-[#525E56] dark:text-[#9BA79F] px-1 mb-0.5">
-        {isMine ? 'Du' : msg.sender_email.split('@')[0]} · {formatMsgTime(msg.created_at)}
-      </span>
+      <div
+        className={`flex items-center gap-1.5 px-1 mb-0.5 ${
+          isMine ? 'flex-row-reverse' : 'flex-row'
+        }`}
+      >
+        <MemberAvatar
+          name={senderDisplayName}
+          avatarUrl={senderAvatarUrl}
+          size="xs"
+        />
+        <span className="text-[10px] text-[#525E56] dark:text-[#9BA79F]">
+          {isMine ? `Du (${senderDisplayName})` : senderDisplayName} ·{' '}
+          {formatMsgTime(msg.created_at)}
+        </span>
+        {mentionsMe && (
+          <span className="px-1.5 py-0.5 rounded-md bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9] text-[9px] font-bold uppercase tracking-wide">
+            Nämnde dig
+          </span>
+        )}
+      </div>
       <div className="group flex items-center gap-1.5 max-w-[88%] sm:max-w-[78%]">
         {isMine && canSaveNote && (
           <button
@@ -282,7 +320,9 @@ function EncryptedMessageBubble({
           className={`px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap break-words flex flex-col gap-2 ${
             isMine
               ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] rounded-br-sm'
-              : 'bg-[#ECEFE9] dark:bg-[#212723] text-[#171D19] dark:text-[#E4EBE6] rounded-bl-sm'
+              : mentionsMe
+                ? 'bg-[#E5F4EA] dark:bg-[#183326] text-[#171D19] dark:text-[#E4EBE6] ring-2 ring-[#2E6B4E] dark:ring-[#8FD4AE] rounded-bl-sm'
+                : 'bg-[#ECEFE9] dark:bg-[#212723] text-[#171D19] dark:text-[#E4EBE6] rounded-bl-sm'
           }`}
         >
           {msg.attachment_url && (
@@ -406,7 +446,26 @@ function EncryptedMessageBubble({
           ) : (
             decryptedBody && (
               <span className={decryptFailed ? 'italic opacity-80 text-xs' : ''}>
-                {decryptedBody}
+                {decryptFailed
+                  ? decryptedBody
+                  : mentionSegments.map((seg, idx) =>
+                      seg.isMention ? (
+                        <span
+                          key={`${idx}-${seg.text}`}
+                          className={`inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md font-semibold text-xs ${
+                            isMine
+                              ? 'bg-white/25 dark:bg-black/20 text-white dark:text-[#063822]'
+                              : seg.isCurrentUser
+                                ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]'
+                                : 'bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]'
+                          }`}
+                        >
+                          {seg.text}
+                        </span>
+                      ) : (
+                        <span key={idx}>{seg.text}</span>
+                      )
+                    )}
               </span>
             )
           )}
@@ -445,6 +504,7 @@ export function HouseholdChat({
   shoppingItems,
   knownStoreNames,
   householdName,
+  members = [],
   encryptionSecret,
   userEmail,
   onSendMessage,
@@ -455,6 +515,9 @@ export function HouseholdChat({
   onOpenHouseholdModal,
 }: HouseholdChatProps) {
   const [text, setText] = useState('');
+  const [cursorPos, setCursorPos] = useState<number>(0);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [mentionDismissed, setMentionDismissed] = useState(false);
   const [sending, setSending] = useState(false);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(null);
@@ -469,6 +532,7 @@ export function HouseholdChat({
   const cancelRecordRef = useRef(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const textInputRef = useRef<HTMLInputElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -484,6 +548,63 @@ export function HouseholdChat({
     };
   }, []);
 
+  // Detect active @mention query immediately before the cursor
+  const activeMentionMatch = (() => {
+    if (mentionDismissed) return null;
+    const pos = Math.min(cursorPos, text.length);
+    const beforeCursor = text.slice(0, pos);
+    const match = beforeCursor.match(/(?:^|\s)@([^\s@]*)$/);
+    if (!match) return null;
+    const atStart = beforeCursor.lastIndexOf('@');
+    if (atStart < 0) return null;
+    return {
+      query: match[1].toLowerCase(),
+      start: atStart,
+      end: pos,
+    };
+  })();
+
+  const filteredMentionMembers = activeMentionMatch
+    ? members.filter((m) => {
+        const displayName = getMemberDisplayName(m.member_email, members).toLowerCase();
+        const emailLower = m.member_email.toLowerCase();
+        return (
+          !activeMentionMatch.query ||
+          displayName.includes(activeMentionMatch.query) ||
+          emailLower.includes(activeMentionMatch.query)
+        );
+      })
+    : [];
+
+  const showMentionPicker =
+    Boolean(activeMentionMatch) && filteredMentionMembers.length > 0;
+
+  useEffect(() => {
+    setMentionIndex(0);
+  }, [activeMentionMatch?.query, filteredMentionMembers.length]);
+
+  const insertMemberMention = (member: HouseholdMember) => {
+    if (!activeMentionMatch) return;
+    const displayName = getMemberDisplayName(member.member_email, members);
+    const insertion = `@${displayName} `;
+    const nextText =
+      text.slice(0, activeMentionMatch.start) +
+      insertion +
+      text.slice(activeMentionMatch.end);
+    const nextCaret = activeMentionMatch.start + insertion.length;
+    setText(nextText);
+    setCursorPos(nextCaret);
+    setMentionDismissed(false);
+
+    window.requestAnimationFrame(() => {
+      const el = textInputRef.current;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(nextCaret, nextCaret);
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = text.trim();
@@ -491,6 +612,7 @@ export function HouseholdChat({
     setMediaError(null);
     setSending(true);
     setText('');
+    setCursorPos(0);
     try {
       await onSendMessage({ text: clean });
     } catch {
@@ -682,6 +804,8 @@ export function HouseholdChat({
                 <EncryptedMessageBubble
                   msg={msg}
                   isMine={isMine}
+                  currentUserEmail={userEmail}
+                  members={members}
                   encryptionSecret={encryptionSecret}
                   shoppingItems={shoppingItems}
                   knownStoreNames={knownStoreNames}
@@ -743,66 +867,152 @@ export function HouseholdChat({
           </div>
         </div>
       ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="p-3 border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center gap-2 bg-white dark:bg-[#191D1A]"
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,*/*"
-            onChange={handleFileChange}
-            className="sr-only"
-          />
+        <div className="relative border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10 bg-white dark:bg-[#191D1A]">
+          {showMentionPicker && (
+            <div
+              role="listbox"
+              aria-label="Nämn en familjemedlem"
+              className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 shadow-xl overflow-hidden z-20 max-h-56 overflow-y-auto"
+            >
+              <div className="px-3 py-1.5 border-b border-[#18221C]/8 dark:border-[#E3EAE5]/8 bg-[#F6F7F4]/80 dark:bg-[#141816]/80 text-[10px] font-semibold uppercase tracking-wider text-[#525E56] dark:text-[#9BA79F]">
+                Nämn i chatten (@Namn)
+              </div>
+              {filteredMentionMembers.map((member, idx) => {
+                const displayName = getMemberDisplayName(member.member_email, members);
+                const isSelected = idx === mentionIndex;
+                return (
+                  <button
+                    key={member.id + member.member_email}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      insertMemberMention(member);
+                    }}
+                    className={`w-full px-3 py-2 flex items-center gap-2.5 text-left transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#D3EBD9]/75 dark:bg-[#1C4A34]/75'
+                        : 'hover:bg-[#ECEFE9] dark:hover:bg-[#212723]'
+                    }`}
+                  >
+                    <MemberAvatar
+                      name={displayName}
+                      avatarUrl={member.avatar_url}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6] truncate">
+                        {displayName}
+                      </p>
+                      <p className="text-[10px] text-[#525E56] dark:text-[#9BA79F] truncate">
+                        {member.member_email}
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-mono-tabular font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0">
+                      @{displayName}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={sending}
-            aria-label="Bifoga bild eller fil"
-            title="Bifoga bild eller fil"
-            className="h-11 w-11 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer transition-colors"
+          <form
+            onSubmit={handleSubmit}
+            className="p-3 flex items-center gap-2"
           >
-            <Paperclip className="w-4 h-4" aria-hidden="true" />
-          </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,*/*"
+              onChange={handleFileChange}
+              className="sr-only"
+            />
 
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={
-              sending
-                ? 'Krypterar & skickar...'
-                : 'Skriv meddelande eller "Handla på Willys: mjölk, ägg"...'
-            }
-            disabled={sending}
-            className="flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
-          />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending}
+              aria-label="Bifoga bild eller fil"
+              title="Bifoga bild eller fil"
+              className="h-11 w-11 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer transition-colors"
+            >
+              <Paperclip className="w-4 h-4" aria-hidden="true" />
+            </button>
 
-          <button
-            type="button"
-            onClick={startRecording}
-            disabled={sending}
-            aria-label="Spela in röstmeddelande"
-            title="Spela in röstmeddelande"
-            className="h-11 w-11 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer transition-colors"
-          >
-            <Mic className="w-4 h-4" aria-hidden="true" />
-          </button>
+            <input
+              ref={textInputRef}
+              type="text"
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value);
+                setCursorPos(e.target.selectionStart ?? e.target.value.length);
+                setMentionDismissed(false);
+              }}
+              onClick={(e) => {
+                const target = e.currentTarget;
+                setCursorPos(target.selectionStart ?? target.value.length);
+              }}
+              onKeyUp={(e) => {
+                const target = e.currentTarget;
+                setCursorPos(target.selectionStart ?? target.value.length);
+              }}
+              onKeyDown={(e) => {
+                if (!showMentionPicker) return;
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setMentionIndex((i) => (i + 1) % filteredMentionMembers.length);
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setMentionIndex(
+                    (i) =>
+                      (i - 1 + filteredMentionMembers.length) %
+                      filteredMentionMembers.length
+                  );
+                } else if (e.key === 'Enter' || e.key === 'Tab') {
+                  e.preventDefault();
+                  const chosen = filteredMentionMembers[mentionIndex];
+                  if (chosen) insertMemberMention(chosen);
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setMentionDismissed(true);
+                }
+              }}
+              placeholder={
+                sending
+                  ? 'Krypterar & skickar...'
+                  : 'Skriv meddelande, @namn eller "Handla på Willys: mjölk"...'
+              }
+              disabled={sending}
+              className="flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+            />
 
-          <button
-            type="submit"
-            disabled={!text.trim() || sending}
-            aria-label="Skicka meddelande"
-            className="h-11 px-4 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] font-semibold text-sm inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
-          >
-            {sending ? (
-              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Send className="w-4 h-4" aria-hidden="true" />
-            )}
-          </button>
-        </form>
+            <button
+              type="button"
+              onClick={startRecording}
+              disabled={sending}
+              aria-label="Spela in röstmeddelande"
+              title="Spela in röstmeddelande"
+              className="h-11 w-11 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer transition-colors"
+            >
+              <Mic className="w-4 h-4" aria-hidden="true" />
+            </button>
+
+            <button
+              type="submit"
+              disabled={!text.trim() || sending}
+              aria-label="Skicka meddelande"
+              className="h-11 px-4 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] font-semibold text-sm inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
+            >
+              {sending ? (
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Send className="w-4 h-4" aria-hidden="true" />
+              )}
+            </button>
+          </form>
+        </div>
       )}
 
       {/* Fullscreen Image Lightbox */}

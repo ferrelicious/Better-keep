@@ -1,7 +1,8 @@
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   BellRing,
+  Camera,
   Check,
   CheckCircle2,
   Copy,
@@ -15,19 +16,27 @@ import {
   Lock,
   Monitor,
   Moon,
+  Pencil,
   RefreshCw,
   Settings,
   ShieldCheck,
   Sun,
   X,
 } from 'lucide-react';
+import { MemberAvatar } from './MemberAvatar';
 import {
   getHouseholdPassphrase,
   setHouseholdPassphrase,
 } from '../services/crypto';
 import { sendTestNotification } from '../services/notifications';
+import {
+  compressAvatarImage,
+  getMemberAvatarUrl,
+  getMemberByEmail,
+  getMemberDisplayName,
+} from '../services/profiles';
 import { ThemeMode } from '../services/storage';
-import { HouseholdInfo } from '../services/supabase';
+import { HouseholdInfo, updateHouseholdMemberProfile } from '../services/supabase';
 import {
   CURRENT_APP_VERSION,
   UpdateCheckResult,
@@ -45,6 +54,7 @@ interface SettingsModalProps {
   household: HouseholdInfo | null;
   onOpenHouseholdModal: () => void;
   onPassphraseChanged: () => void;
+  onProfileUpdated?: () => Promise<void>;
   initialUpdateResult?: UpdateCheckResult | null;
   onUpdateChecked?: (result: UpdateCheckResult) => void;
 }
@@ -60,6 +70,7 @@ export function SettingsModal({
   household,
   onOpenHouseholdModal,
   onPassphraseChanged,
+  onProfileUpdated,
   initialUpdateResult,
   onUpdateChecked,
 }: SettingsModalProps) {
@@ -73,6 +84,15 @@ export function SettingsModal({
   const [copiedKey, setCopiedKey] = useState(false);
   const [passphrase, setPassphrase] = useState('');
   const [passphraseSaved, setPassphraseSaved] = useState(false);
+
+  const [editingProfileName, setEditingProfileName] = useState(false);
+  const [profileNameInput, setProfileNameInput] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(
@@ -88,6 +108,9 @@ export function SettingsModal({
     setCopiedKey(false);
     setPassphraseSaved(false);
     setUpdateError(null);
+    setEditingProfileName(false);
+    setProfileFeedback(null);
+    setProfileNameInput(getMemberDisplayName(userEmail, household?.members));
     if (initialUpdateResult) {
       setUpdateResult(initialUpdateResult);
     }
@@ -96,9 +119,13 @@ export function SettingsModal({
     } else {
       setPassphrase('');
     }
-  }, [open, household?.id, initialUpdateResult]);
+  }, [open, household?.id, household?.members, userEmail, initialUpdateResult]);
 
   if (!open) return null;
+
+  const currentMember = getMemberByEmail(userEmail, household?.members);
+  const myDisplayName = getMemberDisplayName(userEmail, household?.members);
+  const myAvatarUrl = getMemberAvatarUrl(userEmail, household?.members);
 
   const householdKey = household?.encryption_secret?.trim() || household?.id || '';
 
@@ -166,6 +193,57 @@ export function SettingsModal({
     }
   };
 
+  const handleSaveProfileName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!household?.id || !userEmail || savingProfile) return;
+    setSavingProfile(true);
+    setProfileFeedback(null);
+    try {
+      await updateHouseholdMemberProfile({
+        householdId: household.id,
+        memberId: currentMember?.id,
+        memberEmail: userEmail,
+        display_name: profileNameInput.trim() || null,
+      });
+      setEditingProfileName(false);
+      setProfileFeedback({ ok: true, message: 'Visningsnamn sparat!' });
+      await onProfileUpdated?.();
+    } catch (err: unknown) {
+      setProfileFeedback({
+        ok: false,
+        message: err instanceof Error ? err.message : 'Kunde inte spara visningsnamn.',
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleAvatarSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !household?.id || !userEmail || savingProfile) return;
+    setSavingProfile(true);
+    setProfileFeedback(null);
+    try {
+      const dataUrl = await compressAvatarImage(file);
+      await updateHouseholdMemberProfile({
+        householdId: household.id,
+        memberId: currentMember?.id,
+        memberEmail: userEmail,
+        avatar_url: dataUrl,
+      });
+      setProfileFeedback({ ok: true, message: 'Profilbild uppdaterad!' });
+      await onProfileUpdated?.();
+    } catch (err: unknown) {
+      setProfileFeedback({
+        ok: false,
+        message: err instanceof Error ? err.message : 'Kunde inte spara profilbilden.',
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -191,7 +269,7 @@ export function SettingsModal({
                 Inställningar
               </h2>
               <p className="text-xs text-[#525E56] dark:text-[#9BA79F]">
-                Utseende, notiser, säkerhet och appversion
+                Profil, utseende, notiser, säkerhet och appversion
               </p>
             </div>
           </div>
@@ -204,6 +282,127 @@ export function SettingsModal({
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
+
+        {/* 0. Min profil */}
+        {userEmail && (
+          <>
+            <section className="flex flex-col gap-3">
+              <h3 className="text-sm font-semibold text-[#171D19] dark:text-[#E4EBE6]">
+                Min profil
+              </h3>
+
+              <div className="rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-3.5 flex items-center gap-3.5">
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarSelected}
+                  className="sr-only"
+                />
+                <button
+                  type="button"
+                  disabled={!household || savingProfile}
+                  onClick={() => avatarInputRef.current?.click()}
+                  title={household ? 'Byt profilbild' : 'Koppla hushåll för att välja profilbild'}
+                  aria-label="Byt din profilbild"
+                  className="relative shrink-0 rounded-full cursor-pointer disabled:cursor-default focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+                >
+                  <MemberAvatar name={myDisplayName} avatarUrl={myAvatarUrl} size="lg" />
+                  {household && (
+                    <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shadow-xs">
+                      {savingProfile ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Camera className="w-3 h-3" />
+                      )}
+                    </span>
+                  )}
+                </button>
+
+                <div className="min-w-0 flex-1">
+                  {household && editingProfileName ? (
+                    <form onSubmit={handleSaveProfileName} className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        autoFocus
+                        value={profileNameInput}
+                        onChange={(e) => setProfileNameInput(e.target.value)}
+                        placeholder="Ditt familjenamn..."
+                        className="flex-1 min-w-0 h-9 px-2.5 rounded-xl bg-white dark:bg-[#212723] border border-[#2E6B4E]/40 text-xs focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={savingProfile}
+                        aria-label="Spara namn"
+                        className="w-9 h-9 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shrink-0 cursor-pointer"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingProfileName(false)}
+                        aria-label="Avbryt"
+                        className="w-9 h-9 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center shrink-0 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-[#171D19] dark:text-[#E4EBE6] truncate">
+                          {myDisplayName}
+                        </p>
+                        {household && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProfileNameInput(myDisplayName);
+                              setEditingProfileName(true);
+                            }}
+                            aria-label="Ändra visningsnamn"
+                            className="p-1 rounded-lg text-[#525E56] dark:text-[#9BA79F] hover:text-[#2E6B4E] dark:hover:text-[#8FD4AE] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#525E56] dark:text-[#9BA79F] truncate">
+                        {userEmail}
+                      </p>
+                      {!household && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onOpenHouseholdModal();
+                          }}
+                          className="mt-1 text-[11px] font-semibold text-[#2E6B4E] dark:text-[#8FD4AE] hover:underline cursor-pointer"
+                        >
+                          Koppla hushåll för att ändra namn & bild
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {profileFeedback && (
+                <p
+                  className={`text-xs font-medium px-3.5 py-2 rounded-xl ${
+                    profileFeedback.ok
+                      ? 'bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]'
+                      : 'bg-red-500/10 text-red-700 dark:text-red-300'
+                  }`}
+                >
+                  {profileFeedback.message}
+                </p>
+              )}
+            </section>
+
+            <hr className="border-[#18221C]/10 dark:border-[#E3EAE5]/10" />
+          </>
+        )}
 
         {/* 1. Utseende */}
         <section className="flex flex-col gap-3">
