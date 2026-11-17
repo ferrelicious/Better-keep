@@ -15,12 +15,22 @@ import {
 import { CategoryTabs } from './components/CategoryTabs';
 import { EmailImportModal } from './components/EmailImportModal';
 import { HouseholdCalendar, HouseholdEvent } from './components/HouseholdCalendar';
-import { HouseholdChat, HouseholdMessage } from './components/HouseholdChat';
+import {
+  HouseholdChat,
+  HouseholdMessage,
+  OutgoingChatPayload,
+} from './components/HouseholdChat';
 import { HouseholdModal } from './components/HouseholdModal';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
 import { TopBar } from './components/TopBar';
 import { UpdateBanner } from './components/UpdateBanner';
+import {
+  decryptText,
+  encryptBlob,
+  encryptText,
+  resolveHouseholdSecret,
+} from './services/crypto';
 import { UpdateCheckResult } from './services/updater';
 import {
   SnoozePreset,
@@ -96,6 +106,7 @@ export default function App() {
   const [householdEvents, setHouseholdEvents] = useState<HouseholdEvent[]>([]);
   const [householdMessages, setHouseholdMessages] = useState<HouseholdMessage[]>([]);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [passphraseVersion, setPassphraseVersion] = useState(0);
   const [latestRelease, setLatestRelease] = useState<UpdateCheckResult | null>(null);
 
   const [deletedUndo, setDeletedUndo] = useState<Note | null>(null);
@@ -105,6 +116,16 @@ export default function App() {
   const notifiedIdsRef = useRef<Set<string>>(new Set());
   const undoTimerRef = useRef<number | null>(null);
   const activeTabRef = useRef<'notes' | 'calendar' | 'chat'>('notes');
+  const householdRef = useRef<HouseholdInfo | null>(null);
+
+  useEffect(() => {
+    householdRef.current = household;
+  }, [household]);
+
+  const encryptionSecret = useMemo(
+    () => (household ? resolveHouseholdSecret(household) : null),
+    [household, passphraseVersion]
+  );
 
   useEffect(() => {
     ensureHighPriorityNotificationChannel();
@@ -135,19 +156,26 @@ export default function App() {
     saveTheme(theme);
   }, [theme]);
 
-  const fetchHouseholdEvents = useCallback(async (householdId: string) => {
-    const { data, error } = await supabase
-      .from('household_events')
-      .select('*')
-      .eq('household_id', householdId)
-      .order('event_date', { ascending: true });
-    if (!error && data) {
-      setHouseholdEvents(data as HouseholdEvent[]);
-      for (const ev of data as HouseholdEvent[]) {
-        await scheduleCalendarEventNotifications(ev, false);
+  const fetchHouseholdEvents = useCallback(
+    async (householdId: string, currentUserEmail?: string | null) => {
+      const { data, error } = await supabase
+        .from('household_events')
+        .select('*')
+        .eq('household_id', householdId)
+        .order('event_date', { ascending: true });
+      if (!error && data) {
+        const myEmail = (currentUserEmail ?? '').toLowerCase();
+        const visibleEvents = (data as HouseholdEvent[]).filter(
+          (ev) => !ev.is_private || ev.created_by.toLowerCase() === myEmail
+        );
+        setHouseholdEvents(visibleEvents);
+        for (const ev of visibleEvents) {
+          await scheduleCalendarEventNotifications(ev, false);
+        }
       }
-    }
-  }, []);
+    },
+    []
+  );
 
   const fetchHouseholdMessages = useCallback(async (householdId: string) => {
     const { data, error } = await supabase
@@ -171,7 +199,7 @@ export default function App() {
         setHousehold(hh);
         if (hh?.id) {
           await Promise.all([
-            fetchHouseholdEvents(hh.id),
+            fetchHouseholdEvents(hh.id, email),
             fetchHouseholdMessages(hh.id),
           ]);
         } else {
@@ -317,13 +345,16 @@ export default function App() {
           } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const ev = payload.new as HouseholdEvent;
             if (!ev?.id) return;
+            const isMine = ev.created_by.toLowerCase() === userEmail.toLowerCase();
+            if (ev.is_private && !isMine) {
+              return;
+            }
             setHouseholdEvents((prev) => {
               const exists = prev.some((item) => item.id === ev.id);
               return exists ? prev.map((item) => (item.id === ev.id ? ev : item)) : [...prev, ev];
             });
             const isFromPartner =
-              payload.eventType === 'INSERT' &&
-              ev.created_by.toLowerCase() !== userEmail.toLowerCase();
+              payload.eventType === 'INSERT' && !isMine && !ev.is_private;
             if (isFromPartner) {
               setCalendarBanner(ev);
             }
@@ -342,11 +373,41 @@ export default function App() {
           );
           const isFromPartner = msg.sender_email.toLowerCase() !== userEmail.toLowerCase();
           if (isFromPartner) {
+            let previewBody = msg.body;
+            if (msg.is_encrypted) {
+              const currentHousehold = householdRef.current;
+              const secret = currentHousehold ? resolveHouseholdSecret(currentHousehold) : null;
+              if (secret && msg.body) {
+                try {
+                  previewBody = await decryptText(msg.body, secret);
+                } catch {
+                  previewBody = 'Nytt krypterat meddelande';
+                }
+              } else if (!msg.body && msg.attachment_type) {
+                previewBody =
+                  msg.attachment_type === 'image'
+                    ? 'Skickade en krypterad bild'
+                    : msg.attachment_type === 'audio'
+                      ? 'Skickade ett röstmeddelande'
+                      : 'Skickade en krypterad fil';
+              } else {
+                previewBody = 'Nytt krypterat meddelande';
+              }
+            }
+            if (!previewBody && msg.attachment_type) {
+              previewBody =
+                msg.attachment_type === 'image'
+                  ? 'Skickade en bild'
+                  : msg.attachment_type === 'audio'
+                    ? 'Skickade ett röstmeddelande'
+                    : 'Skickade en fil';
+            }
+            const notificationMsg: HouseholdMessage = { ...msg, body: previewBody };
             if (activeTabRef.current !== 'chat') {
               setUnreadChatCount((c) => c + 1);
-              setChatBanner(msg);
+              setChatBanner(notificationMsg);
             }
-            await notifyIncomingChatMessage(msg);
+            await notifyIncomingChatMessage(notificationMsg);
           }
         }
       )
@@ -358,7 +419,7 @@ export default function App() {
           setHousehold(hh);
           if (hh?.id) {
             await Promise.all([
-              fetchHouseholdEvents(hh.id),
+              fetchHouseholdEvents(hh.id, userEmail),
               fetchHouseholdMessages(hh.id),
             ]);
           }
@@ -410,19 +471,54 @@ export default function App() {
   }, []);
 
   const handleSendChatMessage = useCallback(
-    async (body: string) => {
+    async (payload: OutgoingChatPayload) => {
       if (!userEmail || !household?.id) return;
+      const secret = resolveHouseholdSecret(household);
+
+      let attachmentUrl: string | null = null;
+      let attachmentType: 'image' | 'file' | 'audio' | null = null;
+      let encryptedAttachmentName: string | null = null;
+
+      if (payload.file) {
+        const encryptedBlob = await encryptBlob(payload.file, secret);
+        const storagePath = `${household.id}/${Date.now()}.enc`;
+        const { error: uploadError } = await supabase.storage
+          .from('household-media')
+          .upload(storagePath, encryptedBlob, {
+            contentType: 'application/octet-stream',
+            upsert: false,
+          });
+        if (uploadError) {
+          throw uploadError;
+        }
+        attachmentUrl = storagePath;
+        attachmentType = payload.attachmentType ?? 'file';
+        encryptedAttachmentName = await encryptText(
+          payload.originalName || 'bilaga',
+          secret
+        );
+      }
+
+      const cleanText = payload.text.trim();
+      const encryptedBody = cleanText ? await encryptText(cleanText, secret) : '';
+
       const { data, error } = await supabase
         .from('household_messages')
         .insert({
           household_id: household.id,
           sender_email: userEmail,
-          body,
+          body: encryptedBody,
+          is_encrypted: true,
+          attachment_url: attachmentUrl,
+          attachment_type: attachmentType,
+          attachment_name: encryptedAttachmentName,
         })
         .select()
         .single();
 
-      if (!error && data) {
+      if (error) throw error;
+
+      if (data) {
         const created = data as HouseholdMessage;
         setHouseholdMessages((prev) =>
           prev.some((m) => m.id === created.id) ? prev : [...prev, created]
@@ -439,6 +535,7 @@ export default function App() {
       event_date: string;
       event_time: string;
       remind_before_minutes: number;
+      is_private: boolean;
     }) => {
       if (!userEmail || !household?.id) return;
       const { data, error } = await supabase
@@ -451,6 +548,7 @@ export default function App() {
           event_date: draft.event_date,
           event_time: draft.event_time || null,
           remind_before_minutes: draft.remind_before_minutes,
+          is_private: draft.is_private,
         })
         .select()
         .single();
@@ -993,6 +1091,7 @@ export default function App() {
           <HouseholdChat
             messages={householdMessages}
             householdName={household?.name}
+            encryptionSecret={encryptionSecret}
             userEmail={userEmail}
             onSendMessage={handleSendChatMessage}
             onSaveAsNote={handleSaveChatAsNote}
@@ -1252,6 +1351,7 @@ export default function App() {
         userEmail={userEmail}
         household={household}
         onHouseholdUpdated={async () => {
+          setPassphraseVersion((v) => v + 1);
           if (userEmail) {
             await syncFromCloud(userEmail);
           }

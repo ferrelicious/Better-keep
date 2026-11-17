@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CheckCircle2,
   Download,
   Home,
+  KeyRound,
   Loader2,
   LogOut,
   Mail,
@@ -13,6 +14,10 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import {
+  getHouseholdPassphrase,
+  setHouseholdPassphrase,
+} from '../services/crypto';
 import {
   HouseholdInfo,
   createHousehold,
@@ -59,6 +64,15 @@ export function HouseholdModal({
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [downloadingUpdate, setDownloadingUpdate] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+  const [passphrase, setPassphrase] = useState('');
+  const [passphraseSaved, setPassphraseSaved] = useState(false);
+
+  useEffect(() => {
+    if (open && household?.id) {
+      setPassphrase(getHouseholdPassphrase(household.id));
+      setPassphraseSaved(false);
+    }
+  }, [open, household?.id]);
 
   if (!open) return null;
 
@@ -374,6 +388,39 @@ export function HouseholdModal({
                     </button>
                   </div>
                 </form>
+
+                <div className="rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-3 flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold">
+                    <KeyRound className="w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]" aria-hidden="true" />
+                    <span>Personlig chatt-lösenfras (valfri)</span>
+                  </div>
+                  <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] leading-snug">
+                    Sparas endast lokalt på enheten för extra E2E-kryptering. Båda måste ange samma fras.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      value={passphrase}
+                      onChange={(e) => {
+                        setPassphrase(e.target.value);
+                        setPassphraseSaved(false);
+                      }}
+                      placeholder="Lämna tomt för standardnyckel"
+                      className="flex-1 h-9 px-3 rounded-xl bg-white dark:bg-[#212723] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-xs focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHouseholdPassphrase(household.id, passphrase);
+                        setPassphraseSaved(true);
+                        onHouseholdUpdated();
+                      }}
+                      className="px-3 h-9 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer"
+                    >
+                      {passphraseSaved ? 'Sparad' : 'Spara'}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

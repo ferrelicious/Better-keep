@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Lock,
   Plus,
   Trash2,
   Users,
@@ -21,8 +22,11 @@ export interface HouseholdEvent {
   event_date: string; // YYYY-MM-DD
   event_time?: string | null; // HH:mm
   remind_before_minutes?: number | null;
+  is_private?: boolean;
   created_at?: string;
 }
+
+type CalendarFilter = 'all' | 'shared' | 'private';
 
 interface HouseholdCalendarProps {
   events: HouseholdEvent[];
@@ -34,6 +38,7 @@ interface HouseholdCalendarProps {
     event_date: string;
     event_time: string;
     remind_before_minutes: number;
+    is_private: boolean;
   }) => Promise<void>;
   onDeleteEvent: (id: string) => Promise<void>;
   onOpenHouseholdModal: () => void;
@@ -107,15 +112,29 @@ export function HouseholdCalendar({
   const todayStr = useMemo(() => toYMD(new Date()), []);
   const [viewDate, setViewDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [calendarFilter, setCalendarFilter] = useState<CalendarFilter>('all');
 
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('14:00');
   const [notes, setNotes] = useState('');
   const [remindBefore, setRemindBefore] = useState<number>(60);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
+
+  // Defense-in-depth: never display someone else's private events, then apply filter tab
+  const visibleEvents = useMemo(() => {
+    const myEmail = (userEmail ?? '').toLowerCase();
+    return events.filter((ev) => {
+      const isMine = ev.created_by.toLowerCase() === myEmail;
+      if (ev.is_private && !isMine) return false;
+      if (calendarFilter === 'shared') return !ev.is_private;
+      if (calendarFilter === 'private') return Boolean(ev.is_private) && isMine;
+      return true;
+    });
+  }, [events, userEmail, calendarFilter]);
 
   const weeks = useMemo(() => {
     const firstDay = new Date(year, month, 1);
@@ -154,7 +173,7 @@ export function HouseholdCalendar({
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, HouseholdEvent[]>();
-    for (const ev of events) {
+    for (const ev of visibleEvents) {
       const list = map.get(ev.event_date) ?? [];
       list.push(ev);
       map.set(ev.event_date, list);
@@ -163,7 +182,7 @@ export function HouseholdCalendar({
       list.sort((a, b) => (a.event_time || '99:99').localeCompare(b.event_time || '99:99'));
     }
     return map;
-  }, [events]);
+  }, [visibleEvents]);
 
   const selectedDayEvents = eventsByDate.get(selectedDate) ?? [];
 
@@ -178,6 +197,7 @@ export function HouseholdCalendar({
         event_date: selectedDate,
         event_time: time,
         remind_before_minutes: remindBefore,
+        is_private: isPrivate,
       });
       setTitle('');
       setNotes('');
@@ -209,6 +229,54 @@ export function HouseholdCalendar({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Flikväxlare: Alla / Gemensam / Privat */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div
+          role="tablist"
+          aria-label="Filtrera kalenderhändelser"
+          className="inline-flex items-center gap-1 p-1 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723]"
+        >
+          {(
+            [
+              { id: 'all', label: 'Alla' },
+              { id: 'shared', label: 'Gemensam' },
+              { id: 'private', label: 'Privat' },
+            ] as const
+          ).map((tab) => {
+            const active = calendarFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={active}
+                type="button"
+                onClick={() => setCalendarFilter(tab.id)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                  active
+                    ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
+                    : 'text-[#525E56] dark:text-[#9BA79F]'
+                }`}
+              >
+                {tab.id === 'private' && <Lock className="w-3 h-3" aria-hidden="true" />}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-3 text-[11px] text-[#525E56] dark:text-[#9BA79F]">
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#2E6B4E] dark:bg-[#8FD4AE]" /> Dina
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#264E70] dark:bg-[#9ECAFF]" /> Partner
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#6E4C8E] dark:bg-[#C6A4EA]" /> Privat
+          </span>
+        </div>
+      </div>
+
       {/* Fullbredds månadskalender i Samsung / Google Kalender-stil */}
       <div className="rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden shadow-xs">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10">
@@ -321,14 +389,21 @@ export function HouseholdCalendar({
                         return (
                           <div
                             key={ev.id}
-                            className={`px-1 py-0.5 rounded text-[9px] sm:text-[11px] font-medium truncate leading-tight ${
-                              isMine
-                                ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]'
-                                : 'bg-[#264E70] dark:bg-[#9ECAFF] text-white dark:text-[#003258]'
+                            className={`px-1 py-0.5 rounded text-[9px] sm:text-[11px] font-medium truncate leading-tight flex items-center gap-0.5 ${
+                              ev.is_private
+                                ? 'bg-[#6E4C8E] dark:bg-[#C6A4EA] text-white dark:text-[#2B1245]'
+                                : isMine
+                                  ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]'
+                                  : 'bg-[#264E70] dark:bg-[#9ECAFF] text-white dark:text-[#003258]'
                             }`}
                           >
-                            {ev.event_time ? `${ev.event_time} ` : ''}
-                            {ev.title}
+                            {ev.is_private && (
+                              <Lock className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                            )}
+                            <span className="truncate">
+                              {ev.event_time ? `${ev.event_time} ` : ''}
+                              {ev.title}
+                            </span>
                           </div>
                         );
                       })}
@@ -359,7 +434,9 @@ export function HouseholdCalendar({
                 {selectedDate}
               </span>
             </h3>
-            <span className="text-[11px] text-[#525E56] dark:text-[#9BA79F]">{householdName}</span>
+            <span className="text-[11px] text-[#525E56] dark:text-[#9BA79F]">
+              {isPrivate ? 'Privat' : householdName}
+            </span>
           </div>
 
           <input
@@ -382,7 +459,7 @@ export function HouseholdCalendar({
               />
             </label>
             <label className="flex flex-col gap-1 text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F]">
-              <span>Påminn båda</span>
+              <span>{isPrivate ? 'Påminn mig' : 'Påminn båda'}</span>
               <select
                 value={remindBefore}
                 onChange={(e) => setRemindBefore(Number(e.target.value))}
@@ -404,13 +481,46 @@ export function HouseholdCalendar({
             className="w-full h-10 px-3.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
           />
 
+          {/* Switch: Privat bokning */}
+          <label className="flex items-center justify-between gap-3 rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 px-3.5 py-2.5 cursor-pointer select-none">
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <Lock
+                className={`w-4 h-4 ${
+                  isPrivate
+                    ? 'text-[#6E4C8E] dark:text-[#C6A4EA]'
+                    : 'text-[#525E56] dark:text-[#9BA79F]'
+                }`}
+                aria-hidden="true"
+              />
+              <span>Privat bokning (syns bara för mig)</span>
+            </div>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={isPrivate}
+              onChange={(e) => setIsPrivate(e.target.checked)}
+              className="sr-only peer"
+            />
+            <span className="w-10 h-6 rounded-full bg-[#18221C]/20 dark:bg-[#E3EAE5]/20 peer-checked:bg-[#6E4C8E] dark:peer-checked:bg-[#C6A4EA] relative transition-colors shrink-0 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
+          </label>
+
           <button
             type="submit"
             disabled={saving || !title.trim()}
-            className="min-h-[42px] rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-sm font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            className={`min-h-[42px] rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer transition-colors ${
+              isPrivate
+                ? 'bg-[#6E4C8E] dark:bg-[#C6A4EA] text-white dark:text-[#2B1245]'
+                : 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]'
+            }`}
           >
             <Plus className="w-4 h-4" />
-            <span>{saving ? 'Sparar & notifierar...' : 'Lägg till i gemensam kalender'}</span>
+            <span>
+              {saving
+                ? 'Sparar...'
+                : isPrivate
+                  ? 'Lägg till privat bokning'
+                  : 'Lägg till i gemensam kalender'}
+            </span>
           </button>
         </form>
 
@@ -419,14 +529,6 @@ export function HouseholdCalendar({
             <h3 className="text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]">
               Bokningar {selectedDate} ({selectedDayEvents.length})
             </h3>
-            <div className="flex items-center gap-2 text-[10px]">
-              <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-[#2E6B4E] dark:bg-[#8FD4AE]" /> Dina
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-[#264E70] dark:bg-[#9ECAFF]" /> Partner
-              </span>
-            </div>
           </div>
 
           {selectedDayEvents.length === 0 ? (
@@ -438,12 +540,28 @@ export function HouseholdCalendar({
               {selectedDayEvents.map((ev) => (
                 <div
                   key={ev.id}
-                  className="rounded-2xl bg-[#F6F7F4] dark:bg-[#212723] p-3 flex items-start justify-between gap-3"
+                  className={`rounded-2xl p-3 flex items-start justify-between gap-3 border ${
+                    ev.is_private
+                      ? 'bg-[#F3EDF8] dark:bg-[#261E31] border-[#6E4C8E]/20 dark:border-[#C6A4EA]/20'
+                      : 'bg-[#F6F7F4] dark:bg-[#212723] border-transparent'
+                  }`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
+                      {ev.is_private && (
+                        <Lock
+                          className="w-3.5 h-3.5 text-[#6E4C8E] dark:text-[#C6A4EA] shrink-0"
+                          aria-label="Privat bokning"
+                        />
+                      )}
                       {ev.event_time && (
-                        <span className="inline-flex items-center gap-1 text-xs font-mono-tabular font-semibold text-[#2E6B4E] dark:text-[#8FD4AE]">
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs font-mono-tabular font-semibold ${
+                            ev.is_private
+                              ? 'text-[#6E4C8E] dark:text-[#C6A4EA]'
+                              : 'text-[#2E6B4E] dark:text-[#8FD4AE]'
+                          }`}
+                        >
                           <Clock className="w-3.5 h-3.5" />
                           {ev.event_time}
                         </span>
@@ -455,7 +573,11 @@ export function HouseholdCalendar({
                     )}
                     <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] mt-1.5 flex items-center gap-1.5">
                       <Bell className="w-3 h-3" />
-                      <span>Inlagd av {ev.created_by.split('@')[0]}</span>
+                      <span>
+                        {ev.is_private
+                          ? 'Privat bokning (visas bara för dig)'
+                          : `Inlagd av ${ev.created_by.split('@')[0]}`}
+                      </span>
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

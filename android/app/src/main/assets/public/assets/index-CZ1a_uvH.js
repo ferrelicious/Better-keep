@@ -11734,6 +11734,34 @@ var Download = createLucideIcon("download", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var FileText = createLucideIcon("file-text", [
+	["path", {
+		d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",
+		key: "1rqfz7"
+	}],
+	["path", {
+		d: "M14 2v4a2 2 0 0 0 2 2h4",
+		key: "tnqrlb"
+	}],
+	["path", {
+		d: "M10 9H8",
+		key: "b1mrlr"
+	}],
+	["path", {
+		d: "M16 13H8",
+		key: "t4e002"
+	}],
+	["path", {
+		d: "M16 17H8",
+		key: "z1uh3a"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var FileUp = createLucideIcon("file-up", [
 	["path", {
 		d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",
@@ -11764,6 +11792,22 @@ var House = createLucideIcon("house", [["path", {
 }], ["path", {
 	d: "M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
 	key: "r6nss1"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var KeyRound = createLucideIcon("key-round", [["path", {
+	d: "M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z",
+	key: "1s6t7t"
+}], ["circle", {
+	cx: "16.5",
+	cy: "7.5",
+	r: ".5",
+	fill: "currentColor",
+	key: "w0ekpg"
 }]]);
 /**
 * @license lucide-react v0.546.0 - ISC
@@ -11870,9 +11914,43 @@ var MessageCircle = createLucideIcon("message-circle", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Mic = createLucideIcon("mic", [
+	["path", {
+		d: "M12 19v3",
+		key: "npa21l"
+	}],
+	["path", {
+		d: "M19 10v2a7 7 0 0 1-14 0v-2",
+		key: "1vc78b"
+	}],
+	["rect", {
+		x: "9",
+		y: "2",
+		width: "6",
+		height: "13",
+		rx: "3",
+		key: "s6n7sd"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Moon = createLucideIcon("moon", [["path", {
 	d: "M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401",
 	key: "kfwtm"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Paperclip = createLucideIcon("paperclip", [["path", {
+	d: "m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551",
+	key: "1miecu"
 }]]);
 /**
 * @license lucide-react v0.546.0 - ISC
@@ -12019,6 +12097,20 @@ var Sparkles = createLucideIcon("sparkles", [
 		key: "6kqj1y"
 	}]
 ]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Square = createLucideIcon("square", [["rect", {
+	width: "18",
+	height: "18",
+	x: "3",
+	y: "3",
+	rx: "2",
+	key: "afitv7"
+}]]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -12751,13 +12843,29 @@ function HouseholdCalendar({ events, householdName, userEmail, onAddEvent, onDel
 	const todayStr = (0, import_react.useMemo)(() => toYMD(/* @__PURE__ */ new Date()), []);
 	const [viewDate, setViewDate] = (0, import_react.useState)(() => /* @__PURE__ */ new Date());
 	const [selectedDate, setSelectedDate] = (0, import_react.useState)(todayStr);
+	const [calendarFilter, setCalendarFilter] = (0, import_react.useState)("all");
 	const [title, setTitle] = (0, import_react.useState)("");
 	const [time, setTime] = (0, import_react.useState)("14:00");
 	const [notes, setNotes] = (0, import_react.useState)("");
 	const [remindBefore, setRemindBefore] = (0, import_react.useState)(60);
+	const [isPrivate, setIsPrivate] = (0, import_react.useState)(false);
 	const [saving, setSaving] = (0, import_react.useState)(false);
 	const year = viewDate.getFullYear();
 	const month = viewDate.getMonth();
+	const visibleEvents = (0, import_react.useMemo)(() => {
+		const myEmail = (userEmail ?? "").toLowerCase();
+		return events.filter((ev) => {
+			const isMine = ev.created_by.toLowerCase() === myEmail;
+			if (ev.is_private && !isMine) return false;
+			if (calendarFilter === "shared") return !ev.is_private;
+			if (calendarFilter === "private") return Boolean(ev.is_private) && isMine;
+			return true;
+		});
+	}, [
+		events,
+		userEmail,
+		calendarFilter
+	]);
 	const weeks = (0, import_react.useMemo)(() => {
 		const startOffset = (new Date(year, month, 1).getDay() + 6) % 7;
 		const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -12790,14 +12898,14 @@ function HouseholdCalendar({ events, householdName, userEmail, onAddEvent, onDel
 	}, [year, month]);
 	const eventsByDate = (0, import_react.useMemo)(() => {
 		const map = /* @__PURE__ */ new Map();
-		for (const ev of events) {
+		for (const ev of visibleEvents) {
 			const list = map.get(ev.event_date) ?? [];
 			list.push(ev);
 			map.set(ev.event_date, list);
 		}
 		for (const list of map.values()) list.sort((a, b) => (a.event_time || "99:99").localeCompare(b.event_time || "99:99"));
 		return map;
-	}, [events]);
+	}, [visibleEvents]);
 	const selectedDayEvents = eventsByDate.get(selectedDate) ?? [];
 	const handleCreate = async (e) => {
 		e.preventDefault();
@@ -12809,7 +12917,8 @@ function HouseholdCalendar({ events, householdName, userEmail, onAddEvent, onDel
 				notes: notes.trim(),
 				event_date: selectedDate,
 				event_time: time,
-				remind_before_minutes: remindBefore
+				remind_before_minutes: remindBefore,
+				is_private: isPrivate
 			});
 			setTitle("");
 			setNotes("");
@@ -12842,390 +12951,450 @@ function HouseholdCalendar({ events, householdName, userEmail, onAddEvent, onDel
 	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex flex-col gap-5",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden shadow-xs",
-			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-2.5",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, { className: "w-5 h-5 text-[#2E6B4E] dark:text-[#8FD4AE]" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
-							className: "font-display text-lg sm:text-xl font-bold",
-							children: [
-								MONTHS[month],
-								" ",
-								year
-							]
-						})]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-1.5",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => {
-									const now = /* @__PURE__ */ new Date();
-									setViewDate(now);
-									setSelectedDate(toYMD(now));
-								},
-								className: "px-3 py-1.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-xs font-semibold cursor-pointer",
-								children: "Idag"
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setViewDate(new Date(year, month - 1, 1)),
-								"aria-label": "Föregående månad",
-								className: "w-9 h-9 rounded-xl flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] cursor-pointer",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronLeft, { className: "w-4 h-4" })
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setViewDate(new Date(year, month + 1, 1)),
-								"aria-label": "Nästa månad",
-								className: "w-9 h-9 rounded-xl flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] cursor-pointer",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronRight, { className: "w-4 h-4" })
-							})
-						]
-					})]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "grid grid-cols-[30px_repeat(7,minmax(0,1fr))] sm:grid-cols-[38px_repeat(7,minmax(0,1fr))] bg-[#F6F7F4] dark:bg-[#141816] border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-center",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "text-[10px] font-semibold text-[#525E56] dark:text-[#9BA79F] py-2",
-						children: "v."
-					}), WEEKDAYS.map((wd, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: `text-[11px] font-semibold py-2 ${idx >= 5 ? "text-[#B3261E] dark:text-[#F2B8B5]" : "text-[#525E56] dark:text-[#9BA79F]"}`,
-						children: wd
-					}, wd))]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "divide-y divide-[#18221C]/10 dark:divide-[#E3EAE5]/10",
-					children: weeks.map((week, wIdx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "grid grid-cols-[30px_repeat(7,minmax(0,1fr))] sm:grid-cols-[38px_repeat(7,minmax(0,1fr))]",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "flex items-start justify-center pt-2 text-[10px] font-mono-tabular text-[#525E56] dark:text-[#9BA79F] bg-[#F6F7F4]/60 dark:bg-[#141816]/60 border-r border-[#18221C]/10 dark:border-[#E3EAE5]/10",
-							children: week.weekNum
-						}), week.days.map((cell, dIdx) => {
-							if (!cell.dateStr || !cell.dayNum) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "min-h-[68px] sm:min-h-[88px] bg-[#F6F7F4]/30 dark:bg-[#111412]/30 border-r last:border-r-0 border-[#18221C]/10 dark:border-[#E3EAE5]/10" }, `empty-${wIdx}-${dIdx}`);
-							const dayEvents = eventsByDate.get(cell.dateStr) ?? [];
-							const isSelected = cell.dateStr === selectedDate;
-							const isToday = cell.dateStr === todayStr;
-							return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: () => setSelectedDate(cell.dateStr),
-								className: `min-h-[68px] sm:min-h-[88px] p-1 sm:p-1.5 flex flex-col items-stretch text-left border-r last:border-r-0 border-[#18221C]/10 dark:border-[#E3EAE5]/10 transition cursor-pointer overflow-hidden ${isSelected ? "bg-[#D3EBD9]/55 dark:bg-[#1C4A34]/45 ring-2 ring-inset ring-[#2E6B4E] dark:ring-[#8FD4AE]" : "hover:bg-[#ECEFE9]/60 dark:hover:bg-[#212723]/60"}`,
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: `self-center sm:self-start w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono-tabular mb-1 ${isToday ? "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] font-bold" : dIdx >= 5 ? "text-[#B3261E] dark:text-[#F2B8B5] font-medium" : "font-medium"}`,
-									children: cell.dayNum
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex flex-col gap-0.5 w-full overflow-hidden",
-									children: [dayEvents.slice(0, 2).map((ev) => {
-										const isMine = ev.created_by.toLowerCase() === userEmail.toLowerCase();
-										return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: `px-1 py-0.5 rounded text-[9px] sm:text-[11px] font-medium truncate leading-tight ${isMine ? "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]" : "bg-[#264E70] dark:bg-[#9ECAFF] text-white dark:text-[#003258]"}`,
-											children: [ev.event_time ? `${ev.event_time} ` : "", ev.title]
-										}, ev.id);
-									}), dayEvents.length > 2 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-										className: "text-[9px] font-semibold text-[#525E56] dark:text-[#9BA79F] px-0.5",
-										children: [
-											"+",
-											dayEvents.length - 2,
-											" till"
-										]
-									})]
-								})]
-							}, cell.dateStr);
-						})]
-					}, `week-${wIdx}`))
-				})
-			]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-				onSubmit: handleCreate,
-				className: "lg:col-span-6 rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center justify-between",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-							className: "font-display text-sm font-bold",
-							children: [
-								"Ny bokning ·",
-								" ",
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "font-mono-tabular text-[#2E6B4E] dark:text-[#8FD4AE]",
-									children: selectedDate
-								})
-							]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-							className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
-							children: householdName
-						})]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-						type: "text",
-						required: true,
-						value: title,
-						onChange: (e) => setTitle(e.target.value),
-						placeholder: "T.ex. Bokad tid hos veterinären...",
-						className: "w-full h-10 px-3.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "grid grid-cols-2 gap-2.5",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-							className: "flex flex-col gap-1 text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F]",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Tid" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-								type: "time",
-								value: time,
-								onChange: (e) => setTime(e.target.value),
-								className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6]"
-							})]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-							className: "flex flex-col gap-1 text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F]",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Påminn båda" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
-								value: remindBefore,
-								onChange: (e) => setRemindBefore(Number(e.target.value)),
-								className: "h-10 px-2.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6]",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-										value: 15,
-										children: "15 min före"
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-										value: 60,
-										children: "1 timme före"
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-										value: 180,
-										children: "3 timmar före"
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-										value: 1440,
-										children: "1 dag före"
-									})
-								]
-							})]
-						})]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-						type: "text",
-						value: notes,
-						onChange: (e) => setNotes(e.target.value),
-						placeholder: "Valfri detalj (adress, kom ihåg...)",
-						className: "w-full h-10 px-3.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-						type: "submit",
-						disabled: saving || !title.trim(),
-						className: "min-h-[42px] rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-sm font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: saving ? "Sparar & notifierar..." : "Lägg till i gemensam kalender" })]
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center justify-between gap-3 flex-wrap",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					role: "tablist",
+					"aria-label": "Filtrera kalenderhändelser",
+					className: "inline-flex items-center gap-1 p-1 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723]",
+					children: [
+						{
+							id: "all",
+							label: "Alla"
+						},
+						{
+							id: "shared",
+							label: "Gemensam"
+						},
+						{
+							id: "private",
+							label: "Privat"
+						}
+					].map((tab) => {
+						const active = calendarFilter === tab.id;
+						return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							role: "tab",
+							"aria-selected": active,
+							type: "button",
+							onClick: () => setCalendarFilter(tab.id),
+							className: `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${active ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+							children: [tab.id === "private" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+								className: "w-3 h-3",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: tab.label })]
+						}, tab.id);
 					})
-				]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "lg:col-span-6 rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center justify-between",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-						className: "text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
-						children: [
-							"Bokningar ",
-							selectedDate,
-							" (",
-							selectedDayEvents.length,
-							")"
-						]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-2 text-[10px]",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-3 text-[11px] text-[#525E56] dark:text-[#9BA79F]",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
 							className: "inline-flex items-center gap-1",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-2 h-2 rounded-full bg-[#2E6B4E] dark:bg-[#8FD4AE]" }), " Dina"]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
 							className: "inline-flex items-center gap-1",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-2 h-2 rounded-full bg-[#264E70] dark:bg-[#9ECAFF]" }), " Partner"]
-						})]
-					})]
-				}), selectedDayEvents.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					className: "text-sm text-[#525E56] dark:text-[#9BA79F] py-2",
-					children: "Inga bokningar inlagda denna dag. Tryck på valfri dag i kalendern ovan för att boka."
-				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "flex flex-col gap-2.5",
-					children: selectedDayEvents.map((ev) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "rounded-2xl bg-[#F6F7F4] dark:bg-[#212723] p-3 flex items-start justify-between gap-3",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "min-w-0",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center gap-2",
-									children: [ev.event_time && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-										className: "inline-flex items-center gap-1 text-xs font-mono-tabular font-semibold text-[#2E6B4E] dark:text-[#8FD4AE]",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Clock, { className: "w-3.5 h-3.5" }), ev.event_time]
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-										className: "text-sm font-semibold truncate",
-										children: ev.title
-									})]
-								}),
-								ev.notes && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "text-xs text-[#525E56] dark:text-[#9BA79F] mt-1",
-									children: ev.notes
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-									className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] mt-1.5 flex items-center gap-1.5",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bell, { className: "w-3 h-3" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: ["Inlagd av ", ev.created_by.split("@")[0]] })]
-								})
-							]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-center gap-1 shrink-0",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => exportToPhoneCalendar(ev),
-								title: "Lägg i telefonens kalender (Samsung/Google)",
-								"aria-label": "Lägg i telefonens kalender",
-								className: "w-8 h-8 rounded-lg flex items-center justify-center text-[#2E6B4E] dark:text-[#8FD4AE] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CalendarPlus, { className: "w-4 h-4" })
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => onDeleteEvent(ev.id),
-								"aria-label": "Ta bort bokning",
-								className: "w-8 h-8 rounded-lg flex items-center justify-center text-[#525E56] hover:text-red-600 cursor-pointer",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-4 h-4" })
-							})]
-						})]
-					}, ev.id))
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "inline-flex items-center gap-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-2 h-2 rounded-full bg-[#6E4C8E] dark:bg-[#C6A4EA]" }), " Privat"]
+						})
+					]
 				})]
-			})]
-		})]
-	});
-}
-// src/components/HouseholdChat.tsx
-function formatMsgTime(iso) {
-	const d = new Date(iso);
-	if (Number.isNaN(d.getTime())) return "";
-	return d.toLocaleTimeString("sv-SE", {
-		hour: "2-digit",
-		minute: "2-digit"
-	});
-}
-function HouseholdChat({ messages, householdName, userEmail, onSendMessage, onSaveAsNote, onOpenHouseholdModal }) {
-	const [text, setText] = (0, import_react.useState)("");
-	const [sending, setSending] = (0, import_react.useState)(false);
-	const bottomRef = (0, import_react.useRef)(null);
-	(0, import_react.useEffect)(() => {
-		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messages.length]);
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		const clean = text.trim();
-		if (!clean || sending) return;
-		setSending(true);
-		setText("");
-		try {
-			await onSendMessage(clean);
-		} finally {
-			setSending(false);
-		}
-	};
-	if (!userEmail || !householdName) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-6 text-center flex flex-col items-center gap-3 max-w-md mx-auto",
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "w-12 h-12 rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, { className: "w-6 h-6" })
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-				className: "font-display text-lg font-bold",
-				children: "Familjechatt"
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				className: "text-sm text-[#525E56] dark:text-[#9BA79F]",
-				children: "Koppla ihop ert hushåll för att skicka snabba meddelanden i realtid direkt inuti BetterKeep."
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-				type: "button",
-				onClick: onOpenHouseholdModal,
-				className: "min-h-[42px] px-5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-sm font-semibold cursor-pointer",
-				children: "Koppla hushåll nu"
-			})
-		]
-	});
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "max-w-3xl w-full mx-auto rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden flex flex-col h-[68vh] min-h-[420px]",
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "px-4 sm:px-5 py-3.5 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center justify-between bg-[#F6F7F4]/60 dark:bg-[#141816]/60",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-2.5",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MessageCircle, { className: "w-5 h-5 text-[#2E6B4E] dark:text-[#8FD4AE]" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
-						className: "font-display text-sm sm:text-base font-bold",
-						children: [householdName, " · Chatt"]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
-						children: "Realtidsmeddelanden för hushållet"
-					})] })]
-				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex-1 overflow-y-auto p-4 space-y-3",
-				children: [messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "h-full flex flex-col items-center justify-center text-center text-sm text-[#525E56] dark:text-[#9BA79F] px-6",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Inga meddelanden ännu." }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-xs mt-1",
-						children: "Skriv något nedan så plingar det till hos din partner!"
-					})]
-				}) : messages.map((msg) => {
-					const isMine = msg.sender_email.toLowerCase() === userEmail.toLowerCase();
-					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: `flex flex-col ${isMine ? "items-end" : "items-start"}`,
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-							className: "text-[10px] text-[#525E56] dark:text-[#9BA79F] px-1 mb-0.5",
-							children: [
-								isMine ? "Du" : msg.sender_email.split("@")[0],
-								" · ",
-								formatMsgTime(msg.created_at)
-							]
+				className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden shadow-xs",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, { className: "w-5 h-5 text-[#2E6B4E] dark:text-[#8FD4AE]" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
+								className: "font-display text-lg sm:text-xl font-bold",
+								children: [
+									MONTHS[month],
+									" ",
+									year
+								]
+							})]
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "group flex items-center gap-1.5 max-w-[82%]",
+							className: "flex items-center gap-1.5",
 							children: [
-								isMine && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 									type: "button",
-									onClick: () => onSaveAsNote(msg.body),
-									title: "Spara som anteckning",
-									className: "opacity-60 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-3.5 h-3.5" })
+									onClick: () => {
+										const now = /* @__PURE__ */ new Date();
+										setViewDate(now);
+										setSelectedDate(toYMD(now));
+									},
+									className: "px-3 py-1.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-xs font-semibold cursor-pointer",
+									children: "Idag"
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: `px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap break-words ${isMine ? "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] rounded-br-sm" : "bg-[#ECEFE9] dark:bg-[#212723] text-[#171D19] dark:text-[#E4EBE6] rounded-bl-sm"}`,
-									children: msg.body
-								}),
-								!isMine && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 									type: "button",
-									onClick: () => onSaveAsNote(msg.body),
-									title: "Spara som anteckning",
-									className: "opacity-60 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-3.5 h-3.5" })
+									onClick: () => setViewDate(new Date(year, month - 1, 1)),
+									"aria-label": "Föregående månad",
+									className: "w-9 h-9 rounded-xl flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] cursor-pointer",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronLeft, { className: "w-4 h-4" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setViewDate(new Date(year, month + 1, 1)),
+									"aria-label": "Nästa månad",
+									className: "w-9 h-9 rounded-xl flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] cursor-pointer",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronRight, { className: "w-4 h-4" })
 								})
 							]
 						})]
-					}, msg.id);
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: bottomRef })]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "grid grid-cols-[30px_repeat(7,minmax(0,1fr))] sm:grid-cols-[38px_repeat(7,minmax(0,1fr))] bg-[#F6F7F4] dark:bg-[#141816] border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-center",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "text-[10px] font-semibold text-[#525E56] dark:text-[#9BA79F] py-2",
+							children: "v."
+						}), WEEKDAYS.map((wd, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: `text-[11px] font-semibold py-2 ${idx >= 5 ? "text-[#B3261E] dark:text-[#F2B8B5]" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+							children: wd
+						}, wd))]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "divide-y divide-[#18221C]/10 dark:divide-[#E3EAE5]/10",
+						children: weeks.map((week, wIdx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "grid grid-cols-[30px_repeat(7,minmax(0,1fr))] sm:grid-cols-[38px_repeat(7,minmax(0,1fr))]",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "flex items-start justify-center pt-2 text-[10px] font-mono-tabular text-[#525E56] dark:text-[#9BA79F] bg-[#F6F7F4]/60 dark:bg-[#141816]/60 border-r border-[#18221C]/10 dark:border-[#E3EAE5]/10",
+								children: week.weekNum
+							}), week.days.map((cell, dIdx) => {
+								if (!cell.dateStr || !cell.dayNum) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "min-h-[68px] sm:min-h-[88px] bg-[#F6F7F4]/30 dark:bg-[#111412]/30 border-r last:border-r-0 border-[#18221C]/10 dark:border-[#E3EAE5]/10" }, `empty-${wIdx}-${dIdx}`);
+								const dayEvents = eventsByDate.get(cell.dateStr) ?? [];
+								const isSelected = cell.dateStr === selectedDate;
+								const isToday = cell.dateStr === todayStr;
+								return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => setSelectedDate(cell.dateStr),
+									className: `min-h-[68px] sm:min-h-[88px] p-1 sm:p-1.5 flex flex-col items-stretch text-left border-r last:border-r-0 border-[#18221C]/10 dark:border-[#E3EAE5]/10 transition cursor-pointer overflow-hidden ${isSelected ? "bg-[#D3EBD9]/55 dark:bg-[#1C4A34]/45 ring-2 ring-inset ring-[#2E6B4E] dark:ring-[#8FD4AE]" : "hover:bg-[#ECEFE9]/60 dark:hover:bg-[#212723]/60"}`,
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: `self-center sm:self-start w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono-tabular mb-1 ${isToday ? "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] font-bold" : dIdx >= 5 ? "text-[#B3261E] dark:text-[#F2B8B5] font-medium" : "font-medium"}`,
+										children: cell.dayNum
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex flex-col gap-0.5 w-full overflow-hidden",
+										children: [dayEvents.slice(0, 2).map((ev) => {
+											const isMine = ev.created_by.toLowerCase() === userEmail.toLowerCase();
+											return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: `px-1 py-0.5 rounded text-[9px] sm:text-[11px] font-medium truncate leading-tight flex items-center gap-0.5 ${ev.is_private ? "bg-[#6E4C8E] dark:bg-[#C6A4EA] text-white dark:text-[#2B1245]" : isMine ? "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]" : "bg-[#264E70] dark:bg-[#9ECAFF] text-white dark:text-[#003258]"}`,
+												children: [ev.is_private && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+													className: "w-2.5 h-2.5 shrink-0",
+													"aria-hidden": "true"
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+													className: "truncate",
+													children: [ev.event_time ? `${ev.event_time} ` : "", ev.title]
+												})]
+											}, ev.id);
+										}), dayEvents.length > 2 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "text-[9px] font-semibold text-[#525E56] dark:text-[#9BA79F] px-0.5",
+											children: [
+												"+",
+												dayEvents.length - 2,
+												" till"
+											]
+										})]
+									})]
+								}, cell.dateStr);
+							})]
+						}, `week-${wIdx}`))
+					})
+				]
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-				onSubmit: handleSubmit,
-				className: "p-3 border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center gap-2 bg-white dark:bg-[#191D1A]",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-					type: "text",
-					value: text,
-					onChange: (e) => setText(e.target.value),
-					placeholder: "Skriv ett meddelande till partnern...",
-					className: "flex-1 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-					type: "submit",
-					disabled: !text.trim() || sending,
-					"aria-label": "Skicka meddelande",
-					className: "h-11 px-4 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] font-semibold text-sm inline-flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, { className: "w-4 h-4" })
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+					onSubmit: handleCreate,
+					className: "lg:col-span-6 rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-between",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+								className: "font-display text-sm font-bold",
+								children: [
+									"Ny bokning ·",
+									" ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "font-mono-tabular text-[#2E6B4E] dark:text-[#8FD4AE]",
+										children: selectedDate
+									})
+								]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
+								children: isPrivate ? "Privat" : householdName
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							type: "text",
+							required: true,
+							value: title,
+							onChange: (e) => setTitle(e.target.value),
+							placeholder: "T.ex. Bokad tid hos veterinären...",
+							className: "w-full h-10 px-3.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "grid grid-cols-2 gap-2.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Tid" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "time",
+									value: time,
+									onChange: (e) => setTime(e.target.value),
+									className: "h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6]"
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex flex-col gap-1 text-[11px] font-medium text-[#525E56] dark:text-[#9BA79F]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: isPrivate ? "Påminn mig" : "Påminn båda" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+									value: remindBefore,
+									onChange: (e) => setRemindBefore(Number(e.target.value)),
+									className: "h-10 px-2.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6]",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: 15,
+											children: "15 min före"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: 60,
+											children: "1 timme före"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: 180,
+											children: "3 timmar före"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+											value: 1440,
+											children: "1 dag före"
+										})
+									]
+								})]
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							type: "text",
+							value: notes,
+							onChange: (e) => setNotes(e.target.value),
+							placeholder: "Valfri detalj (adress, kom ihåg...)",
+							className: "w-full h-10 px-3.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex items-center justify-between gap-3 rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 px-3.5 py-2.5 cursor-pointer select-none",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2 text-xs font-medium",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+										className: `w-4 h-4 ${isPrivate ? "text-[#6E4C8E] dark:text-[#C6A4EA]" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Privat bokning (syns bara för mig)" })]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "checkbox",
+									role: "switch",
+									checked: isPrivate,
+									onChange: (e) => setIsPrivate(e.target.checked),
+									className: "sr-only peer"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-10 h-6 rounded-full bg-[#18221C]/20 dark:bg-[#E3EAE5]/20 peer-checked:bg-[#6E4C8E] dark:peer-checked:bg-[#C6A4EA] relative transition-colors shrink-0 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" })
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "submit",
+							disabled: saving || !title.trim(),
+							className: `min-h-[42px] rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer transition-colors ${isPrivate ? "bg-[#6E4C8E] dark:bg-[#C6A4EA] text-white dark:text-[#2B1245]" : "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822]"}`,
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: saving ? "Sparar..." : isPrivate ? "Lägg till privat bokning" : "Lägg till i gemensam kalender" })]
+						})
+					]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "lg:col-span-6 rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "flex items-center justify-between",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+							className: "text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+							children: [
+								"Bokningar ",
+								selectedDate,
+								" (",
+								selectedDayEvents.length,
+								")"
+							]
+						})
+					}), selectedDayEvents.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-[#525E56] dark:text-[#9BA79F] py-2",
+						children: "Inga bokningar inlagda denna dag. Tryck på valfri dag i kalendern ovan för att boka."
+					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "flex flex-col gap-2.5",
+						children: selectedDayEvents.map((ev) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: `rounded-2xl p-3 flex items-start justify-between gap-3 border ${ev.is_private ? "bg-[#F3EDF8] dark:bg-[#261E31] border-[#6E4C8E]/20 dark:border-[#C6A4EA]/20" : "bg-[#F6F7F4] dark:bg-[#212723] border-transparent"}`,
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-2",
+										children: [
+											ev.is_private && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+												className: "w-3.5 h-3.5 text-[#6E4C8E] dark:text-[#C6A4EA] shrink-0",
+												"aria-label": "Privat bokning"
+											}),
+											ev.event_time && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+												className: `inline-flex items-center gap-1 text-xs font-mono-tabular font-semibold ${ev.is_private ? "text-[#6E4C8E] dark:text-[#C6A4EA]" : "text-[#2E6B4E] dark:text-[#8FD4AE]"}`,
+												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Clock, { className: "w-3.5 h-3.5" }), ev.event_time]
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-sm font-semibold truncate",
+												children: ev.title
+											})
+										]
+									}),
+									ev.notes && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "text-xs text-[#525E56] dark:text-[#9BA79F] mt-1",
+										children: ev.notes
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+										className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] mt-1.5 flex items-center gap-1.5",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bell, { className: "w-3 h-3" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: ev.is_private ? "Privat bokning (visas bara för dig)" : `Inlagd av ${ev.created_by.split("@")[0]}` })]
+									})
+								]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-1 shrink-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => exportToPhoneCalendar(ev),
+									title: "Lägg i telefonens kalender (Samsung/Google)",
+									"aria-label": "Lägg i telefonens kalender",
+									className: "w-8 h-8 rounded-lg flex items-center justify-center text-[#2E6B4E] dark:text-[#8FD4AE] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CalendarPlus, { className: "w-4 h-4" })
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => onDeleteEvent(ev.id),
+									"aria-label": "Ta bort bokning",
+									className: "w-8 h-8 rounded-lg flex items-center justify-center text-[#525E56] hover:text-red-600 cursor-pointer",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-4 h-4" })
+								})]
+							})]
+						}, ev.id))
+					})]
 				})]
 			})
 		]
 	});
+}
+// src/services/crypto.ts
+var encoder = new TextEncoder();
+var decoder = new TextDecoder();
+var PASSPHRASE_PREFIX = "betterkeep_hh_passphrase_";
+function getHouseholdPassphrase(householdId) {
+	try {
+		return localStorage.getItem(`${PASSPHRASE_PREFIX}${householdId}`) ?? "";
+	} catch {
+		return "";
+	}
+}
+function setHouseholdPassphrase(householdId, passphrase) {
+	try {
+		const trimmed = passphrase.trim();
+		if (trimmed) localStorage.setItem(`${PASSPHRASE_PREFIX}${householdId}`, trimmed);
+		else localStorage.removeItem(`${PASSPHRASE_PREFIX}${householdId}`);
+	} catch {}
+}
+function resolveHouseholdSecret(household) {
+	const baseSecret = household.encryption_secret?.trim() || household.id;
+	const personalPassphrase = getHouseholdPassphrase(household.id).trim();
+	if (personalPassphrase) return `${baseSecret}::${personalPassphrase}`;
+	return baseSecret;
+}
+function bytesToBase64(bytes) {
+	let binary = "";
+	const chunkSize = 32768;
+	for (let i = 0; i < bytes.length; i += chunkSize) {
+		const chunk = bytes.subarray(i, i + chunkSize);
+		binary += String.fromCharCode(...chunk);
+	}
+	return btoa(binary);
+}
+function base64ToBytes(base64) {
+	const binary = atob(base64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+	return bytes;
+}
+async function deriveAesKey(secret) {
+	const secretBytes = encoder.encode(secret);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", secretBytes);
+	return crypto.subtle.importKey("raw", hashBuffer, {
+		name: "AES-GCM",
+		length: 256
+	}, false, ["encrypt", "decrypt"]);
+}
+async function encryptText(plainText, secret) {
+	const key = await deriveAesKey(secret);
+	const iv = crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(12));
+	const encoded = encoder.encode(plainText);
+	const cipherBuffer = await crypto.subtle.encrypt({
+		name: "AES-GCM",
+		iv
+	}, key, encoded);
+	const cipherBytes = new Uint8Array(cipherBuffer);
+	return `${bytesToBase64(iv)}:${bytesToBase64(cipherBytes)}`;
+}
+async function decryptText(payload, secret) {
+	if (!payload || !payload.includes(":")) return payload;
+	const colonIdx = payload.indexOf(":");
+	const ivPart = payload.slice(0, colonIdx);
+	const cipherPart = payload.slice(colonIdx + 1);
+	if (!ivPart || !cipherPart) return payload;
+	const key = await deriveAesKey(secret);
+	const iv = base64ToBytes(ivPart);
+	const cipherBytes = base64ToBytes(cipherPart);
+	const decryptedBuffer = await crypto.subtle.decrypt({
+		name: "AES-GCM",
+		iv: new Uint8Array(iv)
+	}, key, new Uint8Array(cipherBytes));
+	return decoder.decode(decryptedBuffer);
+}
+async function encryptBlob(blob, secret) {
+	const key = await deriveAesKey(secret);
+	const iv = crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(12));
+	const plainBuffer = await blob.arrayBuffer();
+	const cipherBuffer = await crypto.subtle.encrypt({
+		name: "AES-GCM",
+		iv
+	}, key, plainBuffer);
+	const combined = new Uint8Array(iv.byteLength + cipherBuffer.byteLength);
+	combined.set(iv, 0);
+	combined.set(new Uint8Array(cipherBuffer), iv.byteLength);
+	return new Blob([combined], { type: "application/octet-stream" });
+}
+async function decryptBlob(encryptedBlob, secret, mimeType = "application/octet-stream") {
+	const key = await deriveAesKey(secret);
+	const fullBuffer = await encryptedBlob.arrayBuffer();
+	if (fullBuffer.byteLength <= 12) throw new Error("Ogiltig krypterad fil");
+	const iv = new Uint8Array(fullBuffer.slice(0, 12));
+	const cipherBytes = new Uint8Array(fullBuffer.slice(12));
+	const decryptedBuffer = await crypto.subtle.decrypt({
+		name: "AES-GCM",
+		iv
+	}, key, cipherBytes);
+	return new Blob([decryptedBuffer], { type: mimeType });
+}
+function inferMimeTypeFromFilename(filename, fallbackType) {
+	const lower = filename.toLowerCase();
+	if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+	if (lower.endsWith(".png")) return "image/png";
+	if (lower.endsWith(".webp")) return "image/webp";
+	if (lower.endsWith(".gif")) return "image/gif";
+	if (lower.endsWith(".webm")) return "audio/webm";
+	if (lower.endsWith(".ogg")) return "audio/ogg";
+	if (lower.endsWith(".m4a") || lower.endsWith(".mp4")) return "audio/mp4";
+	if (lower.endsWith(".mp3")) return "audio/mpeg";
+	if (lower.endsWith(".wav")) return "audio/wav";
+	if (lower.endsWith(".pdf")) return "application/pdf";
+	if (fallbackType === "image") return "image/jpeg";
+	if (fallbackType === "audio") return "audio/webm";
+	return "application/octet-stream";
 }
 // node_modules/@supabase/supabase-js/dist/tracingRegistry.mjs
 var EXTRACTOR_KEY = Symbol.for("@supabase/supabase-js.traceContextExtractor");
@@ -34817,6 +34986,13 @@ function shouldShowDeprecationWarning() {
 }
 if (shouldShowDeprecationWarning()) console.warn("⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715");
 var supabase = createClient("https://cpzjxjctjmxxpjjvdvjm.supabase.co", "sb_publishable_-wXq5Dn5SRGegTHXEinHVA_340FkdZC");
+function generateRandomSecret() {
+	const bytes = /* @__PURE__ */ new Uint8Array(32);
+	crypto.getRandomValues(bytes);
+	let binary = "";
+	for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+	return btoa(binary);
+}
 async function getUserHousehold(email) {
 	const cleanEmail = email.trim().toLowerCase();
 	const { data: owned } = await supabase.from("households").select("*").eq("owner_email", cleanEmail).limit(1).maybeSingle();
@@ -34834,14 +35010,17 @@ async function getUserHousehold(email) {
 		id: household.id,
 		name: household.name,
 		owner_email: household.owner_email,
+		encryption_secret: household.encryption_secret ?? null,
 		members: members ?? []
 	};
 }
 async function createHousehold(name, ownerEmail) {
 	const cleanEmail = ownerEmail.trim().toLowerCase();
+	const generatedSecret = generateRandomSecret();
 	const { data, error } = await supabase.from("households").insert({
 		name: name.trim() || "Vårt hushåll",
-		owner_email: cleanEmail
+		owner_email: cleanEmail,
+		encryption_secret: generatedSecret
 	}).select().single();
 	if (error) throw error;
 	await supabase.from("household_members").insert({
@@ -34853,6 +35032,7 @@ async function createHousehold(name, ownerEmail) {
 		id: data.id,
 		name: data.name,
 		owner_email: data.owner_email,
+		encryption_secret: data.encryption_secret ?? generatedSecret,
 		members: [{
 			id: "self",
 			member_email: cleanEmail,
@@ -34891,6 +35071,522 @@ async function upsertCloudNote(note, ownerEmail, householdId) {
 async function deleteCloudNote(noteId) {
 	const { error } = await supabase.from("notes").delete().eq("id", noteId);
 	if (error) throw error;
+}
+// src/components/HouseholdChat.tsx
+function formatMsgTime(iso) {
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return "";
+	return d.toLocaleTimeString("sv-SE", {
+		hour: "2-digit",
+		minute: "2-digit"
+	});
+}
+function formatDuration(sec) {
+	const m = Math.floor(sec / 60);
+	const s = sec % 60;
+	return `${m}:${String(s).padStart(2, "0")}`;
+}
+function EncryptedMessageBubble({ msg, isMine, encryptionSecret, onSaveAsNote, onPreviewImage }) {
+	const [decryptedBody, setDecryptedBody] = (0, import_react.useState)(() => msg.is_encrypted ? "" : msg.body);
+	const [decryptedName, setDecryptedName] = (0, import_react.useState)("Fil");
+	const [decryptFailed, setDecryptFailed] = (0, import_react.useState)(false);
+	const [mediaUrl, setMediaUrl] = (0, import_react.useState)(null);
+	const [mediaLoading, setMediaLoading] = (0, import_react.useState)(false);
+	const [mediaError, setMediaError] = (0, import_react.useState)(null);
+	(0, import_react.useEffect)(() => {
+		let active = true;
+		(async () => {
+			if (!msg.is_encrypted) {
+				if (active) {
+					setDecryptedBody(msg.body);
+					setDecryptedName(msg.attachment_name || "Fil");
+					setDecryptFailed(false);
+				}
+				return;
+			}
+			if (!encryptionSecret) {
+				if (active) {
+					setDecryptedBody("Låst meddelande");
+					setDecryptFailed(true);
+				}
+				return;
+			}
+			try {
+				const plainBody = msg.body ? await decryptText(msg.body, encryptionSecret) : "";
+				const plainName = msg.attachment_name ? await decryptText(msg.attachment_name, encryptionSecret) : "Bilaga";
+				if (active) {
+					setDecryptedBody(plainBody);
+					setDecryptedName(plainName);
+					setDecryptFailed(false);
+				}
+			} catch {
+				if (active) {
+					setDecryptedBody("Kunde inte dekryptera meddelandet (kontrollera lösenfras).");
+					setDecryptedName("Krypterad fil");
+					setDecryptFailed(true);
+				}
+			}
+		})();
+		return () => {
+			active = false;
+		};
+	}, [
+		msg.body,
+		msg.attachment_name,
+		msg.is_encrypted,
+		encryptionSecret
+	]);
+	(0, import_react.useEffect)(() => {
+		let active = true;
+		let createdUrl = null;
+		if (!msg.attachment_url || !encryptionSecret || decryptFailed) {
+			setMediaUrl(null);
+			return;
+		}
+		(async () => {
+			setMediaLoading(true);
+			setMediaError(null);
+			try {
+				const { data, error } = await supabase.storage.from("household-media").download(msg.attachment_url);
+				if (error || !data) throw new Error(error?.message || "Kunde inte hämta krypterad bilaga");
+				const plainBlob = await decryptBlob(data, encryptionSecret, inferMimeTypeFromFilename(decryptedName, msg.attachment_type));
+				createdUrl = URL.createObjectURL(plainBlob);
+				if (active) setMediaUrl(createdUrl);
+				else URL.revokeObjectURL(createdUrl);
+			} catch {
+				if (active) setMediaError("Kunde inte dekryptera bilagan.");
+			} finally {
+				if (active) setMediaLoading(false);
+			}
+		})();
+		return () => {
+			active = false;
+			if (createdUrl) URL.revokeObjectURL(createdUrl);
+		};
+	}, [
+		msg.attachment_url,
+		msg.attachment_type,
+		decryptedName,
+		encryptionSecret,
+		decryptFailed
+	]);
+	const canSaveNote = Boolean(decryptedBody.trim()) && !decryptFailed;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: `flex flex-col ${isMine ? "items-end" : "items-start"}`,
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+			className: "text-[10px] text-[#525E56] dark:text-[#9BA79F] px-1 mb-0.5",
+			children: [
+				isMine ? "Du" : msg.sender_email.split("@")[0],
+				" · ",
+				formatMsgTime(msg.created_at)
+			]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "group flex items-center gap-1.5 max-w-[85%] sm:max-w-[75%]",
+			children: [
+				isMine && canSaveNote && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					onClick: () => onSaveAsNote(decryptedBody),
+					title: "Spara som anteckning",
+					className: "opacity-60 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-3.5 h-3.5" })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: `px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap break-words flex flex-col gap-2 ${isMine ? "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] rounded-br-sm" : "bg-[#ECEFE9] dark:bg-[#212723] text-[#171D19] dark:text-[#E4EBE6] rounded-bl-sm"}`,
+					children: [msg.attachment_url && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: mediaLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-2 text-xs opacity-80 py-1",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+							className: "w-4 h-4 animate-spin",
+							"aria-hidden": "true"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Dekrypterar bilaga..." })]
+					}) : mediaError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-xs opacity-80",
+						children: mediaError
+					}) : mediaUrl ? msg.attachment_type === "image" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: () => onPreviewImage(mediaUrl, decryptedName),
+						className: "block rounded-xl overflow-hidden max-w-[240px] cursor-pointer focus:outline-none",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+							src: mediaUrl,
+							alt: decryptedName,
+							className: "max-h-56 w-auto object-cover rounded-xl"
+						})
+					}) : msg.attachment_type === "audio" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "flex flex-col gap-1 min-w-[210px] sm:min-w-[250px]",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("audio", {
+							controls: true,
+							src: mediaUrl,
+							className: "w-full h-9"
+						})
+					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+						href: mediaUrl,
+						download: decryptedName,
+						className: `inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition ${isMine ? "bg-black/15 hover:bg-black/25 text-white dark:text-[#063822]" : "bg-white/75 dark:bg-black/25 hover:bg-white dark:hover:bg-black/40"}`,
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
+								className: "w-4 h-4 shrink-0",
+								"aria-hidden": "true"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "truncate max-w-[170px]",
+								children: decryptedName
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, {
+								className: "w-3.5 h-3.5 shrink-0",
+								"aria-hidden": "true"
+							})
+						]
+					}) : null }), decryptedBody && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: decryptFailed ? "italic opacity-80 text-xs" : "",
+						children: decryptedBody
+					})]
+				}),
+				!isMine && canSaveNote && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					onClick: () => onSaveAsNote(decryptedBody),
+					title: "Spara som anteckning",
+					className: "opacity-60 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-3.5 h-3.5" })
+				})
+			]
+		})]
+	});
+}
+function HouseholdChat({ messages, householdName, encryptionSecret, userEmail, onSendMessage, onSaveAsNote, onOpenHouseholdModal }) {
+	const [text, setText] = (0, import_react.useState)("");
+	const [sending, setSending] = (0, import_react.useState)(false);
+	const [mediaError, setMediaError] = (0, import_react.useState)(null);
+	const [lightbox, setLightbox] = (0, import_react.useState)(null);
+	const [recording, setRecording] = (0, import_react.useState)(false);
+	const [recordSeconds, setRecordSeconds] = (0, import_react.useState)(0);
+	const mediaRecorderRef = (0, import_react.useRef)(null);
+	const audioChunksRef = (0, import_react.useRef)([]);
+	const streamRef = (0, import_react.useRef)(null);
+	const timerRef = (0, import_react.useRef)(null);
+	const cancelRecordRef = (0, import_react.useRef)(false);
+	const fileInputRef = (0, import_react.useRef)(null);
+	const bottomRef = (0, import_react.useRef)(null);
+	(0, import_react.useEffect)(() => {
+		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [messages.length]);
+	(0, import_react.useEffect)(() => {
+		return () => {
+			if (timerRef.current) window.clearInterval(timerRef.current);
+			if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+		};
+	}, []);
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		const clean = text.trim();
+		if (!clean || sending) return;
+		setMediaError(null);
+		setSending(true);
+		setText("");
+		try {
+			await onSendMessage({ text: clean });
+		} catch {
+			setMediaError("Kunde inte kryptera eller skicka meddelandet.");
+		} finally {
+			setSending(false);
+		}
+	};
+	const handleFileChange = async (e) => {
+		const file = e.target.files?.[0];
+		e.target.value = "";
+		if (!file || sending) return;
+		setMediaError(null);
+		setSending(true);
+		const caption = text.trim();
+		setText("");
+		try {
+			await onSendMessage({
+				text: caption,
+				file,
+				attachmentType: file.type.startsWith("image/") ? "image" : file.type.startsWith("audio/") ? "audio" : "file",
+				originalName: file.name
+			});
+		} catch {
+			setMediaError("Kunde inte ladda upp den krypterade filen.");
+		} finally {
+			setSending(false);
+		}
+	};
+	const startRecording = async () => {
+		if (recording || sending) return;
+		setMediaError(null);
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			streamRef.current = stream;
+			const mimeType = [
+				"audio/webm;codecs=opus",
+				"audio/webm",
+				"audio/mp4",
+				"audio/ogg"
+			].find((t) => MediaRecorder.isTypeSupported(t)) || "";
+			const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+			audioChunksRef.current = [];
+			cancelRecordRef.current = false;
+			recorder.ondataavailable = (ev) => {
+				if (ev.data && ev.data.size > 0) audioChunksRef.current.push(ev.data);
+			};
+			recorder.onstop = async () => {
+				if (timerRef.current) {
+					window.clearInterval(timerRef.current);
+					timerRef.current = null;
+				}
+				stream.getTracks().forEach((t) => t.stop());
+				streamRef.current = null;
+				if (cancelRecordRef.current) {
+					audioChunksRef.current = [];
+					return;
+				}
+				const actualType = recorder.mimeType || "audio/webm";
+				const ext = actualType.includes("mp4") ? "m4a" : actualType.includes("ogg") ? "ogg" : "webm";
+				const audioBlob = new Blob(audioChunksRef.current, { type: actualType });
+				audioChunksRef.current = [];
+				if (audioBlob.size === 0) return;
+				setSending(true);
+				try {
+					await onSendMessage({
+						text: "",
+						file: audioBlob,
+						attachmentType: "audio",
+						originalName: `Rostmeddelande_${(/* @__PURE__ */ new Date()).toISOString().slice(11, 19).replace(/:/g, "-")}.${ext}`
+					});
+				} catch {
+					setMediaError("Kunde inte skicka röstmeddelandet.");
+				} finally {
+					setSending(false);
+				}
+			};
+			mediaRecorderRef.current = recorder;
+			recorder.start();
+			setRecordSeconds(0);
+			setRecording(true);
+			timerRef.current = window.setInterval(() => {
+				setRecordSeconds((s) => s + 1);
+			}, 1e3);
+		} catch {
+			setMediaError("Mikrofonåtkomst nekades eller saknas på enheten.");
+		}
+	};
+	const stopAndSendRecording = () => {
+		if (!recording || !mediaRecorderRef.current) return;
+		cancelRecordRef.current = false;
+		setRecording(false);
+		mediaRecorderRef.current.stop();
+	};
+	const cancelRecording = () => {
+		if (!recording || !mediaRecorderRef.current) return;
+		cancelRecordRef.current = true;
+		setRecording(false);
+		mediaRecorderRef.current.stop();
+	};
+	if (!userEmail || !householdName) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-6 text-center flex flex-col items-center gap-3 max-w-md mx-auto",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "w-12 h-12 rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, { className: "w-6 h-6" })
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+				className: "font-display text-lg font-bold",
+				children: "Familjechatt"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-sm text-[#525E56] dark:text-[#9BA79F]",
+				children: "Koppla ihop ert hushåll för att skicka krypterade meddelanden, bilder och röstmeddelanden i realtid."
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				type: "button",
+				onClick: onOpenHouseholdModal,
+				className: "min-h-[42px] px-5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-sm font-semibold cursor-pointer",
+				children: "Koppla hushåll nu"
+			})
+		]
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "max-w-3xl w-full mx-auto rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden flex flex-col h-[68vh] min-h-[420px]",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "px-4 sm:px-5 py-3.5 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center justify-between gap-3 bg-[#F6F7F4]/60 dark:bg-[#141816]/60",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2.5 min-w-0",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MessageCircle, { className: "w-5 h-5 text-[#2E6B4E] dark:text-[#8FD4AE] shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
+							className: "font-display text-sm sm:text-base font-bold truncate",
+							children: [householdName, " · Chatt"]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+							className: "text-[11px] font-medium text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center gap-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+								className: "w-3 h-3 shrink-0",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Krypterad hushållschatt" })]
+						})]
+					})]
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex-1 overflow-y-auto p-4 space-y-3",
+				children: [messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "h-full flex flex-col items-center justify-center text-center text-sm text-[#525E56] dark:text-[#9BA79F] px-6",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Inga meddelanden ännu." }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-xs mt-1",
+						children: "Skriv ett meddelande, skicka en bild eller spela in ett röstmeddelande!"
+					})]
+				}) : messages.map((msg) => {
+					const isMine = msg.sender_email.toLowerCase() === userEmail.toLowerCase();
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "contents",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EncryptedMessageBubble, {
+							msg,
+							isMine,
+							encryptionSecret,
+							onSaveAsNote,
+							onPreviewImage: (url, name) => setLightbox({
+								url,
+								name
+							})
+						})
+					}, msg.id);
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: bottomRef })]
+			}),
+			mediaError && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "px-4 py-2 bg-red-500/10 border-t border-red-500/20 text-xs text-red-700 dark:text-red-300 flex items-center justify-between",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: mediaError }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					onClick: () => setMediaError(null),
+					"aria-label": "Stäng felmeddelande",
+					className: "p-1 cursor-pointer",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-3.5 h-3.5" })
+				})]
+			}),
+			recording ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "p-3 border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10 bg-red-500/10 flex items-center justify-between gap-3",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2.5 text-red-700 dark:text-red-300",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						className: "text-xs sm:text-sm font-semibold",
+						children: [
+							"Spelar in ljud...",
+							" ",
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "font-mono-tabular",
+								children: formatDuration(recordSeconds)
+							})
+						]
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: cancelRecording,
+						"aria-label": "Avbryt inspelning",
+						className: "h-10 px-3 rounded-xl bg-white/80 dark:bg-black/25 text-xs font-semibold cursor-pointer",
+						children: "Avbryt"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						type: "button",
+						onClick: stopAndSendRecording,
+						className: "h-10 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Square, {
+							className: "w-3.5 h-3.5 fill-current",
+							"aria-hidden": "true"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Stoppa & skicka" })]
+					})]
+				})]
+			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+				onSubmit: handleSubmit,
+				className: "p-3 border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center gap-2 bg-white dark:bg-[#191D1A]",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+						ref: fileInputRef,
+						type: "file",
+						accept: "image/*,*/*",
+						onChange: handleFileChange,
+						className: "sr-only"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: () => fileInputRef.current?.click(),
+						disabled: sending,
+						"aria-label": "Bifoga bild eller fil",
+						title: "Bifoga bild eller fil",
+						className: "h-11 w-11 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer transition-colors",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Paperclip, {
+							className: "w-4 h-4",
+							"aria-hidden": "true"
+						})
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+						type: "text",
+						value: text,
+						onChange: (e) => setText(e.target.value),
+						placeholder: sending ? "Krypterar & skickar..." : "Skriv ett krypterat meddelande...",
+						disabled: sending,
+						className: "flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: startRecording,
+						disabled: sending,
+						"aria-label": "Spela in röstmeddelande",
+						title: "Spela in röstmeddelande",
+						className: "h-11 w-11 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer transition-colors",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mic, {
+							className: "w-4 h-4",
+							"aria-hidden": "true"
+						})
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "submit",
+						disabled: !text.trim() || sending,
+						"aria-label": "Skicka meddelande",
+						className: "h-11 px-4 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] font-semibold text-sm inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer",
+						children: sending ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+							className: "w-4 h-4 animate-spin",
+							"aria-hidden": "true"
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, {
+							className: "w-4 h-4",
+							"aria-hidden": "true"
+						})
+					})
+				]
+			}),
+			lightbox && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4",
+				onClick: () => setLightbox(null),
+				role: "dialog",
+				"aria-modal": "true",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "w-full max-w-3xl flex items-center justify-between text-white mb-3",
+					onClick: (e) => e.stopPropagation(),
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "text-sm font-medium truncate",
+						children: lightbox.name
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+							href: lightbox.url,
+							download: lightbox.name,
+							className: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-xs font-semibold",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Spara" })]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => setLightbox(null),
+							"aria-label": "Stäng förhandsvisning",
+							className: "w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center cursor-pointer",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-5 h-5" })
+						})]
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+					src: lightbox.url,
+					alt: lightbox.name,
+					onClick: (e) => e.stopPropagation(),
+					className: "max-h-[82vh] max-w-full rounded-2xl object-contain"
+				})]
+			})
+		]
+	});
 }
 // node_modules/@capacitor/core/dist/index.js
 /*! Capacitor: https://capacitorjs.com/ - MIT License */
@@ -35649,7 +36345,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	});
 };
 // node_modules/@capacitor/filesystem/dist/esm/index.js
-var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-Dr2sQZz4.js").then((m) => new m.FilesystemWeb()), []) });
+var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-sFQQPOrd.js").then((m) => new m.FilesystemWeb()), []) });
 f();
 // node_modules/@capacitor-community/file-opener/dist/esm/index.js
 var FileOpener = registerPlugin("FileOpener");
@@ -35803,6 +36499,14 @@ function HouseholdModal({ open, onClose, userEmail, household, onHouseholdUpdate
 	const [updateError, setUpdateError] = (0, import_react.useState)(null);
 	const [downloadingUpdate, setDownloadingUpdate] = (0, import_react.useState)(false);
 	const [downloadProgress, setDownloadProgress] = (0, import_react.useState)(null);
+	const [passphrase, setPassphrase] = (0, import_react.useState)("");
+	const [passphraseSaved, setPassphraseSaved] = (0, import_react.useState)(false);
+	(0, import_react.useEffect)(() => {
+		if (open && household?.id) {
+			setPassphrase(getHouseholdPassphrase(household.id));
+			setPassphraseSaved(false);
+		}
+	}, [open, household?.id]);
 	if (!open) return null;
 	const handleAuth = async (e) => {
 		e.preventDefault();
@@ -36083,6 +36787,44 @@ function HouseholdModal({ open, onClose, userEmail, household, onHouseholdUpdate
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(UserPlus, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Lägg till" })]
 									})]
 								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 p-3 flex flex-col gap-2",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-1.5 text-xs font-semibold",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(KeyRound, {
+											className: "w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]",
+											"aria-hidden": "true"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Personlig chatt-lösenfras (valfri)" })]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] leading-snug",
+										children: "Sparas endast lokalt på enheten för extra E2E-kryptering. Båda måste ange samma fras."
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "password",
+											value: passphrase,
+											onChange: (e) => {
+												setPassphrase(e.target.value);
+												setPassphraseSaved(false);
+											},
+											placeholder: "Lämna tomt för standardnyckel",
+											className: "flex-1 h-9 px-3 rounded-xl bg-white dark:bg-[#212723] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-xs focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+											type: "button",
+											onClick: () => {
+												setHouseholdPassphrase(household.id, passphrase);
+												setPassphraseSaved(true);
+												onHouseholdUpdated();
+											},
+											className: "px-3 h-9 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer",
+											children: passphraseSaved ? "Sparad" : "Spara"
+										})]
+									})
+								]
 							})
 						]
 					})]
@@ -36180,7 +36922,7 @@ var Weekday;
 	Weekday[Weekday["Saturday"] = 7] = "Saturday";
 })(Weekday || (Weekday = {}));
 // node_modules/@capacitor/local-notifications/dist/esm/index.js
-var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-DLl9_R_v.js").then((m) => new m.LocalNotificationsWeb()), []) });
+var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-Bf1q0N8_.js").then((m) => new m.LocalNotificationsWeb()), []) });
 // src/services/notifications.ts
 var URGENT_CHANNEL_ID = "betterkeep-urgent";
 var channelCreated = false;
@@ -37322,6 +38064,7 @@ function App() {
 	const [householdEvents, setHouseholdEvents] = (0, import_react.useState)([]);
 	const [householdMessages, setHouseholdMessages] = (0, import_react.useState)([]);
 	const [unreadChatCount, setUnreadChatCount] = (0, import_react.useState)(0);
+	const [passphraseVersion, setPassphraseVersion] = (0, import_react.useState)(0);
 	const [latestRelease, setLatestRelease] = (0, import_react.useState)(null);
 	const [deletedUndo, setDeletedUndo] = (0, import_react.useState)(null);
 	const [dueBannerNote, setDueBannerNote] = (0, import_react.useState)(null);
@@ -37330,6 +38073,11 @@ function App() {
 	const notifiedIdsRef = (0, import_react.useRef)(/* @__PURE__ */ new Set());
 	const undoTimerRef = (0, import_react.useRef)(null);
 	const activeTabRef = (0, import_react.useRef)("notes");
+	const householdRef = (0, import_react.useRef)(null);
+	(0, import_react.useEffect)(() => {
+		householdRef.current = household;
+	}, [household]);
+	const encryptionSecret = (0, import_react.useMemo)(() => household ? resolveHouseholdSecret(household) : null, [household, passphraseVersion]);
 	(0, import_react.useEffect)(() => {
 		ensureHighPriorityNotificationChannel();
 	}, []);
@@ -37352,11 +38100,13 @@ function App() {
 		else root.classList.remove("dark");
 		saveTheme(theme);
 	}, [theme]);
-	const fetchHouseholdEvents = (0, import_react.useCallback)(async (householdId) => {
+	const fetchHouseholdEvents = (0, import_react.useCallback)(async (householdId, currentUserEmail) => {
 		const { data, error } = await supabase.from("household_events").select("*").eq("household_id", householdId).order("event_date", { ascending: true });
 		if (!error && data) {
-			setHouseholdEvents(data);
-			for (const ev of data) await scheduleCalendarEventNotifications(ev, false);
+			const myEmail = (currentUserEmail ?? "").toLowerCase();
+			const visibleEvents = data.filter((ev) => !ev.is_private || ev.created_by.toLowerCase() === myEmail);
+			setHouseholdEvents(visibleEvents);
+			for (const ev of visibleEvents) await scheduleCalendarEventNotifications(ev, false);
 		}
 	}, []);
 	const fetchHouseholdMessages = (0, import_react.useCallback)(async (householdId) => {
@@ -37367,7 +38117,7 @@ function App() {
 		try {
 			const [hh, cloudRecords] = await Promise.all([getUserHousehold(email), fetchCloudNotes()]);
 			setHousehold(hh);
-			if (hh?.id) await Promise.all([fetchHouseholdEvents(hh.id), fetchHouseholdMessages(hh.id)]);
+			if (hh?.id) await Promise.all([fetchHouseholdEvents(hh.id, email), fetchHouseholdMessages(hh.id)]);
 			else {
 				setHouseholdEvents([]);
 				setHouseholdMessages([]);
@@ -37478,10 +38228,12 @@ function App() {
 			} else if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
 				const ev = payload.new;
 				if (!ev?.id) return;
+				const isMine = ev.created_by.toLowerCase() === userEmail.toLowerCase();
+				if (ev.is_private && !isMine) return;
 				setHouseholdEvents((prev) => {
 					return prev.some((item) => item.id === ev.id) ? prev.map((item) => item.id === ev.id ? ev : item) : [...prev, ev];
 				});
-				const isFromPartner = payload.eventType === "INSERT" && ev.created_by.toLowerCase() !== userEmail.toLowerCase();
+				const isFromPartner = payload.eventType === "INSERT" && !isMine && !ev.is_private;
 				if (isFromPartner) setCalendarBanner(ev);
 				await scheduleCalendarEventNotifications(ev, isFromPartner);
 			}
@@ -37494,11 +38246,28 @@ function App() {
 			if (!msg?.id) return;
 			setHouseholdMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
 			if (msg.sender_email.toLowerCase() !== userEmail.toLowerCase()) {
+				let previewBody = msg.body;
+				if (msg.is_encrypted) {
+					const currentHousehold = householdRef.current;
+					const secret = currentHousehold ? resolveHouseholdSecret(currentHousehold) : null;
+					if (secret && msg.body) try {
+						previewBody = await decryptText(msg.body, secret);
+					} catch {
+						previewBody = "Nytt krypterat meddelande";
+					}
+					else if (!msg.body && msg.attachment_type) previewBody = msg.attachment_type === "image" ? "Skickade en krypterad bild" : msg.attachment_type === "audio" ? "Skickade ett röstmeddelande" : "Skickade en krypterad fil";
+					else previewBody = "Nytt krypterat meddelande";
+				}
+				if (!previewBody && msg.attachment_type) previewBody = msg.attachment_type === "image" ? "Skickade en bild" : msg.attachment_type === "audio" ? "Skickade ett röstmeddelande" : "Skickade en fil";
+				const notificationMsg = {
+					...msg,
+					body: previewBody
+				};
 				if (activeTabRef.current !== "chat") {
 					setUnreadChatCount((c) => c + 1);
-					setChatBanner(msg);
+					setChatBanner(notificationMsg);
 				}
-				await notifyIncomingChatMessage(msg);
+				await notifyIncomingChatMessage(notificationMsg);
 			}
 		}).on("postgres_changes", {
 			event: "*",
@@ -37507,7 +38276,7 @@ function App() {
 		}, async () => {
 			const hh = await getUserHousehold(userEmail);
 			setHousehold(hh);
-			if (hh?.id) await Promise.all([fetchHouseholdEvents(hh.id), fetchHouseholdMessages(hh.id)]);
+			if (hh?.id) await Promise.all([fetchHouseholdEvents(hh.id, userEmail), fetchHouseholdMessages(hh.id)]);
 		}).subscribe();
 		return () => {
 			supabase.removeChannel(channel);
@@ -37546,14 +38315,37 @@ function App() {
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, []);
-	const handleSendChatMessage = (0, import_react.useCallback)(async (body) => {
+	const handleSendChatMessage = (0, import_react.useCallback)(async (payload) => {
 		if (!userEmail || !household?.id) return;
+		const secret = resolveHouseholdSecret(household);
+		let attachmentUrl = null;
+		let attachmentType = null;
+		let encryptedAttachmentName = null;
+		if (payload.file) {
+			const encryptedBlob = await encryptBlob(payload.file, secret);
+			const storagePath = `${household.id}/${Date.now()}.enc`;
+			const { error: uploadError } = await supabase.storage.from("household-media").upload(storagePath, encryptedBlob, {
+				contentType: "application/octet-stream",
+				upsert: false
+			});
+			if (uploadError) throw uploadError;
+			attachmentUrl = storagePath;
+			attachmentType = payload.attachmentType ?? "file";
+			encryptedAttachmentName = await encryptText(payload.originalName || "bilaga", secret);
+		}
+		const cleanText = payload.text.trim();
+		const encryptedBody = cleanText ? await encryptText(cleanText, secret) : "";
 		const { data, error } = await supabase.from("household_messages").insert({
 			household_id: household.id,
 			sender_email: userEmail,
-			body
+			body: encryptedBody,
+			is_encrypted: true,
+			attachment_url: attachmentUrl,
+			attachment_type: attachmentType,
+			attachment_name: encryptedAttachmentName
 		}).select().single();
-		if (!error && data) {
+		if (error) throw error;
+		if (data) {
 			const created = data;
 			setHouseholdMessages((prev) => prev.some((m) => m.id === created.id) ? prev : [...prev, created]);
 		}
@@ -37567,7 +38359,8 @@ function App() {
 			notes: draft.notes || null,
 			event_date: draft.event_date,
 			event_time: draft.event_time || null,
-			remind_before_minutes: draft.remind_before_minutes
+			remind_before_minutes: draft.remind_before_minutes,
+			is_private: draft.is_private
 		}).select().single();
 		if (!error && data) {
 			const created = data;
@@ -38001,6 +38794,7 @@ function App() {
 					activeTab === "chat" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HouseholdChat, {
 						messages: householdMessages,
 						householdName: household?.name,
+						encryptionSecret,
 						userEmail,
 						onSendMessage: handleSendChatMessage,
 						onSaveAsNote: handleSaveChatAsNote,
@@ -38273,6 +39067,7 @@ function App() {
 				userEmail,
 				household,
 				onHouseholdUpdated: async () => {
+					setPassphraseVersion((v) => v + 1);
 					if (userEmail) await syncFromCloud(userEmail);
 				},
 				onUpdateChecked: setLatestRelease

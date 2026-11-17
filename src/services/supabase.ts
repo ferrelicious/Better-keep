@@ -10,6 +10,7 @@ export interface HouseholdInfo {
   id: string;
   name: string;
   owner_email: string;
+  encryption_secret?: string | null;
   members: { id: string; member_email: string; status: string }[];
 }
 
@@ -19,6 +20,16 @@ export interface CloudNoteRecord {
   household_id: string | null;
   data: Note;
   updated_at: string;
+}
+
+function generateRandomSecret(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 export async function getUserHousehold(email: string): Promise<HouseholdInfo | null> {
@@ -62,15 +73,21 @@ export async function getUserHousehold(email: string): Promise<HouseholdInfo | n
     id: household.id,
     name: household.name,
     owner_email: household.owner_email,
+    encryption_secret: household.encryption_secret ?? null,
     members: members ?? [],
   };
 }
 
 export async function createHousehold(name: string, ownerEmail: string): Promise<HouseholdInfo> {
   const cleanEmail = ownerEmail.trim().toLowerCase();
+  const generatedSecret = generateRandomSecret();
   const { data, error } = await supabase
     .from('households')
-    .insert({ name: name.trim() || 'Vårt hushåll', owner_email: cleanEmail })
+    .insert({
+      name: name.trim() || 'Vårt hushåll',
+      owner_email: cleanEmail,
+      encryption_secret: generatedSecret,
+    })
     .select()
     .single();
 
@@ -86,6 +103,7 @@ export async function createHousehold(name: string, ownerEmail: string): Promise
     id: data.id,
     name: data.name,
     owner_email: data.owner_email,
+    encryption_secret: data.encryption_secret ?? generatedSecret,
     members: [{ id: 'self', member_email: cleanEmail, status: 'active' }],
   };
 }
