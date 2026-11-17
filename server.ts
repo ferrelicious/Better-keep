@@ -41,9 +41,13 @@ interface ParsedMailResult {
 function normalizeParsedMail(raw: Record<string, unknown>): ParsedMailResult {
   const catRaw = String(raw.item_category || '').trim().toLowerCase();
   const item_category: 'package' | 'invoice' | 'letter' =
-    catRaw === 'package' || catRaw === 'invoice' || catRaw === 'letter'
-      ? catRaw
-      : 'letter';
+    catRaw === 'package'
+      ? 'package'
+      : catRaw === 'invoice' || catRaw === 'bill'
+        ? 'invoice'
+        : catRaw === 'letter'
+          ? 'letter'
+          : 'letter';
 
   const clean = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
   const rawDate = clean(raw.due_date);
@@ -138,7 +142,7 @@ async function startServer() {
       parts.push({
         text: [
           `Dagens datum är ${todayIso}.`,
-          'Tolka denna svenska paketavi, Kivra-skärmdump, SMS-avisering, faktura eller myndighetsbrev och returnera strukturerad JSON.',
+          'Analysera denna svenska skärmdump (SMS-tråd, Kivra-avi, mejl, faktura eller pappersavi) och returnera en JSON med en lista "items" med alla unika identifierade försändelser eller räkningar.',
           rawText ? `\nInklistrad text:\n${rawText}` : '',
         ]
           .filter(Boolean)
@@ -150,72 +154,116 @@ async function startServer() {
         contents: { parts },
         config: {
           systemInstruction:
-            'Du är en exakt svensk dokument- och avitolkare för hushållsappen BetterKeep. ' +
-            'Klassificera underlaget som "package" (paketavi/utlämning/spårning från PostNord, Instabox, Budbee, DHL, Bring, Schenker, Early Bird m.fl.), ' +
-            '"invoice" (räkning/faktura/betalningsavi från t.ex. Kivra, företag, elbolag, bankgiro/plusgiro) eller ' +
-            '"letter" (övrigt viktigt brev/meddelande från myndighet, vård, skola eller Kivra utan betalning). ' +
-            'Extrahera fält exakt som de står. För payment_recipient, ange tydligt t.ex. "BG 123-4567" eller "PG 12 34 56-7". ' +
-            'För amount, inkludera kr t.ex. "499,00 kr". För due_date, konvertera alltid sista hämtningsdag eller förfallodatum till YYYY-MM-DD (om endast dag/månad anges, välj närmaste rimliga datum utifrån dagens datum). ' +
-            'Lämna fält som saknas som tom sträng "".',
+            'Du är en expert på svensk dokument-, SMS- och avitolkning för hushållsappen BetterKeep.\n\n' +
+            'VIKTIGA INSTRUKTIONER:\n' +
+            '1. IGNORERA ALLT MOBILT UI-BRUS: Ignorera batteriprocent, klockslag i statusfältet, tangentbord, statusikoner, "Tryck för att läsa in förhandsgranskning", "Skicka meddelande", "Meddelandeinfo" och liknande operativsystemsdetaljer.\n' +
+            '2. RELEVANT STATUS VID SMS-TRÅDAR: Ignorera gamla misslyckade leveransförsök eller äldre statusar om det finns ett nyare SMS i tråden som visar att paketet har anlänt till ombud, paketskåp eller är redo för uthämtning.\n' +
+            '3. FLERA FÖRSÄNDELSER / RÄKNINGAR: Om skärmdumpen eller texten innehåller TVÅ ELLER FLER olika paket/kollinummer eller fakturor (t.ex. två olika FedEx-, PostNord- eller Instabox-kollinummer i samma SMS-tråd), returnera ett separat objekt i arrayen "items" för VARJE unikt kollinummer, paket eller faktura!\n' +
+            '4. KLASSIFICERING:\n' +
+            '   - "package": paket/leverans/spårning/ombud/paketskåp från t.ex. FedEx, PostNord, Instabox, Budbee, DHL, Bring, Schenker, Early Bird, etc.\n' +
+            '   - "invoice": räkning/faktura/betalningsavi från t.ex. Kivra, företag, elbolag, bankgiro/plusgiro.\n' +
+            '   - "letter": övrigt viktigt myndighetsbrev eller meddelande utan betalning.\n' +
+            '5. FÄLTEXTRAHERING:\n' +
+            '   - pickup_code: Hämtningskod, pinkod, säkerhetskod eller skåpkod.\n' +
+            '   - tracking_id: Kolli-ID, spårningsnummer, försändelse-ID.\n' +
+            '   - pickup_location: Namn på ombud, butik eller paketskåp (t.ex. "ICA Kvantum Uppsala", "Instabox City Gross").\n' +
+            '   - pickup_address: Gatuadress, postnummer och ort för ombudet om angivet.\n' +
+            '   - carrier: Transportör eller tjänst (t.ex. FedEx, PostNord, Instabox, Budbee, DHL, Kivra).\n' +
+            '   - sender: Avsändande butik eller företag (t.ex. Zalando, Amazon, Ellevio, Skatteverket).\n' +
+            '   - ocr_number: OCR-nummer eller betalningsreferens.\n' +
+            '   - payment_recipient: Bankgiro ("BG ...") eller Plusgiro ("PG ...").\n' +
+            '   - amount: Belopp att betala (inkludera kr, t.ex. "499,00 kr").\n' +
+            '   - due_date: Sista hämtningsdag för paket eller förfallodatum för räkning i formatet YYYY-MM-DD. Om endast dag och månad anges (t.ex. "hämta senast 28 nov"), använd dagens datum som referens för att beräkna korrekt YYYY-MM-DD.\n' +
+            'Lämna fält som saknas som tom sträng "". Returnera minst ett objekt i "items" om något giltigt hittas, annars en tom lista.',
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              item_category: {
-                type: Type.STRING,
-                description: "Exakt ett av: 'package', 'invoice', 'letter'",
-              },
-              carrier: {
-                type: Type.STRING,
-                description:
-                  'Transportör eller tjänst (t.ex. PostNord, Instabox, Budbee, DHL, Bring, Kivra)',
-              },
-              sender: {
-                type: Type.STRING,
-                description: 'Avsändare, butik eller företag',
-              },
-              pickup_code: {
-                type: Type.STRING,
-                description: 'Hämtningskod, pinkod eller skåpkod',
-              },
-              tracking_id: {
-                type: Type.STRING,
-                description: 'Kolli-ID eller spårningsnummer',
-              },
-              pickup_location: {
-                type: Type.STRING,
-                description: 'Namn på ombud, butik eller paketskåp',
-              },
-              pickup_address: {
-                type: Type.STRING,
-                description: 'Gatuadress och ort för ombud eller paketskåp',
-              },
-              ocr_number: {
-                type: Type.STRING,
-                description: 'OCR-nummer eller betalningsreferens',
-              },
-              payment_recipient: {
-                type: Type.STRING,
-                description: 'Bankgiro eller Plusgiro',
-              },
-              amount: {
-                type: Type.STRING,
-                description: 'Belopp att betala',
-              },
-              due_date: {
-                type: Type.STRING,
-                description:
-                  'Sista hämtningsdag eller förfallodatum i formatet YYYY-MM-DD',
+              items: {
+                type: Type.ARRAY,
+                description: 'Lista av identifierade paket, räkningar eller brev i underlaget',
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    item_category: {
+                      type: Type.STRING,
+                      description: "Exakt ett av: 'package', 'invoice', 'letter'",
+                    },
+                    carrier: {
+                      type: Type.STRING,
+                      description:
+                        'Transportör eller tjänst (t.ex. FedEx, PostNord, Instabox, Budbee, DHL, Bring, Kivra)',
+                    },
+                    sender: {
+                      type: Type.STRING,
+                      description: 'Avsändare, butik eller företag',
+                    },
+                    pickup_code: {
+                      type: Type.STRING,
+                      description: 'Hämtningskod, pinkod eller skåpkod',
+                    },
+                    tracking_id: {
+                      type: Type.STRING,
+                      description: 'Kolli-ID eller spårningsnummer',
+                    },
+                    pickup_location: {
+                      type: Type.STRING,
+                      description: 'Namn på ombud, butik eller paketskåp',
+                    },
+                    pickup_address: {
+                      type: Type.STRING,
+                      description:
+                        'Gatuadress, postnummer och ort för ombud eller paketskåp',
+                    },
+                    ocr_number: {
+                      type: Type.STRING,
+                      description: 'OCR-nummer eller betalningsreferens',
+                    },
+                    payment_recipient: {
+                      type: Type.STRING,
+                      description: 'Bankgiro eller Plusgiro',
+                    },
+                    amount: {
+                      type: Type.STRING,
+                      description: 'Belopp att betala',
+                    },
+                    due_date: {
+                      type: Type.STRING,
+                      description:
+                        'Sista hämtningsdag eller förfallodatum i formatet YYYY-MM-DD',
+                    },
+                  },
+                  required: ['item_category'],
+                },
               },
             },
-            required: ['item_category'],
+            required: ['items'],
           },
         },
       });
 
       const jsonText = (response.text ?? '{}').trim();
-      const parsedObj = JSON.parse(jsonText) as Record<string, unknown>;
-      res.json({ result: normalizeParsedMail(parsedObj) });
+      let parsedObj: Record<string, unknown> = {};
+      try {
+        parsedObj = JSON.parse(jsonText) as Record<string, unknown>;
+      } catch {
+        parsedObj = {};
+      }
+
+      let rawItemsList: Array<Record<string, unknown>> = [];
+      if (Array.isArray(parsedObj.items)) {
+        rawItemsList = parsedObj.items as Array<Record<string, unknown>>;
+      } else if (parsedObj.item_category) {
+        rawItemsList = [parsedObj];
+      }
+
+      const normalizedItems = rawItemsList.map(normalizeParsedMail);
+      const primaryResult = normalizedItems[0] || normalizeParsedMail({});
+
+      res.json({
+        items: normalizedItems,
+        result: primaryResult,
+      });
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : 'Kunde inte tolka innehållet med AI.';

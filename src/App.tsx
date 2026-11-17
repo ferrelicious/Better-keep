@@ -62,7 +62,9 @@ import {
   RawMailItem,
   SharedContentPayload,
   decryptMailItem,
+  deleteLocalMailAttachment,
   encryptMailDraft,
+  saveLocalMailAttachment,
 } from './services/mailService';
 import { UpdateCheckResult } from './services/updater';
 import {
@@ -1918,8 +1920,13 @@ export default function App() {
         .select()
         .single();
 
-      if (error && /calendar_event_id/i.test(error.message)) {
-        delete payloadToInsert.calendar_event_id;
+      if (error && (/calendar_event_id/i.test(error.message) || /attachment_image/i.test(error.message))) {
+        if (/calendar_event_id/i.test(error.message)) {
+          delete payloadToInsert.calendar_event_id;
+        }
+        if (/attachment_image/i.test(error.message)) {
+          delete payloadToInsert.attachment_image;
+        }
         const retry = await supabase
           .from('household_mail_items')
           .insert(payloadToInsert)
@@ -1934,6 +1941,9 @@ export default function App() {
         const created = data as RawMailItem;
         if (calendarEventId) {
           writeJsonMapEntry(MAIL_CAL_EVENTS_KEY, created.id, calendarEventId);
+        }
+        if (draft.attachment_image) {
+          saveLocalMailAttachment(created.id, draft.attachment_image);
         }
         setRawMailItems((prev) =>
           prev.some((m) => m.id === created.id) ? prev : [created, ...prev]
@@ -2039,6 +2049,7 @@ export default function App() {
   );
 
   const handleDeleteMailItem = useCallback(async (id: string) => {
+    deleteLocalMailAttachment(id);
     setMailItems((prev) => prev.filter((item) => item.id !== id));
     setRawMailItems((prev) => prev.filter((item) => item.id !== id));
     await supabase.from('household_mail_items').delete().eq('id', id);

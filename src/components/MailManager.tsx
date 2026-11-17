@@ -1,22 +1,29 @@
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   Archive,
   Calendar as CalendarIcon,
   Camera,
   Check,
   ChevronDown,
   ChevronUp,
+  Clock,
   Copy,
   CreditCard,
   ExternalLink,
+  Eye,
   FileText,
+  Filter,
+  ImageIcon,
   Loader2,
   Lock,
   Mail,
   MapPin,
+  Maximize2,
   Package,
   RotateCcw,
+  Search,
   Sparkles,
   Trash2,
   Upload,
@@ -28,7 +35,9 @@ import {
   MailItemCategory,
   MailShareFilter,
   ParsedMailDraft,
+  ParsedMailItemResult,
   SharedContentPayload,
+  compressScreenshotImage,
   imageFileToBase64,
   parseMailWithAI,
 } from '../services/mailService';
@@ -52,6 +61,24 @@ interface MailManagerProps {
   onOpenHouseholdModal: () => void;
 }
 
+export type MailCategoryFilter = 'all' | 'package' | 'invoice' | 'urgent';
+
+export interface DetectedDraftItem extends ParsedMailDraft {
+  id: string;
+  selected: boolean;
+  expanded?: boolean;
+}
+
+export interface FullscreenImageState {
+  url: string;
+  title: string;
+  category?: MailItemCategory;
+  pickupCode?: string;
+  trackingId?: string;
+  ocrNumber?: string;
+  pickupLocation?: string;
+}
+
 const EMPTY_DRAFT: ParsedMailDraft = {
   item_category: 'package',
   carrier: '',
@@ -65,8 +92,74 @@ const EMPTY_DRAFT: ParsedMailDraft = {
   amount: '',
   due_date: '',
   raw_note: '',
+  attachment_image: null,
   is_private: false,
 };
+
+export function isUrgent(dueDate: string | null | undefined): boolean {
+  if (!dueDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(`${dueDate}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return false;
+  const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays <= 3;
+}
+
+export function getDueBadgeInfo(dueDate: string | null | undefined): {
+  isWithin48h: boolean;
+  label: string;
+  className: string;
+} | null {
+  if (!dueDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(`${dueDate}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return null;
+  const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return {
+      isWithin48h: true,
+      label: `🚨 Förfallen (${Math.abs(diffDays)} d sedan)`,
+      className:
+        'bg-red-500/15 border-red-500/30 text-red-700 dark:text-red-300 font-bold',
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      isWithin48h: true,
+      label: '⚠️ Förfaller idag!',
+      className:
+        'bg-red-500/15 border-red-500/30 text-red-700 dark:text-red-300 font-bold',
+    };
+  }
+  if (diffDays === 1) {
+    return {
+      isWithin48h: true,
+      label: '⚠️ Sista dag imorgon (inom 24h)',
+      className:
+        'bg-orange-500/15 border-orange-500/30 text-orange-800 dark:text-orange-300 font-semibold',
+    };
+  }
+  if (diffDays === 2) {
+    return {
+      isWithin48h: true,
+      label: '⚠️ Förfaller om 2 dagar (inom 48h)',
+      className:
+        'bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300 font-semibold',
+    };
+  }
+  if (diffDays === 3) {
+    return {
+      isWithin48h: false,
+      label: '⏰ Förfaller om 3 dagar',
+      className:
+        'bg-yellow-500/15 border-yellow-500/30 text-yellow-800 dark:text-yellow-300',
+    };
+  }
+  return null;
+}
 
 function getDueUrgency(dueDate: string): 'overdue' | 'soon' | 'normal' | 'none' {
   if (!dueDate) return 'none';
@@ -95,15 +188,21 @@ export function MailManager({
   onOpenHouseholdModal,
 }: MailManagerProps) {
   const [shareFilter, setShareFilter] = useState<MailShareFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState<MailCategoryFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [pastedText, setPastedText] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
+
   const [draft, setDraft] = useState<ParsedMailDraft | null>(null);
+  const [detectedDrafts, setDetectedDrafts] = useState<DetectedDraftItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const [fullscreenImage, setFullscreenImage] = useState<FullscreenImageState | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [archivedExpanded, setArchivedExpanded] = useState(false);
   const [clearingArchive, setClearingArchive] = useState(false);
@@ -112,6 +211,16 @@ export function MailManager({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const copyTimerRef = useRef<number | null>(null);
   const highlightTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && fullscreenImage) {
+        setFullscreenImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fullscreenImage]);
 
   useEffect(() => {
     return () => {
@@ -165,29 +274,71 @@ export function MailManager({
       try {
         if (shared.type === 'image' && shared.base64) {
           const mime = shared.mimeType || 'image/jpeg';
-          setPreviewImageUrl(`data:${mime};base64,${shared.base64}`);
+          const rawDataUrl = shared.base64.startsWith('data:')
+            ? shared.base64
+            : `data:${mime};base64,${shared.base64}`;
+
+          const compressed = await compressScreenshotImage(rawDataUrl, 1200, 0.78);
+          if (!active) return;
+          setPreviewImageUrl(compressed.dataUrl);
+
           const result = await parseMailWithAI({
-            imageBase64: shared.base64,
-            mimeType: mime,
+            imageBase64: compressed.base64,
+            mimeType: 'image/jpeg',
             text: shared.text,
           });
+
           if (active) {
-            setDraft({
-              ...result,
-              raw_note: shared.text?.trim() || '',
-              is_private: isPrivate,
-            });
+            if (result.items && result.items.length > 1) {
+              setDetectedDrafts(
+                result.items.map((item, idx) => ({
+                  ...item,
+                  id: `detected-${Date.now()}-${idx}`,
+                  raw_note: shared.text?.trim() || '',
+                  attachment_image: compressed.dataUrl,
+                  is_private: isPrivate,
+                  selected: true,
+                  expanded: false,
+                }))
+              );
+              setDraft(null);
+            } else {
+              setDetectedDrafts([]);
+              setDraft({
+                ...result,
+                raw_note: shared.text?.trim() || '',
+                attachment_image: compressed.dataUrl,
+                is_private: isPrivate,
+              });
+            }
           }
         } else if (shared.type === 'text' && shared.text) {
           setPreviewImageUrl(null);
           setPastedText(shared.text);
           const result = await parseMailWithAI({ text: shared.text });
           if (active) {
-            setDraft({
-              ...result,
-              raw_note: shared.text.trim(),
-              is_private: isPrivate,
-            });
+            if (result.items && result.items.length > 1) {
+              setDetectedDrafts(
+                result.items.map((item, idx) => ({
+                  ...item,
+                  id: `detected-${Date.now()}-${idx}`,
+                  raw_note: shared.text?.trim() || '',
+                  attachment_image: null,
+                  is_private: isPrivate,
+                  selected: true,
+                  expanded: false,
+                }))
+              );
+              setDraft(null);
+            } else {
+              setDetectedDrafts([]);
+              setDraft({
+                ...result,
+                raw_note: shared.text.trim(),
+                attachment_image: null,
+                is_private: isPrivate,
+              });
+            }
           }
         }
       } catch (err) {
@@ -197,9 +348,11 @@ export function MailManager({
               ? err.message
               : 'Kunde inte tolka det delade innehållet med AI.'
           );
+          setDetectedDrafts([]);
           setDraft({
             ...EMPTY_DRAFT,
             raw_note: shared.text?.trim() || '',
+            attachment_image: previewImageUrl || null,
             is_private: isPrivate,
           });
         }
@@ -235,27 +388,48 @@ export function MailManager({
     setParsing(true);
 
     try {
-      const { base64, mimeType } = await imageFileToBase64(file);
-      setPreviewImageUrl(`data:${mimeType};base64,${base64}`);
+      const { base64, mimeType, dataUrl } = await imageFileToBase64(file);
+      setPreviewImageUrl(dataUrl);
+
       const result = await parseMailWithAI({
         imageBase64: base64,
         mimeType,
         text: pastedText.trim() || undefined,
       });
-      setDraft({
-        ...result,
-        raw_note: pastedText.trim(),
-        is_private: isPrivate,
-      });
+
+      if (result.items && result.items.length > 1) {
+        setDetectedDrafts(
+          result.items.map((item, idx) => ({
+            ...item,
+            id: `detected-${Date.now()}-${idx}`,
+            raw_note: pastedText.trim(),
+            attachment_image: dataUrl,
+            is_private: isPrivate,
+            selected: true,
+            expanded: false,
+          }))
+        );
+        setDraft(null);
+      } else {
+        setDetectedDrafts([]);
+        setDraft({
+          ...result,
+          raw_note: pastedText.trim(),
+          attachment_image: dataUrl,
+          is_private: isPrivate,
+        });
+      }
     } catch (err) {
       setParseError(
         err instanceof Error
           ? err.message
           : 'Kunde inte tolka bilden med AI. Du kan fylla i fälten manuellt.'
       );
+      setDetectedDrafts([]);
       setDraft({
         ...EMPTY_DRAFT,
         raw_note: pastedText.trim(),
+        attachment_image: previewImageUrl || null,
         is_private: isPrivate,
       });
     } finally {
@@ -273,20 +447,39 @@ export function MailManager({
 
     try {
       const result = await parseMailWithAI({ text: clean });
-      setDraft({
-        ...result,
-        raw_note: clean,
-        is_private: isPrivate,
-      });
+      if (result.items && result.items.length > 1) {
+        setDetectedDrafts(
+          result.items.map((item, idx) => ({
+            ...item,
+            id: `detected-${Date.now()}-${idx}`,
+            raw_note: clean,
+            attachment_image: null,
+            is_private: isPrivate,
+            selected: true,
+            expanded: false,
+          }))
+        );
+        setDraft(null);
+      } else {
+        setDetectedDrafts([]);
+        setDraft({
+          ...result,
+          raw_note: clean,
+          attachment_image: null,
+          is_private: isPrivate,
+        });
+      }
     } catch (err) {
       setParseError(
         err instanceof Error
           ? err.message
           : 'Kunde inte tolka texten med AI. Du kan redigera manuellt nedan.'
       );
+      setDetectedDrafts([]);
       setDraft({
         ...EMPTY_DRAFT,
         raw_note: clean,
+        attachment_image: null,
         is_private: isPrivate,
       });
     } finally {
@@ -313,7 +506,32 @@ export function MailManager({
     }
   };
 
-  const filteredItems = useMemo(() => {
+  const handleSaveDetectedDrafts = async () => {
+    const selected = detectedDrafts.filter((d) => d.selected);
+    if (selected.length === 0 || saving) return;
+    setSaveError(null);
+    setSaving(true);
+    try {
+      for (const item of selected) {
+        const { id: _id, selected: _s, expanded: _e, ...cleanDraft } = item;
+        await onSaveMailItem(cleanDraft);
+      }
+      setDetectedDrafts([]);
+      setDraft(null);
+      setPastedText('');
+      setPreviewImageUrl(null);
+    } catch (err) {
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : 'Ett fel uppstod när de valda posterna sparades.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const shareFilteredItems = useMemo(() => {
     return items.filter((item) => {
       if (shareFilter === 'private' && !item.is_private) return false;
       if (shareFilter === 'shared' && item.is_private) return false;
@@ -321,26 +539,76 @@ export function MailManager({
     });
   }, [items, shareFilter]);
 
-  const activeItems = useMemo(
-    () =>
-      filteredItems
-        .filter((i) => !i.completed)
-        .sort((a, b) => {
-          if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
-          if (a.due_date) return -1;
-          if (b.due_date) return 1;
-          return (b.created_at || '').localeCompare(a.created_at || '');
-        }),
-    [filteredItems]
+  const shareFilteredActiveItems = useMemo(
+    () => shareFilteredItems.filter((i) => !i.completed),
+    [shareFilteredItems]
   );
 
-  const archivedItems = useMemo(
-    () =>
-      filteredItems
-        .filter((i) => i.completed)
-        .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')),
-    [filteredItems]
+  const packageCount = useMemo(
+    () => shareFilteredActiveItems.filter((i) => i.item_category === 'package').length,
+    [shareFilteredActiveItems]
   );
+
+  const invoiceCount = useMemo(
+    () => shareFilteredActiveItems.filter((i) => i.item_category === 'invoice').length,
+    [shareFilteredActiveItems]
+  );
+
+  const urgentCount = useMemo(
+    () => shareFilteredActiveItems.filter((i) => isUrgent(i.due_date)).length,
+    [shareFilteredActiveItems]
+  );
+
+  const matchesSearch = (item: MailItem, q: string): boolean => {
+    if (!q) return true;
+    const haystacks = [
+      item.sender,
+      item.carrier,
+      item.tracking_id,
+      item.pickup_code,
+      item.pickup_location,
+      item.pickup_address,
+      item.ocr_number,
+      item.payment_recipient,
+      item.amount,
+      item.due_date,
+      item.raw_note,
+    ];
+    return haystacks.some((val) => val && val.toLowerCase().includes(q));
+  };
+
+  const activeItems = useMemo(() => {
+    const cleanQ = searchQuery.trim().toLowerCase();
+    return shareFilteredActiveItems
+      .filter((item) => {
+        if (categoryFilter === 'package' && item.item_category !== 'package') return false;
+        if (categoryFilter === 'invoice' && item.item_category !== 'invoice') return false;
+        if (categoryFilter === 'urgent' && !isUrgent(item.due_date)) return false;
+        if (cleanQ && !matchesSearch(item, cleanQ)) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        // Items with due_date sorted ascending (nearest & overdue first!)
+        if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
+        if (a.due_date) return -1;
+        if (b.due_date) return 1;
+        return (b.created_at || '').localeCompare(a.created_at || '');
+      });
+  }, [shareFilteredActiveItems, categoryFilter, searchQuery]);
+
+  const archivedItems = useMemo(() => {
+    const cleanQ = searchQuery.trim().toLowerCase();
+    return shareFilteredItems
+      .filter((i) => i.completed)
+      .filter((item) => {
+        if (categoryFilter === 'package' && item.item_category !== 'package') return false;
+        if (categoryFilter === 'invoice' && item.item_category !== 'invoice') return false;
+        if (categoryFilter === 'urgent' && !isUrgent(item.due_date)) return false;
+        if (cleanQ && !matchesSearch(item, cleanQ)) return false;
+        return true;
+      })
+      .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  }, [shareFilteredItems, categoryFilter, searchQuery]);
 
   const handleClearArchiveClick = async () => {
     if (archivedItems.length === 0 || clearingArchive) return;
@@ -560,8 +828,287 @@ export function MailManager({
         )}
       </div>
 
-      {/* Editable AI Preview Card */}
-      {draft && (
+      {/* Multi-Item AI Review Card */}
+      {detectedDrafts.length > 0 && (
+        <div className="rounded-3xl bg-white dark:bg-[#191D1A] border-2 border-[#2E6B4E] dark:border-[#8FD4AE] p-4 sm:p-5 flex flex-col gap-4 shadow-md">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-display text-sm sm:text-base font-bold text-[#171D19] dark:text-[#E4EBE6]">
+                  Hittade {detectedDrafts.length} försändelser / räkningar i underlaget
+                </h3>
+                <p className="text-xs text-[#525E56] dark:text-[#9BA79F]">
+                  Bocka för de du vill spara i hushållet, eller redigera detaljer direkt.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const allSelected = detectedDrafts.every((d) => d.selected);
+                  setDetectedDrafts((prev) =>
+                    prev.map((d) => ({ ...d, selected: !allSelected }))
+                  );
+                }}
+                className="px-3 py-1.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E1E6DE] text-xs font-semibold cursor-pointer"
+              >
+                {detectedDrafts.every((d) => d.selected) ? 'Avmarkera alla' : 'Välj alla'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDetectedDrafts([]);
+                  setPreviewImageUrl(null);
+                }}
+                aria-label="Avbryt"
+                className="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-[#525E56]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {previewImageUrl && (
+            <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] border border-[#18221C]/8 dark:border-[#E3EAE5]/8">
+              <button
+                type="button"
+                onClick={() =>
+                  setFullscreenImage({
+                    url: previewImageUrl,
+                    title: 'Uppladdad skärmdump',
+                  })
+                }
+                title="Klicka för att förstora"
+                className="w-12 h-12 rounded-xl overflow-hidden border border-[#18221C]/10 shrink-0 cursor-pointer relative group"
+              >
+                <img
+                  src={previewImageUrl}
+                  alt="Förhandsgranskning"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                />
+              </button>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6]">
+                  Skärmdump kopplas till alla valda poster
+                </p>
+                <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F]">
+                  Kompakt komprimerad (1200px, JPEG 0.78) och E2E-krypterad.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2.5">
+            {detectedDrafts.map((d, index) => (
+              <div
+                key={d.id}
+                className={`rounded-2xl p-3 sm:p-4 border transition-colors ${
+                  d.selected
+                    ? 'bg-[#F6F7F4] dark:bg-[#212723] border-[#2E6B4E]/30 dark:border-[#8FD4AE]/30'
+                    : 'bg-white/40 dark:bg-[#191D1A]/40 border-[#18221C]/10 dark:border-[#E3EAE5]/10 opacity-60'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <label className="flex items-start gap-3 min-w-0 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={d.selected}
+                      onChange={() =>
+                        setDetectedDrafts((prev) =>
+                          prev.map((item) =>
+                            item.id === d.id ? { ...item, selected: !item.selected } : item
+                          )
+                        )
+                      }
+                      className="w-5 h-5 mt-0.5 accent-[#2E6B4E] rounded cursor-pointer shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                            d.item_category === 'package'
+                              ? 'bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]'
+                              : 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                          }`}
+                        >
+                          {d.item_category === 'package' ? '📦 Paket' : '💳 Räkning'}
+                        </span>
+                        <h4 className="text-sm font-bold text-[#171D19] dark:text-[#E4EBE6] truncate">
+                          {d.sender || d.carrier || `Post #${index + 1}`}
+                        </h4>
+                        {d.carrier && d.sender && (
+                          <span className="text-xs text-[#525E56] dark:text-[#9BA79F]">
+                            via {d.carrier}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap mt-1 text-xs text-[#525E56] dark:text-[#9BA79F]">
+                        {d.pickup_code && (
+                          <span className="font-mono-tabular font-bold text-[#171D19] dark:text-[#E4EBE6]">
+                            Kod: {d.pickup_code}
+                          </span>
+                        )}
+                        {d.tracking_id && (
+                          <span className="font-mono-tabular">Kolli: {d.tracking_id}</span>
+                        )}
+                        {d.pickup_location && (
+                          <span>Ombud: {d.pickup_location}</span>
+                        )}
+                        {d.amount && (
+                          <span className="font-bold text-[#171D19] dark:text-[#E4EBE6]">
+                            {d.amount}
+                          </span>
+                        )}
+                        {d.due_date && (
+                          <span className="font-mono-tabular">Datum: {d.due_date}</span>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDetectedDrafts((prev) =>
+                        prev.map((item) =>
+                          item.id === d.id ? { ...item, expanded: !item.expanded } : item
+                        )
+                      )
+                    }
+                    className="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-[#525E56] shrink-0 cursor-pointer text-xs inline-flex items-center gap-1"
+                  >
+                    <span>{d.expanded ? 'Dölj' : 'Redigera'}</span>
+                    {d.expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {d.expanded && (
+                  <div className="mt-3 pt-3 border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <label className="flex flex-col gap-1">
+                      <span className="font-semibold text-[#525E56] dark:text-[#9BA79F]">Avsändare</span>
+                      <input
+                        type="text"
+                        value={d.sender}
+                        onChange={(e) =>
+                          setDetectedDrafts((prev) =>
+                            prev.map((it) => (it.id === d.id ? { ...it, sender: e.target.value } : it))
+                          )
+                        }
+                        className="h-8 px-2.5 rounded-lg bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="font-semibold text-[#525E56] dark:text-[#9BA79F]">Transportör</span>
+                      <input
+                        type="text"
+                        value={d.carrier}
+                        onChange={(e) =>
+                          setDetectedDrafts((prev) =>
+                            prev.map((it) => (it.id === d.id ? { ...it, carrier: e.target.value } : it))
+                          )
+                        }
+                        className="h-8 px-2.5 rounded-lg bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="font-semibold text-[#525E56] dark:text-[#9BA79F]">Hämtningskod</span>
+                      <input
+                        type="text"
+                        value={d.pickup_code}
+                        onChange={(e) =>
+                          setDetectedDrafts((prev) =>
+                            prev.map((it) => (it.id === d.id ? { ...it, pickup_code: e.target.value } : it))
+                          )
+                        }
+                        className="h-8 px-2.5 rounded-lg bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 font-mono-tabular"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="font-semibold text-[#525E56] dark:text-[#9BA79F]">Kolli-ID</span>
+                      <input
+                        type="text"
+                        value={d.tracking_id}
+                        onChange={(e) =>
+                          setDetectedDrafts((prev) =>
+                            prev.map((it) => (it.id === d.id ? { ...it, tracking_id: e.target.value } : it))
+                          )
+                        }
+                        className="h-8 px-2.5 rounded-lg bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 font-mono-tabular"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="font-semibold text-[#525E56] dark:text-[#9BA79F]">Ombud</span>
+                      <input
+                        type="text"
+                        value={d.pickup_location}
+                        onChange={(e) =>
+                          setDetectedDrafts((prev) =>
+                            prev.map((it) => (it.id === d.id ? { ...it, pickup_location: e.target.value } : it))
+                          )
+                        }
+                        className="h-8 px-2.5 rounded-lg bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="font-semibold text-[#525E56] dark:text-[#9BA79F]">Datum (YYYY-MM-DD)</span>
+                      <input
+                        type="date"
+                        value={d.due_date}
+                        onChange={(e) =>
+                          setDetectedDrafts((prev) =>
+                            prev.map((it) => (it.id === d.id ? { ...it, due_date: e.target.value } : it))
+                          )
+                        }
+                        className="h-8 px-2.5 rounded-lg bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 font-mono-tabular"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {saveError && (
+            <p className="text-xs text-red-700 dark:text-red-300">{saveError}</p>
+          )}
+
+          <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                setDetectedDrafts([]);
+                setPreviewImageUrl(null);
+              }}
+              className="min-h-[40px] px-4 rounded-xl text-xs font-semibold text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 cursor-pointer"
+            >
+              Avbryt
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveDetectedDrafts}
+              disabled={saving || detectedDrafts.filter((d) => d.selected).length === 0}
+              className="min-h-[42px] px-5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs sm:text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-sm"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Check className="w-4 h-4" aria-hidden="true" />
+              )}
+              <span>
+                Spara valda ({detectedDrafts.filter((d) => d.selected).length})
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Editable AI Preview Card (Single item) */}
+      {draft && detectedDrafts.length === 0 && (
         <form
           onSubmit={handleSaveDraft}
           className="rounded-3xl bg-white dark:bg-[#191D1A] border-2 border-[#2E6B4E]/45 dark:border-[#8FD4AE]/45 p-4 sm:p-5 flex flex-col gap-4 shadow-sm"
@@ -590,12 +1137,33 @@ export function MailManager({
           </div>
 
           {previewImageUrl && (
-            <div className="rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] p-2 flex justify-center">
-              <img
-                src={previewImageUrl}
-                alt="Uppladdad skärmdump"
-                className="max-h-48 w-auto rounded-xl object-contain"
-              />
+            <div className="rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] p-2 flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setFullscreenImage({
+                    url: previewImageUrl,
+                    title: draft.sender || draft.carrier || 'Skärmdump',
+                    category: draft.item_category,
+                    pickupCode: draft.pickup_code,
+                    trackingId: draft.tracking_id,
+                    ocrNumber: draft.ocr_number,
+                    pickupLocation: draft.pickup_location,
+                  })
+                }
+                title="Klicka för att förstora"
+                className="cursor-pointer group relative rounded-xl overflow-hidden"
+              >
+                <img
+                  src={previewImageUrl}
+                  alt="Uppladdad skärmdump"
+                  className="max-h-48 w-auto rounded-xl object-contain group-hover:opacity-90 transition-opacity"
+                />
+                <span className="absolute bottom-2 right-2 px-2 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold inline-flex items-center gap-1">
+                  <Maximize2 className="w-3 h-3" />
+                  <span>Klicka för att förstora</span>
+                </span>
+              </button>
             </div>
           )}
 
@@ -679,7 +1247,7 @@ export function MailManager({
                 type="text"
                 value={draft.carrier}
                 onChange={(e) => setDraft({ ...draft, carrier: e.target.value })}
-                placeholder="T.ex. PostNord, Instabox, Budbee, Kivra"
+                placeholder="T.ex. FedEx, PostNord, Instabox, Kivra"
                 className="h-10 px-3 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
               />
             </label>
@@ -834,6 +1402,93 @@ export function MailManager({
         </form>
       )}
 
+      {/* Search Bar & Smart Filter Pills */}
+      <div className="flex flex-col gap-2.5">
+        <div className="relative">
+          <Search
+            className="w-4 h-4 text-[#525E56] dark:text-[#9BA79F] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Sök avsändare, kolli-ID, ombud, OCR..."
+            aria-label="Sök i post och räkningar"
+            className="w-full h-10 pl-10 pr-9 rounded-2xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-xs sm:text-sm text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              aria-label="Rensa sökning"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[#525E56] hover:text-[#171D19] dark:hover:text-[#E4EBE6] cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('all')}
+            className={`min-h-[34px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+              categoryFilter === 'all'
+                ? 'bg-[#171D19] dark:bg-[#E4EBE6] text-white dark:text-[#171D19] shadow-xs'
+                : 'bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <span>Alla ({shareFilteredActiveItems.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setCategoryFilter((curr) => (curr === 'package' ? 'all' : 'package'))
+            }
+            className={`min-h-[34px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+              categoryFilter === 'package'
+                ? 'bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] shadow-xs'
+                : 'bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <span>📦 Paket</span>
+            <span className="font-mono-tabular opacity-90">({packageCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setCategoryFilter((curr) => (curr === 'invoice' ? 'all' : 'invoice'))
+            }
+            className={`min-h-[34px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+              categoryFilter === 'invoice'
+                ? 'bg-amber-600 dark:bg-amber-400 text-white dark:text-[#2E1A04] shadow-xs'
+                : 'bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <span>💳 Räkningar</span>
+            <span className="font-mono-tabular opacity-90">({invoiceCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setCategoryFilter((curr) => (curr === 'urgent' ? 'all' : 'urgent'))
+            }
+            className={`min-h-[34px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+              categoryFilter === 'urgent'
+                ? 'bg-red-600 dark:bg-red-400 text-white dark:text-[#380905] shadow-xs'
+                : 'bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <span>⏰ Brådskande</span>
+            <span className="font-mono-tabular opacity-90">({urgentCount})</span>
+          </button>
+        </div>
+      </div>
+
       {/* Active Cards */}
       {activeItems.length === 0 && archivedItems.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-[#18221C]/15 dark:border-[#E3EAE5]/15 py-12 px-6 text-center flex flex-col items-center gap-2">
@@ -842,20 +1497,27 @@ export function MailManager({
             aria-hidden="true"
           />
           <h3 className="font-display text-base font-semibold">
-            {shareFilter === 'private'
-              ? 'Inga privata poster ännu'
-              : shareFilter === 'shared'
-                ? 'Inga delade poster ännu'
-                : 'Rent i brevlådan!'}
+            {searchQuery
+              ? 'Inga poster matchar din sökning'
+              : categoryFilter !== 'all'
+                ? 'Inga poster i denna kategori'
+                : shareFilter === 'private'
+                  ? 'Inga privata poster ännu'
+                  : shareFilter === 'shared'
+                    ? 'Inga delade poster ännu'
+                    : 'Rent i brevlådan!'}
           </h3>
           <p className="text-xs sm:text-sm text-[#525E56] dark:text-[#9BA79F] max-w-md">
-            Ladda upp en skärmdump av en paketavi eller Kivra-räkning ovan så tolkar AI den och lägger in datum i kalendern automatiskt.
+            {searchQuery
+              ? 'Prova en annan sökterm eller rensa filtret.'
+              : 'Ladda upp en skärmdump av en paketavi eller Kivra-räkning ovan så tolkar AI den och lägger in datum i kalendern automatiskt.'}
           </p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           {activeItems.map((item) => {
             const urgency = getDueUrgency(item.due_date);
+            const dueBadge = getDueBadgeInfo(item.due_date);
             const mapQuery = [item.pickup_location, item.pickup_address]
               .filter(Boolean)
               .join(', ');
@@ -867,7 +1529,9 @@ export function MailManager({
                 className={`rounded-3xl bg-white dark:bg-[#191D1A] border p-4 sm:p-5 flex flex-col gap-3.5 transition-all ${
                   highlightedMailId === item.id
                     ? 'border-[#2E6B4E] dark:border-[#8FD4AE] ring-2 ring-[#2E6B4E] dark:ring-[#8FD4AE] shadow-md'
-                    : 'border-[#18221C]/12 dark:border-[#E3EAE5]/12'
+                    : dueBadge?.isWithin48h
+                      ? 'border-amber-500/50 dark:border-amber-400/40 shadow-xs'
+                      : 'border-[#18221C]/12 dark:border-[#E3EAE5]/12'
                 }`}
               >
                 {/* Card Header */}
@@ -921,6 +1585,16 @@ export function MailManager({
                           )}
                           <span>{item.is_private ? 'Privat' : 'Delad'}</span>
                         </span>
+
+                        {/* 48h / Overdue Warning Badge */}
+                        {dueBadge && (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] border ${dueBadge.className}`}
+                          >
+                            <AlertTriangle className="w-3 h-3 shrink-0" aria-hidden="true" />
+                            <span>{dueBadge.label}</span>
+                          </span>
+                        )}
                       </div>
 
                       {item.due_date && (
@@ -1136,6 +1810,67 @@ export function MailManager({
                   </p>
                 )}
 
+                {/* Screenshot / Barcode thumbnail & Fullscreen Button */}
+                {item.attachment_image && (
+                  <div className="rounded-2xl bg-[#F6F7F4] dark:bg-[#212723] p-3 flex items-center justify-between gap-3 border border-[#18221C]/8 dark:border-[#E3EAE5]/8">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFullscreenImage({
+                            url: item.attachment_image!,
+                            title: item.sender || item.carrier || 'Skärmdump',
+                            category: item.item_category,
+                            pickupCode: item.pickup_code,
+                            trackingId: item.tracking_id,
+                            ocrNumber: item.ocr_number,
+                            pickupLocation: item.pickup_location,
+                          })
+                        }
+                        title="Klicka för att förstora skärmdumpen"
+                        className="relative group w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 border border-[#18221C]/15 dark:border-[#E3EAE5]/15 bg-black/5 dark:bg-white/5 cursor-pointer"
+                      >
+                        <img
+                          src={item.attachment_image}
+                          alt={`Skärmdump för ${item.sender || item.carrier || 'post'}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                          <Eye className="w-4 h-4" />
+                        </div>
+                      </button>
+
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6] truncate">
+                          Sparad skärmdump / avi
+                        </p>
+                        <p className="text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate">
+                          Visa hos ombudet för QR-kod, streckkod eller OCR
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFullscreenImage({
+                          url: item.attachment_image!,
+                          title: item.sender || item.carrier || 'Skärmdump',
+                          category: item.item_category,
+                          pickupCode: item.pickup_code,
+                          trackingId: item.tracking_id,
+                          ocrNumber: item.ocr_number,
+                          pickupLocation: item.pickup_location,
+                        })
+                      }
+                      className="min-h-[38px] px-3.5 rounded-xl bg-white dark:bg-[#191D1A] hover:bg-[#ECEFE9] dark:hover:bg-[#262D28] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6] inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs transition-colors"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]" aria-hidden="true" />
+                      <span>🖼️ Visa bild / streckkod</span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Card Footer Actions */}
                 <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 text-[11px] text-[#525E56] dark:text-[#9BA79F]">
@@ -1234,6 +1969,27 @@ export function MailManager({
                         </p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
+                        {item.attachment_image && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFullscreenImage({
+                                url: item.attachment_image!,
+                                title: item.sender || item.carrier || 'Arkiverad avi',
+                                category: item.item_category,
+                                pickupCode: item.pickup_code,
+                                trackingId: item.tracking_id,
+                                ocrNumber: item.ocr_number,
+                                pickupLocation: item.pickup_location,
+                              })
+                            }
+                            title="Visa bild"
+                            aria-label="Visa sparad bild"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                          >
+                            <ImageIcon className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => onToggleCompleted(item)}
@@ -1258,6 +2014,131 @@ export function MailManager({
               )}
             </section>
           )}
+        </div>
+      )}
+
+      {/* Fullscreen Image / Barcode Modal */}
+      {fullscreenImage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Förstorad skärmdump"
+          className="fixed inset-0 z-50 bg-black/92 backdrop-blur-md flex flex-col justify-between p-3 sm:p-5 animate-in fade-in duration-150"
+          onClick={() => setFullscreenImage(null)}
+        >
+          {/* Top Bar */}
+          <div
+            className="flex items-center justify-between gap-3 text-white max-w-4xl w-full mx-auto pb-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="min-w-0">
+              <h3 className="font-display text-sm sm:text-base font-bold truncate">
+                {fullscreenImage.title}
+              </h3>
+              <p className="text-xs text-white/70 truncate">
+                {fullscreenImage.pickupLocation
+                  ? `Ombud: ${fullscreenImage.pickupLocation}`
+                  : 'Skärmdump / avisering med streckkod / QR-kod'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setFullscreenImage(null)}
+                aria-label="Stäng fullskärmsläge"
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Center Image */}
+          <div
+            className="flex-1 min-h-0 flex items-center justify-center p-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={fullscreenImage.url}
+              alt={fullscreenImage.title}
+              className="max-h-[75vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl select-none"
+            />
+          </div>
+
+          {/* Bottom info pills for quick pickup desk reading */}
+          <div
+            className="max-w-2xl w-full mx-auto pt-2 flex flex-wrap items-center justify-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {fullscreenImage.pickupCode && (
+              <div className="rounded-xl bg-white/15 text-white px-3.5 py-2 flex items-center gap-2.5 text-xs font-medium backdrop-blur-sm shadow-md">
+                <span>
+                  Hämtkod:{' '}
+                  <strong className="font-mono-tabular tracking-wider text-emerald-300 text-sm">
+                    {fullscreenImage.pickupCode}
+                  </strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy('fs-code', fullscreenImage.pickupCode!)}
+                  className="hover:underline text-emerald-300 inline-flex items-center gap-1 cursor-pointer font-semibold ml-1"
+                >
+                  {copiedKey === 'fs-code' ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                  <span>{copiedKey === 'fs-code' ? 'Kopierad!' : 'Kopiera'}</span>
+                </button>
+              </div>
+            )}
+
+            {fullscreenImage.trackingId && (
+              <div className="rounded-xl bg-white/15 text-white px-3.5 py-2 flex items-center gap-2.5 text-xs font-medium backdrop-blur-sm shadow-md">
+                <span className="truncate max-w-[240px]">
+                  Kolli:{' '}
+                  <span className="font-mono-tabular text-emerald-300">
+                    {fullscreenImage.trackingId}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy('fs-track', fullscreenImage.trackingId!)}
+                  className="hover:underline text-emerald-300 inline-flex items-center gap-1 cursor-pointer font-semibold ml-1"
+                >
+                  {copiedKey === 'fs-track' ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                  <span>{copiedKey === 'fs-track' ? 'Kopierad!' : 'Kopiera'}</span>
+                </button>
+              </div>
+            )}
+
+            {fullscreenImage.ocrNumber && (
+              <div className="rounded-xl bg-white/15 text-white px-3.5 py-2 flex items-center gap-2.5 text-xs font-medium backdrop-blur-sm shadow-md">
+                <span className="truncate max-w-[240px]">
+                  OCR:{' '}
+                  <span className="font-mono-tabular text-emerald-300">
+                    {fullscreenImage.ocrNumber}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy('fs-ocr', fullscreenImage.ocrNumber!)}
+                  className="hover:underline text-emerald-300 inline-flex items-center gap-1 cursor-pointer font-semibold ml-1"
+                >
+                  {copiedKey === 'fs-ocr' ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                  <span>{copiedKey === 'fs-ocr' ? 'Kopierad!' : 'Kopiera'}</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

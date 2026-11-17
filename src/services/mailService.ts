@@ -20,6 +20,7 @@ export interface RawMailItem {
   amount?: string | null;
   due_date?: string | null;
   raw_note?: string | null;
+  attachment_image?: string | null;
   is_private: boolean;
   completed: boolean;
   is_encrypted?: boolean;
@@ -43,6 +44,7 @@ export interface MailItem {
   amount: string;
   due_date: string;
   raw_note: string;
+  attachment_image?: string | null;
   is_private: boolean;
   completed: boolean;
   is_encrypted?: boolean;
@@ -63,7 +65,26 @@ export interface ParsedMailDraft {
   amount: string;
   due_date: string;
   raw_note: string;
+  attachment_image?: string | null;
   is_private: boolean;
+}
+
+export interface ParsedMailItemResult {
+  item_category: MailItemCategory;
+  carrier: string;
+  sender: string;
+  pickup_code: string;
+  tracking_id: string;
+  pickup_location: string;
+  pickup_address: string;
+  ocr_number: string;
+  payment_recipient: string;
+  amount: string;
+  due_date: string;
+}
+
+export interface ParseMailResultWithItems extends ParsedMailItemResult {
+  items: ParsedMailItemResult[];
 }
 
 export interface SharedContentPayload {
@@ -77,6 +98,35 @@ export interface SharedContentPayload {
 const DEFAULT_NATIVE_API_BASE =
   'https://ais-pre-foseevlikbd26otglcr2vv-521875751697.europe-west2.run.app';
 
+const ATTACHMENT_CACHE_KEY_PREFIX = 'betterkeep_mail_attachment_v1_';
+
+export function saveLocalMailAttachment(mailId: string, dataUrl: string): void {
+  if (!mailId || !dataUrl) return;
+  try {
+    localStorage.setItem(`${ATTACHMENT_CACHE_KEY_PREFIX}${mailId}`, dataUrl);
+  } catch {
+    // Non-fatal if storage quota is full
+  }
+}
+
+export function getLocalMailAttachment(mailId: string): string | null {
+  if (!mailId) return null;
+  try {
+    return localStorage.getItem(`${ATTACHMENT_CACHE_KEY_PREFIX}${mailId}`);
+  } catch {
+    return null;
+  }
+}
+
+export function deleteLocalMailAttachment(mailId: string): void {
+  if (!mailId) return;
+  try {
+    localStorage.removeItem(`${ATTACHMENT_CACHE_KEY_PREFIX}${mailId}`);
+  } catch {
+    // Non-fatal
+  }
+}
+
 function getMailParseEndpoint(): string {
   if (Capacitor.isNativePlatform()) {
     const configured = import.meta.env?.VITE_API_BASE_URL as string | undefined;
@@ -86,40 +136,16 @@ function getMailParseEndpoint(): string {
   return '/api/mail/parse';
 }
 
-export async function parseMailWithAI(params: {
-  text?: string;
-  imageBase64?: string;
-  mimeType?: string;
-}): Promise<Omit<ParsedMailDraft, 'raw_note' | 'is_private'>> {
-  const endpoint = getMailParseEndpoint();
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      text: params.text || '',
-      imageBase64: params.imageBase64 || '',
-      mimeType: params.mimeType || 'image/jpeg',
-    }),
-  });
-
-  const payload = (await res.json().catch(() => ({}))) as {
-    result?: Partial<ParsedMailDraft>;
-    error?: string;
-  };
-
-  if (!res.ok || !payload.result) {
-    throw new Error(
-      payload.error || 'AI-tolkningen misslyckades. Försök igen eller fyll i manuellt.'
-    );
-  }
-
-  const r = payload.result;
+function normalizeRawItem(r: Partial<ParsedMailItemResult>): ParsedMailItemResult {
+  const catRaw = String(r.item_category || '').trim().toLowerCase();
   const cat: MailItemCategory =
-    r.item_category === 'package' ||
-    r.item_category === 'invoice' ||
-    r.item_category === 'letter'
-      ? r.item_category
-      : 'letter';
+    catRaw === 'package'
+      ? 'package'
+      : catRaw === 'invoice' || catRaw === 'bill'
+        ? 'invoice'
+        : catRaw === 'letter'
+          ? 'letter'
+          : 'letter';
 
   return {
     item_category: cat,
@@ -136,61 +162,135 @@ export async function parseMailWithAI(params: {
   };
 }
 
-export async function imageFileToBase64(
-  file: File
-): Promise<{ base64: string; mimeType: string }> {
-  const readAsDataUrl = (): Promise<string> =>
-    new Promise((resolve, reject) => {
+export async function parseMailWithAI(params: {
+  text?: string;
+  imageBase64?: string;
+  mimeType?: string;
+}): Promise<ParseMailResultWithItems> {
+  const endpoint = getMailParseEndpoint();
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text: params.text || '',
+      imageBase64: params.imageBase64 || '',
+      mimeType: params.mimeType || 'image/jpeg',
+    }),
+  });
+
+  const payload = (await res.json().catch(() => ({}))) as {
+    items?: Array<Partial<ParsedMailItemResult>>;
+    result?: Partial<ParsedMailItemResult>;
+    error?: string;
+  };
+
+  if (!res.ok || (!payload.result && (!payload.items || payload.items.length === 0))) {
+    throw new Error(
+      payload.error || 'AI-tolkningen misslyckades. Försök igen eller fyll i manuellt.'
+    );
+  }
+
+  let items: ParsedMailItemResult[] = [];
+  if (Array.isArray(payload.items) && payload.items.length > 0) {
+    items = payload.items.map(normalizeRawItem);
+  } else if (payload.result) {
+    items = [normalizeRawItem(payload.result)];
+  }
+
+  const primary = items[0] || normalizeRawItem({});
+
+  return {
+    ...primary,
+    items,
+  };
+}
+
+/**
+ * Compresses screenshot or camera photos to max 1200px width/height and JPEG 0.78 quality
+ * as requested, maintaining barcode / QR code / OCR clarity while staying lightweight.
+ */
+export async function compressScreenshotImage(
+  fileOrDataUrl: File | string,
+  maxDimension = 1200,
+  quality = 0.78
+): Promise<{ base64: string; mimeType: string; dataUrl: string }> {
+  let sourceDataUrl = '';
+  if (typeof fileOrDataUrl === 'string') {
+    sourceDataUrl = fileOrDataUrl;
+  } else {
+    sourceDataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || ''));
       reader.onerror = () => reject(new Error('Kunde inte läsa bildfilen.'));
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(fileOrDataUrl);
     });
-
-  const dataUrl = await readAsDataUrl();
-  if (file.size <= 1_800_000) {
-    const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-    return {
-      base64,
-      mimeType: file.type || 'image/jpeg',
-    };
   }
 
-  // Downscale oversized camera photos while keeping text/OCR legible
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const maxDim = 1600;
       let { width, height } = img;
-      if (width > maxDim || height > maxDim) {
+      if (width > maxDimension || height > maxDimension) {
         if (width >= height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
         } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
         }
       }
+
       const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = Math.max(1, width);
+      canvas.height = Math.max(1, height);
       const ctx = canvas.getContext('2d');
       if (!ctx) {
-        const fallbackBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-        resolve({ base64: fallbackBase64, mimeType: file.type || 'image/jpeg' });
+        const fallbackBase64 = sourceDataUrl.includes(',')
+          ? sourceDataUrl.split(',').pop() || ''
+          : sourceDataUrl;
+        resolve({
+          base64: fallbackBase64,
+          mimeType: 'image/jpeg',
+          dataUrl: sourceDataUrl,
+        });
         return;
       }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
-      const compressed = canvas.toDataURL('image/jpeg', 0.88);
-      const base64 = compressed.includes(',') ? compressed.split(',')[1] : compressed;
-      resolve({ base64, mimeType: 'image/jpeg' });
+
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+      const cleanBase64 = compressedDataUrl.includes(',')
+        ? compressedDataUrl.split(',').pop() || ''
+        : compressedDataUrl;
+
+      resolve({
+        base64: cleanBase64,
+        mimeType: 'image/jpeg',
+        dataUrl: compressedDataUrl,
+      });
     };
+
     img.onerror = () => {
-      const fallbackBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-      resolve({ base64: fallbackBase64, mimeType: file.type || 'image/jpeg' });
+      const fallbackBase64 = sourceDataUrl.includes(',')
+        ? sourceDataUrl.split(',').pop() || ''
+        : sourceDataUrl;
+      resolve({
+        base64: fallbackBase64,
+        mimeType: 'image/jpeg',
+        dataUrl: sourceDataUrl,
+      });
     };
-    img.src = dataUrl;
+
+    img.src = sourceDataUrl;
   });
+}
+
+export async function imageFileToBase64(
+  file: File
+): Promise<{ base64: string; mimeType: string; dataUrl: string }> {
+  return compressScreenshotImage(file, 1200, 0.78);
 }
 
 async function safeDecryptMailField(
@@ -222,6 +322,7 @@ export async function decryptMailItem(
     payment_recipient,
     amount,
     raw_note,
+    attachment_image_decrypted,
   ] = await Promise.all([
     safeDecryptMailField(raw.sender, raw.is_encrypted, secret),
     safeDecryptMailField(raw.pickup_code, raw.is_encrypted, secret),
@@ -232,7 +333,15 @@ export async function decryptMailItem(
     safeDecryptMailField(raw.payment_recipient, raw.is_encrypted, secret),
     safeDecryptMailField(raw.amount, raw.is_encrypted, secret),
     safeDecryptMailField(raw.raw_note, raw.is_encrypted, secret),
+    safeDecryptMailField(raw.attachment_image, raw.is_encrypted, secret),
   ]);
+
+  let finalAttachmentImage = attachment_image_decrypted || null;
+  if (!finalAttachmentImage && raw.id) {
+    finalAttachmentImage = getLocalMailAttachment(raw.id);
+  } else if (finalAttachmentImage && raw.id) {
+    saveLocalMailAttachment(raw.id, finalAttachmentImage);
+  }
 
   return {
     id: raw.id,
@@ -250,6 +359,7 @@ export async function decryptMailItem(
     amount,
     due_date: (raw.due_date ?? '').trim(),
     raw_note,
+    attachment_image: finalAttachmentImage,
     is_private: Boolean(raw.is_private),
     completed: Boolean(raw.completed),
     is_encrypted: raw.is_encrypted,
@@ -274,6 +384,7 @@ export async function encryptMailDraft(
   amount: string;
   due_date: string | null;
   raw_note: string;
+  attachment_image: string | null;
   is_private: boolean;
   is_encrypted: boolean;
 }> {
@@ -287,6 +398,7 @@ export async function encryptMailDraft(
     payment_recipient,
     amount,
     raw_note,
+    attachment_image,
   ] = await Promise.all([
     encryptText(draft.sender.trim(), secret),
     encryptText(draft.pickup_code.trim(), secret),
@@ -297,6 +409,7 @@ export async function encryptMailDraft(
     encryptText(draft.payment_recipient.trim(), secret),
     encryptText(draft.amount.trim(), secret),
     encryptText(draft.raw_note.trim(), secret),
+    draft.attachment_image ? encryptText(draft.attachment_image, secret) : Promise.resolve(null),
   ]);
 
   return {
@@ -312,6 +425,7 @@ export async function encryptMailDraft(
     amount,
     due_date: draft.due_date.trim() || null,
     raw_note,
+    attachment_image,
     is_private: draft.is_private,
     is_encrypted: true,
   };
