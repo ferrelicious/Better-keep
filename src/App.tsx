@@ -3,11 +3,13 @@ import {
   Bell,
   Calendar as CalendarIcon,
   Check,
+  CheckCircle2,
   Clock,
   Lock,
   MessageCircle,
   Plus,
   Search,
+  ShoppingCart,
   StickyNote,
   Users,
   X,
@@ -24,6 +26,7 @@ import { HouseholdModal } from './components/HouseholdModal';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
 import { SettingsModal } from './components/SettingsModal';
+import { ShoppingList } from './components/ShoppingList';
 import { TopBar } from './components/TopBar';
 import { UpdateBanner } from './components/UpdateBanner';
 import {
@@ -32,6 +35,11 @@ import {
   encryptText,
   resolveHouseholdSecret,
 } from './services/crypto';
+import {
+  ShoppingItem,
+  extractShoppingItems,
+  hasShoppingPrefix,
+} from './services/shoppingParser';
 import { UpdateCheckResult } from './services/updater';
 import {
   SnoozePreset,
@@ -41,6 +49,7 @@ import {
   ensureHighPriorityNotificationChannel,
   formatReminderDateTime,
   notifyIncomingChatMessage,
+  notifyShoppingListCompleted,
   scheduleCalendarEventNotifications,
   syncNoteReminderNotification,
   triggerWebNotification,
@@ -87,7 +96,7 @@ export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
-  const [activeTab, setActiveTab] = useState<'notes' | 'calendar' | 'chat'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'shopping' | 'calendar' | 'chat'>('notes');
   const [theme, setTheme] = useState<ThemeMode>(() => getSavedTheme());
   const [systemDark, setSystemDark] = useState<boolean>(() => {
     try {
@@ -120,6 +129,7 @@ export default function App() {
   const [sharedNoteIds, setSharedNoteIds] = useState<Set<string>>(new Set());
   const [householdEvents, setHouseholdEvents] = useState<HouseholdEvent[]>([]);
   const [householdMessages, setHouseholdMessages] = useState<HouseholdMessage[]>([]);
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [passphraseVersion, setPassphraseVersion] = useState(0);
   const [latestRelease, setLatestRelease] = useState<UpdateCheckResult | null>(null);
@@ -128,18 +138,32 @@ export default function App() {
   const [dueBannerNote, setDueBannerNote] = useState<Note | null>(null);
   const [calendarBanner, setCalendarBanner] = useState<HouseholdEvent | null>(null);
   const [chatBanner, setChatBanner] = useState<HouseholdMessage | null>(null);
+  const [shoppingDoneBanner, setShoppingDoneBanner] = useState<{
+    actorName: string;
+    at: string;
+  } | null>(null);
   const notifiedIdsRef = useRef<Set<string>>(new Set());
   const undoTimerRef = useRef<number | null>(null);
-  const activeTabRef = useRef<'notes' | 'calendar' | 'chat'>('notes');
+  const activeTabRef = useRef<'notes' | 'shopping' | 'calendar' | 'chat'>('notes');
   const householdRef = useRef<HouseholdInfo | null>(null);
+  const shoppingItemsRef = useRef<ShoppingItem[]>([]);
 
   useEffect(() => {
     householdRef.current = household;
   }, [household]);
 
+  useEffect(() => {
+    shoppingItemsRef.current = shoppingItems;
+  }, [shoppingItems]);
+
   const encryptionSecret = useMemo(
     () => (household ? resolveHouseholdSecret(household) : null),
     [household, passphraseVersion]
+  );
+
+  const uncheckedShoppingCount = useMemo(
+    () => shoppingItems.filter((item) => !item.checked).length,
+    [shoppingItems]
   );
 
   useEffect(() => {
@@ -216,6 +240,17 @@ export default function App() {
     }
   }, []);
 
+  const fetchHouseholdShoppingItems = useCallback(async (householdId: string) => {
+    const { data, error } = await supabase
+      .from('household_shopping_items')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('created_at', { ascending: true });
+    if (!error && data) {
+      setShoppingItems(data as ShoppingItem[]);
+    }
+  }, []);
+
   const syncFromCloud = useCallback(
     async (email: string) => {
       try {
@@ -228,10 +263,12 @@ export default function App() {
           await Promise.all([
             fetchHouseholdEvents(hh.id, email),
             fetchHouseholdMessages(hh.id),
+            fetchHouseholdShoppingItems(hh.id),
           ]);
         } else {
           setHouseholdEvents([]);
           setHouseholdMessages([]);
+          setShoppingItems([]);
         }
 
         const sharedIds = new Set<string>();
@@ -311,6 +348,7 @@ export default function App() {
         setSharedNoteIds(new Set());
         setHouseholdEvents([]);
         setHouseholdMessages([]);
+        setShoppingItems([]);
       }
     });
 
@@ -443,11 +481,44 @@ export default function App() {
                     : 'Skickade en fil';
             }
             const notificationMsg: HouseholdMessage = { ...msg, body: previewBody };
-            if (activeTabRef.current !== 'chat') {
-              setUnreadChatCount((c) => c + 1);
-              setChatBanner(notificationMsg);
+            const completedMatch = previewBody.match(
+              /^✅\s*Inköpslistan är klar!\s*\(Utfört av ([^)]+)\)/i
+            );
+            if (completedMatch) {
+              const actorName = completedMatch[1].trim() || msg.sender_email.split('@')[0];
+              setShoppingDoneBanner({ actorName, at: msg.created_at });
+              if (activeTabRef.current !== 'chat') {
+                setUnreadChatCount((c) => c + 1);
+              }
+              await notifyShoppingListCompleted(msg.id, actorName);
+            } else {
+              if (activeTabRef.current !== 'chat') {
+                setUnreadChatCount((c) => c + 1);
+                setChatBanner(notificationMsg);
+              }
+              await notifyIncomingChatMessage(notificationMsg);
             }
-            await notifyIncomingChatMessage(notificationMsg);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'household_shopping_items' },
+        (payload) => {
+          const currentHhId = householdRef.current?.id;
+          if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as { id?: string })?.id;
+            if (deletedId) {
+              setShoppingItems((prev) => prev.filter((item) => item.id !== deletedId));
+            }
+          } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const item = payload.new as ShoppingItem;
+            if (!item?.id) return;
+            if (currentHhId && item.household_id !== currentHhId) return;
+            setShoppingItems((prev) => {
+              const exists = prev.some((i) => i.id === item.id);
+              return exists ? prev.map((i) => (i.id === item.id ? item : i)) : [...prev, item];
+            });
           }
         }
       )
@@ -461,6 +532,7 @@ export default function App() {
             await Promise.all([
               fetchHouseholdEvents(hh.id, userEmail),
               fetchHouseholdMessages(hh.id),
+              fetchHouseholdShoppingItems(hh.id),
             ]);
           }
         }
@@ -470,7 +542,12 @@ export default function App() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userEmail, fetchHouseholdEvents, fetchHouseholdMessages]);
+  }, [
+    userEmail,
+    fetchHouseholdEvents,
+    fetchHouseholdMessages,
+    fetchHouseholdShoppingItems,
+  ]);
 
   useEffect(() => {
     const checkDueReminders = () => {
@@ -510,6 +587,49 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
+
+  const handleAddShoppingItems = useCallback(
+    async (rawText: string): Promise<number> => {
+      if (!userEmail || !household?.id) return 0;
+      const parsed = extractShoppingItems(rawText);
+      if (parsed.length === 0) return 0;
+
+      const existingUnchecked = new Set(
+        shoppingItemsRef.current
+          .filter((i) => !i.checked)
+          .map((i) => i.title.trim().toLowerCase())
+      );
+
+      const toInsert = parsed
+        .filter((title) => !existingUnchecked.has(title.trim().toLowerCase()))
+        .map((title) => ({
+          household_id: household.id,
+          title,
+          checked: false,
+          created_by: userEmail,
+        }));
+
+      if (toInsert.length === 0) return 0;
+
+      const { data, error } = await supabase
+        .from('household_shopping_items')
+        .insert(toInsert)
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const created = data as ShoppingItem[];
+        setShoppingItems((prev) => {
+          const existingIds = new Set(prev.map((i) => i.id));
+          return [...prev, ...created.filter((c) => !existingIds.has(c.id))];
+        });
+        return created.length;
+      }
+      return 0;
+    },
+    [userEmail, household]
+  );
 
   const handleSendChatMessage = useCallback(
     async (payload: OutgoingChatPayload) => {
@@ -565,9 +685,67 @@ export default function App() {
           prev.some((m) => m.id === created.id) ? prev : [...prev, created]
         );
       }
+
+      if (cleanText && hasShoppingPrefix(cleanText)) {
+        await handleAddShoppingItems(cleanText);
+      }
     },
-    [userEmail, household]
+    [userEmail, household, handleAddShoppingItems]
   );
+
+  const handleToggleShoppingItem = useCallback(
+    async (item: ShoppingItem) => {
+      if (!userEmail || !household?.id) return;
+      const currentList = shoppingItemsRef.current;
+      const uncheckedBefore = currentList.filter((i) => !i.checked).length;
+      const nextChecked = !item.checked;
+      const willFinishList =
+        nextChecked &&
+        !item.checked &&
+        currentList.length >= 1 &&
+        uncheckedBefore === 1;
+
+      setShoppingItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, checked: nextChecked } : i))
+      );
+
+      const { error } = await supabase
+        .from('household_shopping_items')
+        .update({ checked: nextChecked })
+        .eq('id', item.id);
+
+      if (error) {
+        setShoppingItems((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, checked: item.checked } : i))
+        );
+        return;
+      }
+
+      if (willFinishList) {
+        const actorName = userEmail.split('@')[0];
+        setShoppingDoneBanner({ actorName, at: new Date().toISOString() });
+        await handleSendChatMessage({
+          text: `✅ Inköpslistan är klar! (Utfört av ${actorName})`,
+        });
+      }
+    },
+    [userEmail, household, handleSendChatMessage]
+  );
+
+  const handleDeleteShoppingItem = useCallback(async (id: string) => {
+    setShoppingItems((prev) => prev.filter((item) => item.id !== id));
+    await supabase.from('household_shopping_items').delete().eq('id', id);
+  }, []);
+
+  const handleClearCheckedShoppingItems = useCallback(async () => {
+    if (!household?.id) return;
+    setShoppingItems((prev) => prev.filter((item) => !item.checked));
+    await supabase
+      .from('household_shopping_items')
+      .delete()
+      .eq('household_id', household.id)
+      .eq('checked', true);
+  }, [household]);
 
   const handleAddCalendarEvent = useCallback(
     async (draft: {
@@ -1022,12 +1200,12 @@ export default function App() {
           </button>
         </div>
 
-        {/* Huvudväxlare: Anteckningar / Kalender / Chatt */}
+        {/* Huvudväxlare: Anteckningar / Inköp / Kalender / Chatt */}
         <div className="flex items-center gap-1.5 bg-[#ECEFE9] dark:bg-[#212723] p-1 rounded-2xl self-start flex-wrap">
           <button
             type="button"
             onClick={() => setActiveTab('notes')}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
               activeTab === 'notes'
                 ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
                 : 'text-[#525E56] dark:text-[#9BA79F]'
@@ -1038,8 +1216,25 @@ export default function App() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('shopping')}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
+              activeTab === 'shopping'
+                ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
+                : 'text-[#525E56] dark:text-[#9BA79F]'
+            }`}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span>Inköp</span>
+            {uncheckedShoppingCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono-tabular bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]">
+                {uncheckedShoppingCount}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('calendar')}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
               activeTab === 'calendar'
                 ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
                 : 'text-[#525E56] dark:text-[#9BA79F]'
@@ -1056,7 +1251,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('chat')}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
               activeTab === 'chat'
                 ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
                 : 'text-[#525E56] dark:text-[#9BA79F]'
@@ -1071,6 +1266,45 @@ export default function App() {
             )}
           </button>
         </div>
+
+        {shoppingDoneBanner && (
+          <div
+            role="status"
+            className="rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] border border-[#2E6B4E]/30 dark:border-[#8FD4AE]/30 text-[#0D3824] dark:text-[#CBEED9] p-4 flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-[#2E6B4E] dark:text-[#8FD4AE]" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">
+                  Inköpslistan är klar!
+                </p>
+                <p className="text-xs opacity-85 truncate">
+                  {shoppingDoneBanner.actorName} har handlat klart alla varor på listan.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('shopping');
+                  setShoppingDoneBanner(null);
+                }}
+                className="min-h-[34px] px-3 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer"
+              >
+                Visa Inköp
+              </button>
+              <button
+                type="button"
+                onClick={() => setShoppingDoneBanner(null)}
+                aria-label="Stäng"
+                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/10 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {chatBanner && activeTab !== 'chat' && (
           <div
@@ -1152,11 +1386,26 @@ export default function App() {
         {activeTab === 'chat' ? (
           <HouseholdChat
             messages={householdMessages}
+            shoppingItems={shoppingItems}
             householdName={household?.name}
             encryptionSecret={encryptionSecret}
             userEmail={userEmail}
             onSendMessage={handleSendChatMessage}
             onSaveAsNote={handleSaveChatAsNote}
+            onToggleShoppingItem={handleToggleShoppingItem}
+            onCreateShoppingFromText={handleAddShoppingItems}
+            onOpenShoppingTab={() => setActiveTab('shopping')}
+            onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
+          />
+        ) : activeTab === 'shopping' ? (
+          <ShoppingList
+            items={shoppingItems}
+            householdName={household?.name}
+            userEmail={userEmail}
+            onAddItems={handleAddShoppingItems}
+            onToggleItem={handleToggleShoppingItem}
+            onDeleteItem={handleDeleteShoppingItem}
+            onClearChecked={handleClearCheckedShoppingItems}
             onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
           />
         ) : activeTab === 'calendar' ? (

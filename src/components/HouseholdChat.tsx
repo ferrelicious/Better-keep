@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Check,
   Download,
   FileText,
   Loader2,
@@ -9,6 +10,7 @@ import {
   Mic,
   Paperclip,
   Send,
+  ShoppingCart,
   Square,
   StickyNote,
   Users,
@@ -19,6 +21,11 @@ import {
   decryptText,
   inferMimeTypeFromFilename,
 } from '../services/crypto';
+import {
+  ShoppingItem,
+  extractShoppingItems,
+  hasShoppingPrefix,
+} from '../services/shoppingParser';
 import { supabase } from '../services/supabase';
 
 export interface HouseholdMessage {
@@ -42,11 +49,15 @@ export interface OutgoingChatPayload {
 
 interface HouseholdChatProps {
   messages: HouseholdMessage[];
+  shoppingItems: ShoppingItem[];
   householdName?: string;
   encryptionSecret: string | null;
   userEmail: string | null;
   onSendMessage: (payload: OutgoingChatPayload) => Promise<void>;
   onSaveAsNote: (body: string) => Promise<void>;
+  onToggleShoppingItem: (item: ShoppingItem) => Promise<void>;
+  onCreateShoppingFromText: (rawText: string) => Promise<number>;
+  onOpenShoppingTab: () => void;
   onOpenHouseholdModal: () => void;
 }
 
@@ -66,7 +77,11 @@ interface EncryptedMessageBubbleProps {
   msg: HouseholdMessage;
   isMine: boolean;
   encryptionSecret: string | null;
+  shoppingItems: ShoppingItem[];
   onSaveAsNote: (decryptedBody: string) => Promise<void>;
+  onToggleShoppingItem: (item: ShoppingItem) => Promise<void>;
+  onCreateShoppingFromText: (rawText: string) => Promise<number>;
+  onOpenShoppingTab: () => void;
   onPreviewImage: (url: string, name: string) => void;
 }
 
@@ -74,7 +89,11 @@ function EncryptedMessageBubble({
   msg,
   isMine,
   encryptionSecret,
+  shoppingItems,
   onSaveAsNote,
+  onToggleShoppingItem,
+  onCreateShoppingFromText,
+  onOpenShoppingTab,
   onPreviewImage,
 }: EncryptedMessageBubbleProps) {
   const [decryptedBody, setDecryptedBody] = useState<string>(() =>
@@ -85,6 +104,8 @@ function EncryptedMessageBubble({
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [convertedToChecklist, setConvertedToChecklist] = useState(false);
+  const [creatingList, setCreatingList] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -176,19 +197,44 @@ function EncryptedMessageBubble({
   }, [msg.attachment_url, msg.attachment_type, decryptedName, encryptionSecret, decryptFailed]);
 
   const canSaveNote = Boolean(decryptedBody.trim()) && !decryptFailed;
+  const isShoppingPrefixMsg = canSaveNote && hasShoppingPrefix(decryptedBody);
+  const showInteractiveChecklist = isShoppingPrefixMsg || (canSaveNote && convertedToChecklist);
+  const checklistTitles = showInteractiveChecklist ? extractShoppingItems(decryptedBody) : [];
+
+  const findShoppingMatch = (title: string): ShoppingItem | undefined => {
+    const key = title.trim().toLowerCase();
+    return (
+      shoppingItems.find((i) => !i.checked && i.title.trim().toLowerCase() === key) ??
+      shoppingItems.find((i) => i.title.trim().toLowerCase() === key)
+    );
+  };
+
+  const handleCreateListClick = async () => {
+    if (!canSaveNote || creatingList) return;
+    setCreatingList(true);
+    try {
+      await onCreateShoppingFromText(decryptedBody);
+      setConvertedToChecklist(true);
+    } finally {
+      setCreatingList(false);
+    }
+  };
+
+  const checkedInBubbleCount = checklistTitles.filter((t) => findShoppingMatch(t)?.checked).length;
 
   return (
     <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
       <span className="text-[10px] text-[#525E56] dark:text-[#9BA79F] px-1 mb-0.5">
         {isMine ? 'Du' : msg.sender_email.split('@')[0]} · {formatMsgTime(msg.created_at)}
       </span>
-      <div className="group flex items-center gap-1.5 max-w-[85%] sm:max-w-[75%]">
+      <div className="group flex items-center gap-1.5 max-w-[88%] sm:max-w-[78%]">
         {isMine && canSaveNote && (
           <button
             type="button"
             onClick={() => onSaveAsNote(decryptedBody)}
             title="Spara som anteckning"
-            className="opacity-60 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer"
+            aria-label="Spara som anteckning"
+            className="opacity-65 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer"
           >
             <StickyNote className="w-3.5 h-3.5" />
           </button>
@@ -246,10 +292,72 @@ function EncryptedMessageBubble({
             </div>
           )}
 
-          {decryptedBody && (
-            <span className={decryptFailed ? 'italic opacity-80 text-xs' : ''}>
-              {decryptedBody}
-            </span>
+          {showInteractiveChecklist && checklistTitles.length > 0 ? (
+            <div className="flex flex-col gap-2 min-w-[200px]">
+              <div className="flex items-center justify-between gap-3 border-b border-current/15 pb-1.5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                  <ShoppingCart className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>Inköpslista</span>
+                  <span className="font-mono-tabular opacity-80">
+                    ({checkedInBubbleCount}/{checklistTitles.length})
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenShoppingTab}
+                  className="text-[11px] font-semibold underline opacity-90 hover:opacity-100 cursor-pointer whitespace-nowrap"
+                >
+                  Öppna Inköp
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                {checklistTitles.map((title) => {
+                  const matched = findShoppingMatch(title);
+                  const isChecked = Boolean(matched?.checked);
+                  return (
+                    <button
+                      key={title}
+                      type="button"
+                      onClick={() => {
+                        if (matched) {
+                          onToggleShoppingItem(matched);
+                        } else {
+                          onCreateShoppingFromText(title);
+                        }
+                      }}
+                      className="flex items-center gap-2 py-1 text-left rounded-lg hover:bg-black/10 dark:hover:bg-white/10 px-1.5 -mx-1.5 transition-colors cursor-pointer"
+                    >
+                      <span
+                        className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                          isChecked
+                            ? isMine
+                              ? 'bg-white text-[#2E6B4E] dark:bg-[#063822] dark:text-[#8FD4AE] border-transparent'
+                              : 'bg-[#2E6B4E] text-white dark:bg-[#8FD4AE] dark:text-[#063822] border-transparent'
+                            : 'border-current/45'
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {isChecked && <Check className="w-3 h-3 stroke-[2.5]" />}
+                      </span>
+                      <span
+                        className={`text-sm break-words ${
+                          isChecked ? 'line-through opacity-65' : ''
+                        }`}
+                      >
+                        {title}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            decryptedBody && (
+              <span className={decryptFailed ? 'italic opacity-80 text-xs' : ''}>
+                {decryptedBody}
+              </span>
+            )
           )}
         </div>
 
@@ -258,23 +366,40 @@ function EncryptedMessageBubble({
             type="button"
             onClick={() => onSaveAsNote(decryptedBody)}
             title="Spara som anteckning"
-            className="opacity-60 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer"
+            aria-label="Spara som anteckning"
+            className="opacity-65 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer"
           >
             <StickyNote className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
+
+      {!showInteractiveChecklist && canSaveNote && (
+        <button
+          type="button"
+          onClick={handleCreateListClick}
+          disabled={creatingList}
+          className="mt-1 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[#2E6B4E] dark:text-[#8FD4AE] hover:bg-[#2E6B4E]/10 dark:hover:bg-[#8FD4AE]/10 transition-colors cursor-pointer"
+        >
+          <ShoppingCart className="w-3 h-3" aria-hidden="true" />
+          <span>{creatingList ? 'Skapar lista...' : 'Skapa inköpslista'}</span>
+        </button>
+      )}
     </div>
   );
 }
 
 export function HouseholdChat({
   messages,
+  shoppingItems,
   householdName,
   encryptionSecret,
   userEmail,
   onSendMessage,
   onSaveAsNote,
+  onToggleShoppingItem,
+  onCreateShoppingFromText,
+  onOpenShoppingTab,
   onOpenHouseholdModal,
 }: HouseholdChatProps) {
   const [text, setText] = useState('');
@@ -506,7 +631,11 @@ export function HouseholdChat({
                   msg={msg}
                   isMine={isMine}
                   encryptionSecret={encryptionSecret}
+                  shoppingItems={shoppingItems}
                   onSaveAsNote={onSaveAsNote}
+                  onToggleShoppingItem={onToggleShoppingItem}
+                  onCreateShoppingFromText={onCreateShoppingFromText}
+                  onOpenShoppingTab={onOpenShoppingTab}
                   onPreviewImage={(url, name) => setLightbox({ url, name })}
                 />
               </div>
@@ -589,7 +718,9 @@ export function HouseholdChat({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={
-              sending ? 'Krypterar & skickar...' : 'Skriv ett krypterat meddelande...'
+              sending
+                ? 'Krypterar & skickar...'
+                : 'Skriv meddelande eller "Handla: mjölk, ägg"...'
             }
             disabled={sending}
             className="flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"

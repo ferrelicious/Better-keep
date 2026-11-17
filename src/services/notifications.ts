@@ -240,6 +240,42 @@ export async function notifyIncomingChatMessage(msg: {
   }
 }
 
+export async function notifyShoppingListCompleted(
+  eventKey: string,
+  actorName: string
+): Promise<void> {
+  const title = 'Inköpslistan är klar!';
+  const body = `${actorName} har handlat klart alla varor på listan.`;
+  try {
+    await ensureHighPriorityNotificationChannel();
+
+    if (Capacitor.isNativePlatform()) {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: eventNotificationId(eventKey, 4),
+            channelId: URGENT_CHANNEL_ID,
+            title,
+            body,
+            schedule: { at: new Date(Date.now() + 400), allowWhileIdle: true },
+          },
+        ],
+      });
+    } else if (
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      Notification.permission === 'granted'
+    ) {
+      new Notification(title, {
+        body,
+        tag: `betterkeep-shopping-done-${eventKey}`,
+      });
+    }
+  } catch {
+    // Fallback on web preview
+  }
+}
+
 export function triggerWebNotification(note: Note): void {
   try {
     if (

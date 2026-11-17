@@ -12234,6 +12234,30 @@ var ShieldCheck = createLucideIcon("shield-check", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ShoppingCart = createLucideIcon("shopping-cart", [
+	["circle", {
+		cx: "8",
+		cy: "21",
+		r: "1",
+		key: "jimo8o"
+	}],
+	["circle", {
+		cx: "19",
+		cy: "21",
+		r: "1",
+		key: "13723u"
+	}],
+	["path", {
+		d: "M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12",
+		key: "9zh506"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Sparkles = createLucideIcon("sparkles", [
 	["path", {
 		d: "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z",
@@ -13552,6 +13576,28 @@ function inferMimeTypeFromFilename(filename, fallbackType) {
 	if (fallbackType === "image") return "image/jpeg";
 	if (fallbackType === "audio") return "audio/webm";
 	return "application/octet-stream";
+}
+// src/services/shoppingParser.ts
+var SHOPPING_PREFIX_REGEX = /^(handla|inköp|lista)\s*:\s*/i;
+function hasShoppingPrefix(text) {
+	return SHOPPING_PREFIX_REGEX.test(text.trim());
+}
+function extractShoppingItems(rawText) {
+	const withoutPrefix = rawText.trim().replace(SHOPPING_PREFIX_REGEX, "");
+	if (!withoutPrefix) return [];
+	const tokens = withoutPrefix.split(/[\r\n,;]+/);
+	const seen = /* @__PURE__ */ new Set();
+	const items = [];
+	for (const token of tokens) {
+		const cleaned = token.trim().replace(/^[-•*☐☑✅✓]\s*/, "").replace(/^\d+[.)]\s*/, "").trim();
+		if (!cleaned) continue;
+		const normalizedKey = cleaned.toLowerCase();
+		if (seen.has(normalizedKey)) continue;
+		seen.add(normalizedKey);
+		const formatted = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+		items.push(formatted);
+	}
+	return items;
 }
 // node_modules/@supabase/supabase-js/dist/tracingRegistry.mjs
 var EXTRACTOR_KEY = Symbol.for("@supabase/supabase-js.traceContextExtractor");
@@ -35243,13 +35289,15 @@ function formatDuration(sec) {
 	const s = sec % 60;
 	return `${m}:${String(s).padStart(2, "0")}`;
 }
-function EncryptedMessageBubble({ msg, isMine, encryptionSecret, onSaveAsNote, onPreviewImage }) {
+function EncryptedMessageBubble({ msg, isMine, encryptionSecret, shoppingItems, onSaveAsNote, onToggleShoppingItem, onCreateShoppingFromText, onOpenShoppingTab, onPreviewImage }) {
 	const [decryptedBody, setDecryptedBody] = (0, import_react.useState)(() => msg.is_encrypted ? "" : msg.body);
 	const [decryptedName, setDecryptedName] = (0, import_react.useState)("Fil");
 	const [decryptFailed, setDecryptFailed] = (0, import_react.useState)(false);
 	const [mediaUrl, setMediaUrl] = (0, import_react.useState)(null);
 	const [mediaLoading, setMediaLoading] = (0, import_react.useState)(false);
 	const [mediaError, setMediaError] = (0, import_react.useState)(null);
+	const [convertedToChecklist, setConvertedToChecklist] = (0, import_react.useState)(false);
+	const [creatingList, setCreatingList] = (0, import_react.useState)(false);
 	(0, import_react.useEffect)(() => {
 		let active = true;
 		(async () => {
@@ -35328,87 +35376,171 @@ function EncryptedMessageBubble({ msg, isMine, encryptionSecret, onSaveAsNote, o
 		decryptFailed
 	]);
 	const canSaveNote = Boolean(decryptedBody.trim()) && !decryptFailed;
+	const showInteractiveChecklist = canSaveNote && hasShoppingPrefix(decryptedBody) || canSaveNote && convertedToChecklist;
+	const checklistTitles = showInteractiveChecklist ? extractShoppingItems(decryptedBody) : [];
+	const findShoppingMatch = (title) => {
+		const key = title.trim().toLowerCase();
+		return shoppingItems.find((i) => !i.checked && i.title.trim().toLowerCase() === key) ?? shoppingItems.find((i) => i.title.trim().toLowerCase() === key);
+	};
+	const handleCreateListClick = async () => {
+		if (!canSaveNote || creatingList) return;
+		setCreatingList(true);
+		try {
+			await onCreateShoppingFromText(decryptedBody);
+			setConvertedToChecklist(true);
+		} finally {
+			setCreatingList(false);
+		}
+	};
+	const checkedInBubbleCount = checklistTitles.filter((t) => findShoppingMatch(t)?.checked).length;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: `flex flex-col ${isMine ? "items-end" : "items-start"}`,
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-			className: "text-[10px] text-[#525E56] dark:text-[#9BA79F] px-1 mb-0.5",
-			children: [
-				isMine ? "Du" : msg.sender_email.split("@")[0],
-				" · ",
-				formatMsgTime(msg.created_at)
-			]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "group flex items-center gap-1.5 max-w-[85%] sm:max-w-[75%]",
-			children: [
-				isMine && canSaveNote && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-					type: "button",
-					onClick: () => onSaveAsNote(decryptedBody),
-					title: "Spara som anteckning",
-					className: "opacity-60 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-3.5 h-3.5" })
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: `px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap break-words flex flex-col gap-2 ${isMine ? "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] rounded-br-sm" : "bg-[#ECEFE9] dark:bg-[#212723] text-[#171D19] dark:text-[#E4EBE6] rounded-bl-sm"}`,
-					children: [msg.attachment_url && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: mediaLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-2 text-xs opacity-80 py-1",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
-							className: "w-4 h-4 animate-spin",
-							"aria-hidden": "true"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Dekrypterar bilaga..." })]
-					}) : mediaError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-xs opacity-80",
-						children: mediaError
-					}) : mediaUrl ? msg.attachment_type === "image" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+				className: "text-[10px] text-[#525E56] dark:text-[#9BA79F] px-1 mb-0.5",
+				children: [
+					isMine ? "Du" : msg.sender_email.split("@")[0],
+					" · ",
+					formatMsgTime(msg.created_at)
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "group flex items-center gap-1.5 max-w-[88%] sm:max-w-[78%]",
+				children: [
+					isMine && canSaveNote && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 						type: "button",
-						onClick: () => onPreviewImage(mediaUrl, decryptedName),
-						className: "block rounded-xl overflow-hidden max-w-[240px] cursor-pointer focus:outline-none",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-							src: mediaUrl,
-							alt: decryptedName,
-							className: "max-h-56 w-auto object-cover rounded-xl"
-						})
-					}) : msg.attachment_type === "audio" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "flex flex-col gap-1 min-w-[210px] sm:min-w-[250px]",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("audio", {
-							controls: true,
-							src: mediaUrl,
-							className: "w-full h-9"
-						})
-					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
-						href: mediaUrl,
-						download: decryptedName,
-						className: `inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition ${isMine ? "bg-black/15 hover:bg-black/25 text-white dark:text-[#063822]" : "bg-white/75 dark:bg-black/25 hover:bg-white dark:hover:bg-black/40"}`,
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
-								className: "w-4 h-4 shrink-0",
+						onClick: () => onSaveAsNote(decryptedBody),
+						title: "Spara som anteckning",
+						"aria-label": "Spara som anteckning",
+						className: "opacity-65 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-3.5 h-3.5" })
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: `px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap break-words flex flex-col gap-2 ${isMine ? "bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] rounded-br-sm" : "bg-[#ECEFE9] dark:bg-[#212723] text-[#171D19] dark:text-[#E4EBE6] rounded-bl-sm"}`,
+						children: [msg.attachment_url && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: mediaLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2 text-xs opacity-80 py-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+								className: "w-4 h-4 animate-spin",
 								"aria-hidden": "true"
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "truncate max-w-[170px]",
-								children: decryptedName
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, {
-								className: "w-3.5 h-3.5 shrink-0",
-								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Dekrypterar bilaga..." })]
+						}) : mediaError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs opacity-80",
+							children: mediaError
+						}) : mediaUrl ? msg.attachment_type === "image" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => onPreviewImage(mediaUrl, decryptedName),
+							className: "block rounded-xl overflow-hidden max-w-[240px] cursor-pointer focus:outline-none",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+								src: mediaUrl,
+								alt: decryptedName,
+								className: "max-h-56 w-auto object-cover rounded-xl"
 							})
-						]
-					}) : null }), decryptedBody && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						className: decryptFailed ? "italic opacity-80 text-xs" : "",
-						children: decryptedBody
-					})]
-				}),
-				!isMine && canSaveNote && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-					type: "button",
-					onClick: () => onSaveAsNote(decryptedBody),
-					title: "Spara som anteckning",
-					className: "opacity-60 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-3.5 h-3.5" })
-				})
-			]
-		})]
+						}) : msg.attachment_type === "audio" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex flex-col gap-1 min-w-[210px] sm:min-w-[250px]",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("audio", {
+								controls: true,
+								src: mediaUrl,
+								className: "w-full h-9"
+							})
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+							href: mediaUrl,
+							download: decryptedName,
+							className: `inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition ${isMine ? "bg-black/15 hover:bg-black/25 text-white dark:text-[#063822]" : "bg-white/75 dark:bg-black/25 hover:bg-white dark:hover:bg-black/40"}`,
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
+									className: "w-4 h-4 shrink-0",
+									"aria-hidden": "true"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "truncate max-w-[170px]",
+									children: decryptedName
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, {
+									className: "w-3.5 h-3.5 shrink-0",
+									"aria-hidden": "true"
+								})
+							]
+						}) : null }), showInteractiveChecklist && checklistTitles.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex flex-col gap-2 min-w-[200px]",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between gap-3 border-b border-current/15 pb-1.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "inline-flex items-center gap-1.5 text-xs font-semibold",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
+											className: "w-3.5 h-3.5 shrink-0",
+											"aria-hidden": "true"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Inköpslista" }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "font-mono-tabular opacity-80",
+											children: [
+												"(",
+												checkedInBubbleCount,
+												"/",
+												checklistTitles.length,
+												")"
+											]
+										})
+									]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: onOpenShoppingTab,
+									className: "text-[11px] font-semibold underline opacity-90 hover:opacity-100 cursor-pointer whitespace-nowrap",
+									children: "Öppna Inköp"
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "flex flex-col gap-1",
+								children: checklistTitles.map((title) => {
+									const matched = findShoppingMatch(title);
+									const isChecked = Boolean(matched?.checked);
+									return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										onClick: () => {
+											if (matched) onToggleShoppingItem(matched);
+											else onCreateShoppingFromText(title);
+										},
+										className: "flex items-center gap-2 py-1 text-left rounded-lg hover:bg-black/10 dark:hover:bg-white/10 px-1.5 -mx-1.5 transition-colors cursor-pointer",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: `w-4 h-4 rounded flex items-center justify-center shrink-0 border ${isChecked ? isMine ? "bg-white text-[#2E6B4E] dark:bg-[#063822] dark:text-[#8FD4AE] border-transparent" : "bg-[#2E6B4E] text-white dark:bg-[#8FD4AE] dark:text-[#063822] border-transparent" : "border-current/45"}`,
+											"aria-hidden": "true",
+											children: isChecked && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3 h-3 stroke-[2.5]" })
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: `text-sm break-words ${isChecked ? "line-through opacity-65" : ""}`,
+											children: title
+										})]
+									}, title);
+								})
+							})]
+						}) : decryptedBody && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: decryptFailed ? "italic opacity-80 text-xs" : "",
+							children: decryptedBody
+						})]
+					}),
+					!isMine && canSaveNote && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: () => onSaveAsNote(decryptedBody),
+						title: "Spara som anteckning",
+						"aria-label": "Spara som anteckning",
+						className: "opacity-65 hover:opacity-100 p-1.5 rounded-lg text-[#525E56] dark:text-[#9BA79F] cursor-pointer",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-3.5 h-3.5" })
+					})
+				]
+			}),
+			!showInteractiveChecklist && canSaveNote && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				type: "button",
+				onClick: handleCreateListClick,
+				disabled: creatingList,
+				className: "mt-1 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[#2E6B4E] dark:text-[#8FD4AE] hover:bg-[#2E6B4E]/10 dark:hover:bg-[#8FD4AE]/10 transition-colors cursor-pointer",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
+					className: "w-3 h-3",
+					"aria-hidden": "true"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: creatingList ? "Skapar lista..." : "Skapa inköpslista" })]
+			})
+		]
 	});
 }
-function HouseholdChat({ messages, householdName, encryptionSecret, userEmail, onSendMessage, onSaveAsNote, onOpenHouseholdModal }) {
+function HouseholdChat({ messages, shoppingItems, householdName, encryptionSecret, userEmail, onSendMessage, onSaveAsNote, onToggleShoppingItem, onCreateShoppingFromText, onOpenShoppingTab, onOpenHouseholdModal }) {
 	const [text, setText] = (0, import_react.useState)("");
 	const [sending, setSending] = (0, import_react.useState)(false);
 	const [mediaError, setMediaError] = (0, import_react.useState)(null);
@@ -35599,7 +35731,11 @@ function HouseholdChat({ messages, householdName, encryptionSecret, userEmail, o
 							msg,
 							isMine,
 							encryptionSecret,
+							shoppingItems,
 							onSaveAsNote,
+							onToggleShoppingItem,
+							onCreateShoppingFromText,
+							onOpenShoppingTab,
 							onPreviewImage: (url, name) => setLightbox({
 								url,
 								name
@@ -35678,7 +35814,7 @@ function HouseholdChat({ messages, householdName, encryptionSecret, userEmail, o
 						type: "text",
 						value: text,
 						onChange: (e) => setText(e.target.value),
-						placeholder: sending ? "Krypterar & skickar..." : "Skriv ett krypterat meddelande...",
+						placeholder: sending ? "Krypterar & skickar..." : "Skriv meddelande eller \"Handla: mjölk, ägg\"...",
 						disabled: sending,
 						className: "flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
 					}),
@@ -36502,7 +36638,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	});
 };
 // node_modules/@capacitor/filesystem/dist/esm/index.js
-var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-Cm83flZ9.js").then((m) => new m.FilesystemWeb()), []) });
+var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-BbwSF_Cx.js").then((m) => new m.FilesystemWeb()), []) });
 f();
 // node_modules/@capacitor-community/file-opener/dist/esm/index.js
 var FileOpener = registerPlugin("FileOpener");
@@ -37079,7 +37215,7 @@ var Weekday;
 	Weekday[Weekday["Saturday"] = 7] = "Saturday";
 })(Weekday || (Weekday = {}));
 // node_modules/@capacitor/local-notifications/dist/esm/index.js
-var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-Daz36XTs.js").then((m) => new m.LocalNotificationsWeb()), []) });
+var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-6OqzzBni.js").then((m) => new m.LocalNotificationsWeb()), []) });
 // src/services/notifications.ts
 var URGENT_CHANNEL_ID = "betterkeep-urgent";
 var channelCreated = false;
@@ -37228,6 +37364,27 @@ async function notifyIncomingChatMessage(msg) {
 		else if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") new Notification(`Nytt meddelande från ${msg.sender_email.split("@")[0]}`, {
 			body: msg.body,
 			tag: `betterkeep-chat-${msg.id}`
+		});
+	} catch {}
+}
+async function notifyShoppingListCompleted(eventKey, actorName) {
+	const title = "Inköpslistan är klar!";
+	const body = `${actorName} har handlat klart alla varor på listan.`;
+	try {
+		await ensureHighPriorityNotificationChannel();
+		if (Capacitor.isNativePlatform()) await LocalNotifications.schedule({ notifications: [{
+			id: eventNotificationId(eventKey, 4),
+			channelId: URGENT_CHANNEL_ID,
+			title,
+			body,
+			schedule: {
+				at: new Date(Date.now() + 400),
+				allowWhileIdle: true
+			}
+		}] });
+		else if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") new Notification(title, {
+			body,
+			tag: `betterkeep-shopping-done-${eventKey}`
 		});
 	} catch {}
 }
@@ -38259,6 +38416,263 @@ function SettingsModal({ open, onClose, theme, onChangeTheme, userEmail, househo
 		})
 	});
 }
+// src/components/ShoppingList.tsx
+function ShoppingList({ items, householdName, userEmail, onAddItems, onToggleItem, onDeleteItem, onClearChecked, onOpenHouseholdModal }) {
+	const [input, setInput] = (0, import_react.useState)("");
+	const [adding, setAdding] = (0, import_react.useState)(false);
+	const [clearing, setClearing] = (0, import_react.useState)(false);
+	const uncheckedItems = (0, import_react.useMemo)(() => items.filter((item) => !item.checked), [items]);
+	const checkedItems = (0, import_react.useMemo)(() => items.filter((item) => item.checked), [items]);
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		const clean = input.trim();
+		if (!clean || adding) return;
+		setAdding(true);
+		try {
+			await onAddItems(clean);
+			setInput("");
+		} finally {
+			setAdding(false);
+		}
+	};
+	const handlePaste = (e) => {
+		const pasted = e.clipboardData.getData("text");
+		if (pasted && /[\r\n]/.test(pasted)) {
+			e.preventDefault();
+			const normalized = pasted.split(/\r?\n+/).map((line) => line.trim()).filter(Boolean).join(", ");
+			setInput((prev) => prev.trim() ? `${prev.trim()}, ${normalized}` : normalized);
+		}
+	};
+	const handleClear = async () => {
+		if (checkedItems.length === 0 || clearing) return;
+		setClearing(true);
+		try {
+			await onClearChecked();
+		} finally {
+			setClearing(false);
+		}
+	};
+	if (!userEmail || !householdName) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-6 text-center flex flex-col items-center gap-3 max-w-md mx-auto",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "w-12 h-12 rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, {
+					className: "w-6 h-6",
+					"aria-hidden": "true"
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+				className: "font-display text-lg font-bold",
+				children: "Delad Inköpslista"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-sm text-[#525E56] dark:text-[#9BA79F]",
+				children: "Koppla ihop ert hushåll för att dela inköpslistan i realtid, bocka av varor i butiken och få pling när allt är handlat."
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				type: "button",
+				onClick: onOpenHouseholdModal,
+				className: "min-h-[42px] px-5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-sm font-semibold cursor-pointer",
+				children: "Koppla hushåll nu"
+			})
+		]
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "max-w-3xl w-full mx-auto flex flex-col gap-5",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 p-4 sm:p-5 flex flex-col gap-4",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "flex items-center justify-between gap-3 flex-wrap",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-2.5",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "w-9 h-9 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
+								className: "w-4 h-4",
+								"aria-hidden": "true"
+							})
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
+							className: "font-display text-base sm:text-lg font-bold",
+							children: [householdName, " · Inköp"]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+							className: "text-xs text-[#525E56] dark:text-[#9BA79F] font-mono-tabular",
+							children: [
+								uncheckedItems.length,
+								" kvar att handla · ",
+								checkedItems.length,
+								" avbockade"
+							]
+						})] })]
+					})
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+					onSubmit: handleSubmit,
+					className: "flex items-center gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+						type: "text",
+						value: input,
+						onChange: (e) => setInput(e.target.value),
+						onPaste: handlePaste,
+						placeholder: "Lägg till vara (t.ex. Mjölk, ägg, kaffe)...",
+						"aria-label": "Lägg till varor i inköpslistan",
+						disabled: adding,
+						className: "flex-1 min-w-0 h-11 px-4 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723] text-sm text-[#171D19] dark:text-[#E4EBE6] placeholder:text-[#525E56] dark:placeholder:text-[#9BA79F] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E] dark:focus:ring-[#8FD4AE]"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						type: "submit",
+						disabled: !input.trim() || adding,
+						className: "h-11 px-4 rounded-2xl bg-[#2E6B4E] dark:bg-[#8FD4AE] hover:bg-[#24563E] dark:hover:bg-[#A3DFBD] text-white dark:text-[#063822] text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer whitespace-nowrap",
+						children: [adding ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+							className: "w-4 h-4 animate-spin",
+							"aria-hidden": "true"
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, {
+							className: "w-4 h-4",
+							"aria-hidden": "true"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Lägg till" })]
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+					className: "text-[11px] text-[#525E56] dark:text-[#9BA79F]",
+					children: [
+						"Tips: Separera flera varor med kommatecken, klistra in en lista eller skriv ",
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "font-mono-tabular font-semibold",
+							children: "Handla: mjölk, ägg"
+						}),
+						" i chatten."
+					]
+				})
+			]
+		}), items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "rounded-3xl border border-dashed border-[#18221C]/15 dark:border-[#E3EAE5]/15 py-12 px-6 text-center flex flex-col items-center gap-2",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, {
+					className: "w-8 h-8 text-[#525E56] dark:text-[#9BA79F] opacity-60",
+					"aria-hidden": "true"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+					className: "font-display text-base font-semibold",
+					children: "Inköpslistan är tom"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+					className: "text-xs sm:text-sm text-[#525E56] dark:text-[#9BA79F] max-w-md",
+					children: [
+						"Lägg till varor ovan eller skicka ett chattmeddelande som börjar med ",
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "font-mono-tabular",
+							children: "Handla:"
+						}),
+						" så skapas bockrutor automatiskt."
+					]
+				})
+			]
+		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex flex-col gap-5",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 overflow-hidden",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "px-4 sm:px-5 py-3 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center justify-between",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+						className: "text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+						children: [
+							"Att handla (",
+							uncheckedItems.length,
+							")"
+						]
+					})
+				}), uncheckedItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "px-5 py-6 text-center text-sm text-[#2E6B4E] dark:text-[#8FD4AE] font-medium",
+					children: "Alla varor på listan är avbockade!"
+				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+					className: "divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8",
+					children: uncheckedItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+						className: "flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 hover:bg-[#F6F7F4]/70 dark:hover:bg-[#212723]/50 transition-colors",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: () => onToggleItem(item),
+							className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "w-6 h-6 rounded-lg border-2 border-[#2E6B4E] dark:border-[#8FD4AE] flex items-center justify-center shrink-0 transition-colors",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-sm sm:text-base font-medium text-[#171D19] dark:text-[#E4EBE6] break-words",
+									children: item.title
+								}), item.created_by && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "text-[11px] text-[#525E56] dark:text-[#9BA79F] truncate",
+									children: ["Tillagd av ", item.created_by.split("@")[0]]
+								})]
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => onDeleteItem(item.id),
+							"aria-label": `Ta bort ${item.title}`,
+							className: "w-10 h-10 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
+								className: "w-4 h-4",
+								"aria-hidden": "true"
+							})
+						})]
+					}, item.id))
+				})]
+			}), checkedItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "rounded-3xl bg-[#F6F7F4]/80 dark:bg-[#141816] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 overflow-hidden",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "px-4 sm:px-5 py-3 border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10 flex items-center justify-between gap-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+						className: "text-xs font-semibold text-[#525E56] dark:text-[#9BA79F]",
+						children: [
+							"Avbockat (",
+							checkedItems.length,
+							")"
+						]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						type: "button",
+						onClick: handleClear,
+						disabled: clearing,
+						className: "inline-flex items-center gap-1.5 min-h-[34px] px-3 rounded-xl bg-white dark:bg-[#191D1A] border border-[#18221C]/10 dark:border-[#E3EAE5]/10 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-500/10 disabled:opacity-50 cursor-pointer whitespace-nowrap",
+						children: [clearing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+							className: "w-3.5 h-3.5 animate-spin",
+							"aria-hidden": "true"
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
+							className: "w-3.5 h-3.5",
+							"aria-hidden": "true"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Rensa avbockade" })]
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+					className: "divide-y divide-[#18221C]/8 dark:divide-[#E3EAE5]/8",
+					children: checkedItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+						className: "flex items-center justify-between gap-2 px-3 sm:px-4 py-1.5 opacity-75",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: () => onToggleItem(item),
+							className: "flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left cursor-pointer",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "w-6 h-6 rounded-lg bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] flex items-center justify-center shrink-0",
+								"aria-hidden": "true",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-4 h-4 stroke-[2.5]" })
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-sm line-through text-[#525E56] dark:text-[#9BA79F] break-words",
+								children: item.title
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => onDeleteItem(item.id),
+							"aria-label": `Ta bort ${item.title}`,
+							className: "w-10 h-10 rounded-xl flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 shrink-0 cursor-pointer",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, {
+								className: "w-4 h-4",
+								"aria-hidden": "true"
+							})
+						})]
+					}, item.id))
+				})]
+			})]
+		})]
+	});
+}
 // src/components/TopBar.tsx
 function TopBar({ searchQuery, onSearchChange, effectiveTheme, onToggleTheme, onOpenSettings, onOpenNewNote, onOpenEmailImport }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("header", {
@@ -38766,6 +39180,7 @@ function App() {
 	const [sharedNoteIds, setSharedNoteIds] = (0, import_react.useState)(/* @__PURE__ */ new Set());
 	const [householdEvents, setHouseholdEvents] = (0, import_react.useState)([]);
 	const [householdMessages, setHouseholdMessages] = (0, import_react.useState)([]);
+	const [shoppingItems, setShoppingItems] = (0, import_react.useState)([]);
 	const [unreadChatCount, setUnreadChatCount] = (0, import_react.useState)(0);
 	const [passphraseVersion, setPassphraseVersion] = (0, import_react.useState)(0);
 	const [latestRelease, setLatestRelease] = (0, import_react.useState)(null);
@@ -38773,14 +39188,20 @@ function App() {
 	const [dueBannerNote, setDueBannerNote] = (0, import_react.useState)(null);
 	const [calendarBanner, setCalendarBanner] = (0, import_react.useState)(null);
 	const [chatBanner, setChatBanner] = (0, import_react.useState)(null);
+	const [shoppingDoneBanner, setShoppingDoneBanner] = (0, import_react.useState)(null);
 	const notifiedIdsRef = (0, import_react.useRef)(/* @__PURE__ */ new Set());
 	const undoTimerRef = (0, import_react.useRef)(null);
 	const activeTabRef = (0, import_react.useRef)("notes");
 	const householdRef = (0, import_react.useRef)(null);
+	const shoppingItemsRef = (0, import_react.useRef)([]);
 	(0, import_react.useEffect)(() => {
 		householdRef.current = household;
 	}, [household]);
+	(0, import_react.useEffect)(() => {
+		shoppingItemsRef.current = shoppingItems;
+	}, [shoppingItems]);
 	const encryptionSecret = (0, import_react.useMemo)(() => household ? resolveHouseholdSecret(household) : null, [household, passphraseVersion]);
+	const uncheckedShoppingCount = (0, import_react.useMemo)(() => shoppingItems.filter((item) => !item.checked).length, [shoppingItems]);
 	(0, import_react.useEffect)(() => {
 		ensureHighPriorityNotificationChannel();
 	}, []);
@@ -38825,14 +39246,23 @@ function App() {
 		const { data, error } = await supabase.from("household_messages").select("*").eq("household_id", householdId).order("created_at", { ascending: true }).limit(200);
 		if (!error && data) setHouseholdMessages(data);
 	}, []);
+	const fetchHouseholdShoppingItems = (0, import_react.useCallback)(async (householdId) => {
+		const { data, error } = await supabase.from("household_shopping_items").select("*").eq("household_id", householdId).order("created_at", { ascending: true });
+		if (!error && data) setShoppingItems(data);
+	}, []);
 	const syncFromCloud = (0, import_react.useCallback)(async (email) => {
 		try {
 			const [hh, cloudRecords] = await Promise.all([getUserHousehold(email), fetchCloudNotes()]);
 			setHousehold(hh);
-			if (hh?.id) await Promise.all([fetchHouseholdEvents(hh.id, email), fetchHouseholdMessages(hh.id)]);
+			if (hh?.id) await Promise.all([
+				fetchHouseholdEvents(hh.id, email),
+				fetchHouseholdMessages(hh.id),
+				fetchHouseholdShoppingItems(hh.id)
+			]);
 			else {
 				setHouseholdEvents([]);
 				setHouseholdMessages([]);
+				setShoppingItems([]);
 			}
 			const sharedIds = /* @__PURE__ */ new Set();
 			const mergedMap = /* @__PURE__ */ new Map();
@@ -38886,6 +39316,7 @@ function App() {
 				setSharedNoteIds(/* @__PURE__ */ new Set());
 				setHouseholdEvents([]);
 				setHouseholdMessages([]);
+				setShoppingItems([]);
 			}
 		});
 		return () => {
@@ -38978,11 +39409,39 @@ function App() {
 					...msg,
 					body: previewBody
 				};
-				if (activeTabRef.current !== "chat") {
-					setUnreadChatCount((c) => c + 1);
-					setChatBanner(notificationMsg);
+				const completedMatch = previewBody.match(/^✅\s*Inköpslistan är klar!\s*\(Utfört av ([^)]+)\)/i);
+				if (completedMatch) {
+					const actorName = completedMatch[1].trim() || msg.sender_email.split("@")[0];
+					setShoppingDoneBanner({
+						actorName,
+						at: msg.created_at
+					});
+					if (activeTabRef.current !== "chat") setUnreadChatCount((c) => c + 1);
+					await notifyShoppingListCompleted(msg.id, actorName);
+				} else {
+					if (activeTabRef.current !== "chat") {
+						setUnreadChatCount((c) => c + 1);
+						setChatBanner(notificationMsg);
+					}
+					await notifyIncomingChatMessage(notificationMsg);
 				}
-				await notifyIncomingChatMessage(notificationMsg);
+			}
+		}).on("postgres_changes", {
+			event: "*",
+			schema: "public",
+			table: "household_shopping_items"
+		}, (payload) => {
+			const currentHhId = householdRef.current?.id;
+			if (payload.eventType === "DELETE") {
+				const deletedId = payload.old?.id;
+				if (deletedId) setShoppingItems((prev) => prev.filter((item) => item.id !== deletedId));
+			} else if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+				const item = payload.new;
+				if (!item?.id) return;
+				if (currentHhId && item.household_id !== currentHhId) return;
+				setShoppingItems((prev) => {
+					return prev.some((i) => i.id === item.id) ? prev.map((i) => i.id === item.id ? item : i) : [...prev, item];
+				});
 			}
 		}).on("postgres_changes", {
 			event: "*",
@@ -38991,7 +39450,11 @@ function App() {
 		}, async () => {
 			const hh = await getUserHousehold(userEmail);
 			setHousehold(hh);
-			if (hh?.id) await Promise.all([fetchHouseholdEvents(hh.id, userEmail), fetchHouseholdMessages(hh.id)]);
+			if (hh?.id) await Promise.all([
+				fetchHouseholdEvents(hh.id, userEmail),
+				fetchHouseholdMessages(hh.id),
+				fetchHouseholdShoppingItems(hh.id)
+			]);
 		}).subscribe();
 		return () => {
 			supabase.removeChannel(channel);
@@ -38999,7 +39462,8 @@ function App() {
 	}, [
 		userEmail,
 		fetchHouseholdEvents,
-		fetchHouseholdMessages
+		fetchHouseholdMessages,
+		fetchHouseholdShoppingItems
 	]);
 	(0, import_react.useEffect)(() => {
 		const checkDueReminders = () => {
@@ -39031,6 +39495,30 @@ function App() {
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, []);
+	const handleAddShoppingItems = (0, import_react.useCallback)(async (rawText) => {
+		if (!userEmail || !household?.id) return 0;
+		const parsed = extractShoppingItems(rawText);
+		if (parsed.length === 0) return 0;
+		const existingUnchecked = new Set(shoppingItemsRef.current.filter((i) => !i.checked).map((i) => i.title.trim().toLowerCase()));
+		const toInsert = parsed.filter((title) => !existingUnchecked.has(title.trim().toLowerCase())).map((title) => ({
+			household_id: household.id,
+			title,
+			checked: false,
+			created_by: userEmail
+		}));
+		if (toInsert.length === 0) return 0;
+		const { data, error } = await supabase.from("household_shopping_items").insert(toInsert).select();
+		if (error) throw error;
+		if (data && data.length > 0) {
+			const created = data;
+			setShoppingItems((prev) => {
+				const existingIds = new Set(prev.map((i) => i.id));
+				return [...prev, ...created.filter((c) => !existingIds.has(c.id))];
+			});
+			return created.length;
+		}
+		return 0;
+	}, [userEmail, household]);
 	const handleSendChatMessage = (0, import_react.useCallback)(async (payload) => {
 		if (!userEmail || !household?.id) return;
 		const secret = resolveHouseholdSecret(household);
@@ -39065,7 +39553,52 @@ function App() {
 			const created = data;
 			setHouseholdMessages((prev) => prev.some((m) => m.id === created.id) ? prev : [...prev, created]);
 		}
-	}, [userEmail, household]);
+		if (cleanText && hasShoppingPrefix(cleanText)) await handleAddShoppingItems(cleanText);
+	}, [
+		userEmail,
+		household,
+		handleAddShoppingItems
+	]);
+	const handleToggleShoppingItem = (0, import_react.useCallback)(async (item) => {
+		if (!userEmail || !household?.id) return;
+		const currentList = shoppingItemsRef.current;
+		const uncheckedBefore = currentList.filter((i) => !i.checked).length;
+		const nextChecked = !item.checked;
+		const willFinishList = nextChecked && !item.checked && currentList.length >= 1 && uncheckedBefore === 1;
+		setShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
+			...i,
+			checked: nextChecked
+		} : i));
+		const { error } = await supabase.from("household_shopping_items").update({ checked: nextChecked }).eq("id", item.id);
+		if (error) {
+			setShoppingItems((prev) => prev.map((i) => i.id === item.id ? {
+				...i,
+				checked: item.checked
+			} : i));
+			return;
+		}
+		if (willFinishList) {
+			const actorName = userEmail.split("@")[0];
+			setShoppingDoneBanner({
+				actorName,
+				at: (/* @__PURE__ */ new Date()).toISOString()
+			});
+			await handleSendChatMessage({ text: `✅ Inköpslistan är klar! (Utfört av ${actorName})` });
+		}
+	}, [
+		userEmail,
+		household,
+		handleSendChatMessage
+	]);
+	const handleDeleteShoppingItem = (0, import_react.useCallback)(async (id) => {
+		setShoppingItems((prev) => prev.filter((item) => item.id !== id));
+		await supabase.from("household_shopping_items").delete().eq("id", id);
+	}, []);
+	const handleClearCheckedShoppingItems = (0, import_react.useCallback)(async () => {
+		if (!household?.id) return;
+		setShoppingItems((prev) => prev.filter((item) => !item.checked));
+		await supabase.from("household_shopping_items").delete().eq("household_id", household.id).eq("checked", true);
+	}, [household]);
 	const handleAddCalendarEvent = (0, import_react.useCallback)(async (draft) => {
 		if (!userEmail || !household?.id) return;
 		const { data, error } = await supabase.from("household_events").insert({
@@ -39425,13 +39958,26 @@ function App() {
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								type: "button",
 								onClick: () => setActiveTab("notes"),
-								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${activeTab === "notes" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${activeTab === "notes" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StickyNote, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Anteckningar" })]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								type: "button",
+								onClick: () => setActiveTab("shopping"),
+								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${activeTab === "shopping" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingCart, { className: "w-4 h-4" }),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Inköp" }),
+									uncheckedShoppingCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "px-1.5 py-0.5 rounded-full text-[10px] font-mono-tabular bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]",
+										children: uncheckedShoppingCount
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
 								onClick: () => setActiveTab("calendar"),
-								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${activeTab === "calendar" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${activeTab === "calendar" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, { className: "w-4 h-4" }),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kalender" }),
@@ -39444,7 +39990,7 @@ function App() {
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								type: "button",
 								onClick: () => setActiveTab("chat"),
-								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${activeTab === "chat" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+								className: `inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${activeTab === "chat" ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MessageCircle, { className: "w-4 h-4" }),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Chatt" }),
@@ -39455,6 +40001,40 @@ function App() {
 								]
 							})
 						]
+					}),
+					shoppingDoneBanner && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						role: "status",
+						className: "rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] border border-[#2E6B4E]/30 dark:border-[#8FD4AE]/30 text-[#0D3824] dark:text-[#CBEED9] p-4 flex items-center justify-between gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-3 min-w-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, { className: "w-5 h-5 shrink-0 text-[#2E6B4E] dark:text-[#8FD4AE]" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-sm font-semibold truncate",
+									children: "Inköpslistan är klar!"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "text-xs opacity-85 truncate",
+									children: [shoppingDoneBanner.actorName, " har handlat klart alla varor på listan."]
+								})]
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2 shrink-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								onClick: () => {
+									setActiveTab("shopping");
+									setShoppingDoneBanner(null);
+								},
+								className: "min-h-[34px] px-3 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold cursor-pointer",
+								children: "Visa Inköp"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								onClick: () => setShoppingDoneBanner(null),
+								"aria-label": "Stäng",
+								className: "w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/10 cursor-pointer",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "w-4 h-4" })
+							})]
+						})]
 					}),
 					chatBanner && activeTab !== "chat" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						role: "status",
@@ -39531,11 +40111,24 @@ function App() {
 					}),
 					activeTab === "chat" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HouseholdChat, {
 						messages: householdMessages,
+						shoppingItems,
 						householdName: household?.name,
 						encryptionSecret,
 						userEmail,
 						onSendMessage: handleSendChatMessage,
 						onSaveAsNote: handleSaveChatAsNote,
+						onToggleShoppingItem: handleToggleShoppingItem,
+						onCreateShoppingFromText: handleAddShoppingItems,
+						onOpenShoppingTab: () => setActiveTab("shopping"),
+						onOpenHouseholdModal: () => setHouseholdModalOpen(true)
+					}) : activeTab === "shopping" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingList, {
+						items: shoppingItems,
+						householdName: household?.name,
+						userEmail,
+						onAddItems: handleAddShoppingItems,
+						onToggleItem: handleToggleShoppingItem,
+						onDeleteItem: handleDeleteShoppingItem,
+						onClearChecked: handleClearCheckedShoppingItems,
 						onOpenHouseholdModal: () => setHouseholdModalOpen(true)
 					}) : activeTab === "calendar" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HouseholdCalendar, {
 						events: householdEvents,
