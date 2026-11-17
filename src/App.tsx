@@ -23,6 +23,7 @@ import {
 import { HouseholdModal } from './components/HouseholdModal';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditorModal } from './components/NoteEditorModal';
+import { SettingsModal } from './components/SettingsModal';
 import { TopBar } from './components/TopBar';
 import { UpdateBanner } from './components/UpdateBanner';
 import {
@@ -72,6 +73,7 @@ import {
   Note,
   NoteCategory,
   NoteColor,
+  NoteShareFilter,
 } from './types/note';
 
 function generateNoteId(): string {
@@ -87,12 +89,25 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState<'notes' | 'calendar' | 'chat'>('notes');
   const [theme, setTheme] = useState<ThemeMode>(() => getSavedTheme());
+  const [systemDark, setSystemDark] = useState<boolean>(() => {
+    try {
+      return Boolean(
+        typeof window !== 'undefined' &&
+          window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches
+      );
+    } catch {
+      return false;
+    }
+  });
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('Alla');
+  const [noteShareFilter, setNoteShareFilter] = useState<NoteShareFilter>('all');
   const [onlyReminders, setOnlyReminders] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailConfigs, setEmailConfigs] = useState<Record<EmailProvider, EmailProviderConfig>>(
@@ -147,14 +162,26 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    setSystemDark(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const effectiveTheme: 'light' | 'dark' =
+    theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
+
+  useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
+    if (effectiveTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
     saveTheme(theme);
-  }, [theme]);
+  }, [theme, effectiveTheme]);
 
   const fetchHouseholdEvents = useCallback(
     async (householdId: string, currentUserEmail?: string | null) => {
@@ -216,7 +243,13 @@ export default function App() {
         }
 
         for (const rec of cloudRecords) {
-          if (rec.household_id) sharedIds.add(rec.id);
+          if (
+            rec.data?.isPrivate &&
+            rec.owner_email.toLowerCase() !== email.toLowerCase()
+          ) {
+            continue;
+          }
+          if (rec.household_id && !rec.data?.isPrivate) sharedIds.add(rec.id);
           const existing = mergedMap.get(rec.id);
           const cloudTime = new Date(rec.data.updatedAt || rec.updated_at).getTime();
           const localTime = existing ? new Date(existing.updatedAt).getTime() : 0;
@@ -230,8 +263,9 @@ export default function App() {
 
         for (const ln of localNotes) {
           if (!cloudRecords.some((r) => r.id === ln.id)) {
-            await upsertCloudNote(ln, email, hh?.id ?? null);
-            if (hh?.id) sharedIds.add(ln.id);
+            const hhToUse = ln.isPrivate ? null : (hh?.id ?? null);
+            await upsertCloudNote(ln, email, hhToUse);
+            if (hhToUse) sharedIds.add(ln.id);
           }
         }
 
@@ -310,6 +344,12 @@ export default function App() {
           } else if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const rec = payload.new as CloudNoteRecord;
             if (!rec?.data) return;
+            if (
+              rec.data.isPrivate &&
+              rec.owner_email.toLowerCase() !== userEmail.toLowerCase()
+            ) {
+              return;
+            }
 
             setNotes((prev) => {
               const exists = prev.some((n) => n.id === rec.id);
@@ -319,7 +359,7 @@ export default function App() {
             });
             setSharedNoteIds((prev) => {
               const next = new Set(prev);
-              if (rec.household_id) next.add(rec.id);
+              if (rec.household_id && !rec.data.isPrivate) next.add(rec.id);
               else next.delete(rec.id);
               return next;
             });
@@ -464,6 +504,7 @@ export default function App() {
         setEditorOpen(false);
         setEmailModalOpen(false);
         setHouseholdModalOpen(false);
+        setSettingsModalOpen(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -619,8 +660,13 @@ export default function App() {
         setHouseholdModalOpen(true);
         return;
       }
-      const nextHouseholdId = sharedNoteIds.has(note.id) ? null : household.id;
-      const updated: Note = { ...note, updatedAt: new Date().toISOString() };
+      const nextIsShared = !sharedNoteIds.has(note.id);
+      const nextHouseholdId = nextIsShared ? household.id : null;
+      const updated: Note = {
+        ...note,
+        isPrivate: !nextIsShared,
+        updatedAt: new Date().toISOString(),
+      };
       setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
       await persistNoteEverywhere(updated, nextHouseholdId);
     },
@@ -635,6 +681,7 @@ export default function App() {
       category: NoteCategory;
       color: NoteColor;
       pinned: boolean;
+      isPrivate: boolean;
       reminder: { at: string; completed: boolean } | null;
     }) => {
       const now = new Date().toISOString();
@@ -648,6 +695,7 @@ export default function App() {
             category: draft.category,
             color: draft.color,
             pinned: draft.pinned,
+            isPrivate: draft.isPrivate,
             reminder: draft.reminder,
             updatedAt: now,
           }
@@ -658,6 +706,7 @@ export default function App() {
             category: draft.category,
             color: draft.color,
             pinned: draft.pinned,
+            isPrivate: draft.isPrivate,
             reminder: draft.reminder,
             createdAt: now,
             updatedAt: now,
@@ -672,11 +721,7 @@ export default function App() {
       setEditorOpen(false);
       setEditingNote(null);
 
-      const targetHhId = existing
-        ? sharedNoteIds.has(existing.id)
-          ? (household?.id ?? null)
-          : null
-        : (household?.id ?? null);
+      const targetHhId = draft.isPrivate ? null : (household?.id ?? null);
 
       await persistNoteEverywhere(updatedNote, targetHhId);
       if (updatedNote.reminder && !updatedNote.reminder.completed) {
@@ -684,7 +729,7 @@ export default function App() {
       }
       await syncNoteReminderNotification(updatedNote);
     },
-    [notes, household, sharedNoteIds, persistNoteEverywhere]
+    [notes, household, persistNoteEverywhere]
   );
 
   const handleTogglePin = useCallback(
@@ -700,7 +745,7 @@ export default function App() {
       setNotes((prev) => prev.map((n) => (n.id === noteId ? updated : n)));
       await persistNoteEverywhere(
         updated,
-        sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
+        !target.isPrivate && sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
       );
     },
     [notes, sharedNoteIds, household, persistNoteEverywhere]
@@ -736,7 +781,10 @@ export default function App() {
     if (undoTimerRef.current) window.clearTimeout(undoTimerRef.current);
 
     setNotes((prev) => [restored, ...prev]);
-    await persistNoteEverywhere(restored, household?.id ?? null);
+    await persistNoteEverywhere(
+      restored,
+      restored.isPrivate ? null : (household?.id ?? null)
+    );
     await syncNoteReminderNotification(restored);
   }, [deletedUndo, household, persistNoteEverywhere]);
 
@@ -758,7 +806,7 @@ export default function App() {
 
       await persistNoteEverywhere(
         updated,
-        sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
+        !target.isPrivate && sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
       );
       await syncNoteReminderNotification(updated);
     },
@@ -785,7 +833,7 @@ export default function App() {
 
       await persistNoteEverywhere(
         updated,
-        sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
+        !target.isPrivate && sharedNoteIds.has(noteId) ? (household?.id ?? null) : null
       );
       await syncNoteReminderNotification(updated);
     },
@@ -832,10 +880,21 @@ export default function App() {
     [notes]
   );
 
+  const isNotePrivate = useCallback(
+    (note: Note): boolean => {
+      if (note.isPrivate) return true;
+      if (userEmail && household && !sharedNoteIds.has(note.id)) return true;
+      return false;
+    },
+    [userEmail, household, sharedNoteIds]
+  );
+
   const filteredNotes = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return notes
       .filter((note) => {
+        if (noteShareFilter === 'private' && !isNotePrivate(note)) return false;
+        if (noteShareFilter === 'shared' && isNotePrivate(note)) return false;
         if (activeCategory !== 'Alla' && note.category !== activeCategory) return false;
         if (onlyReminders && !note.reminder) return false;
         if (!q) return true;
@@ -847,20 +906,22 @@ export default function App() {
         );
       })
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  }, [notes, activeCategory, onlyReminders, searchQuery]);
+  }, [notes, activeCategory, noteShareFilter, isNotePrivate, onlyReminders, searchQuery]);
 
   const pinnedNotes = useMemo(() => filteredNotes.filter((n) => n.pinned), [filteredNotes]);
   const otherNotes = useMemo(() => filteredNotes.filter((n) => !n.pinned), [filteredNotes]);
   const defaultNewCategory: NoteCategory = activeCategory === 'Alla' ? 'Arbete' : activeCategory;
 
   const renderNoteItem = (note: Note) => {
-    const isShared = sharedNoteIds.has(note.id);
+    const noteIsPrivate = isNotePrivate(note);
+    const isShared = !noteIsPrivate && sharedNoteIds.has(note.id);
     return (
       <div key={note.id} className="flex flex-col gap-1.5">
         <NoteCard
           note={note}
+          isPrivate={noteIsPrivate}
           onEdit={(n) => {
-            setEditingNote(n);
+            setEditingNote({ ...n, isPrivate: noteIsPrivate });
             setEditorOpen(true);
           }}
           onTogglePin={handleTogglePin}
@@ -914,8 +975,9 @@ export default function App() {
       <TopBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        theme={theme}
-        onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+        effectiveTheme={effectiveTheme}
+        onToggleTheme={() => setTheme(effectiveTheme === 'dark' ? 'light' : 'dark')}
+        onOpenSettings={() => setSettingsModalOpen(true)}
         onOpenNewNote={() => {
           setEditingNote(null);
           setEditorOpen(true);
@@ -1178,6 +1240,43 @@ export default function App() {
               </div>
             )}
 
+            {/* Filterväxlare: Alla / Delade / Privata */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div
+                role="tablist"
+                aria-label="Filtrera privata eller delade anteckningar"
+                className="inline-flex items-center gap-1 p-1 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723]"
+              >
+                {(
+                  [
+                    { id: 'all', label: 'Alla' },
+                    { id: 'shared', label: 'Delade' },
+                    { id: 'private', label: 'Privata' },
+                  ] as const
+                ).map((tab) => {
+                  const active = noteShareFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      role="tab"
+                      aria-selected={active}
+                      type="button"
+                      onClick={() => setNoteShareFilter(tab.id)}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                        active
+                          ? 'bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs'
+                          : 'text-[#525E56] dark:text-[#9BA79F]'
+                      }`}
+                    >
+                      {tab.id === 'private' && <Lock className="w-3 h-3" aria-hidden="true" />}
+                      {tab.id === 'shared' && <Users className="w-3 h-3" aria-hidden="true" />}
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <CategoryTabs
               activeCategory={activeCategory}
               onSelectCategory={setActiveCategory}
@@ -1216,23 +1315,24 @@ export default function App() {
             ) : filteredNotes.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-[#18221C]/15 dark:border-[#E3EAE5]/15 py-14 px-6 text-center flex flex-col items-center gap-3 max-w-lg mx-auto my-4">
                 <h2 className="font-display text-lg font-semibold">
-                  {searchQuery || onlyReminders || activeCategory !== 'Alla'
+                  {searchQuery || onlyReminders || activeCategory !== 'Alla' || noteShareFilter !== 'all'
                     ? 'Inga matchande anteckningar'
                     : 'Inga anteckningar ännu'}
                 </h2>
                 <p className="text-sm text-[#525E56] dark:text-[#9BA79F]">
-                  {searchQuery || onlyReminders || activeCategory !== 'Alla'
-                    ? 'Prova att ändra sökord eller välj en annan kategori.'
+                  {searchQuery || onlyReminders || activeCategory !== 'Alla' || noteShareFilter !== 'all'
+                    ? 'Prova att ändra sökord eller välj ett annat filter.'
                     : 'Skapa din första anteckning med påminnelse eller importera ett mejl från Gmail eller Outlook.'}
                 </p>
                 <div className="flex items-center gap-2.5 pt-2 flex-wrap justify-center">
-                  {(searchQuery || onlyReminders || activeCategory !== 'Alla') && (
+                  {(searchQuery || onlyReminders || activeCategory !== 'Alla' || noteShareFilter !== 'all') && (
                     <button
                       type="button"
                       onClick={() => {
                         setSearchQuery('');
                         setOnlyReminders(false);
                         setActiveCategory(FILTER_TABS[0]);
+                        setNoteShareFilter('all');
                       }}
                       className="min-h-[40px] px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium cursor-pointer"
                     >
@@ -1356,6 +1456,19 @@ export default function App() {
             await syncFromCloud(userEmail);
           }
         }}
+        onUpdateChecked={setLatestRelease}
+      />
+
+      <SettingsModal
+        open={settingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+        theme={theme}
+        onChangeTheme={setTheme}
+        userEmail={userEmail}
+        household={household}
+        onOpenHouseholdModal={() => setHouseholdModalOpen(true)}
+        onPassphraseChanged={() => setPassphraseVersion((v) => v + 1)}
+        initialUpdateResult={latestRelease}
         onUpdateChecked={setLatestRelease}
       />
     </div>

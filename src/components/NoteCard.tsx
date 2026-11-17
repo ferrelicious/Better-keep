@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   Clock,
+  Lock,
   Pin,
   RotateCcw,
   Trash2,
@@ -18,6 +19,7 @@ import { Note, getColorConfig } from '../types/note';
 
 interface NoteCardProps {
   note: Note;
+  isPrivate?: boolean;
   onEdit: (note: Note) => void;
   onTogglePin: (noteId: string) => void;
   onDelete: (noteId: string) => void;
@@ -27,6 +29,7 @@ interface NoteCardProps {
 
 export function NoteCard({
   note,
+  isPrivate = false,
   onEdit,
   onTogglePin,
   onDelete,
@@ -35,6 +38,7 @@ export function NoteCard({
 }: NoteCardProps) {
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const colorConfig = getColorConfig(note.color);
+  const noteIsPrivate = Boolean(note.isPrivate) || isPrivate;
 
   const overdue = note.reminder
     ? isReminderOverdue(note.reminder.at, note.reminder.completed)
@@ -55,6 +59,12 @@ export function NoteCard({
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs text-[#525E56] dark:text-[#9BA79F] min-w-0">
+            {noteIsPrivate && (
+              <Lock
+                className="w-3.5 h-3.5 text-[#6E4C8E] dark:text-[#C6A4EA] shrink-0"
+                aria-label="Privat anteckning"
+              />
+            )}
             <span className="font-medium truncate">{note.category}</span>
             <span aria-hidden="true">·</span>
             <span className="font-mono-tabular whitespace-nowrap shrink-0">

@@ -11714,6 +11714,24 @@ var Clock = createLucideIcon("clock", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Copy = createLucideIcon("copy", [["rect", {
+	width: "14",
+	height: "14",
+	x: "8",
+	y: "8",
+	rx: "2",
+	ry: "2",
+	key: "17jyea"
+}], ["path", {
+	d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
+	key: "zix9uf"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Download = createLucideIcon("download", [
 	["path", {
 		d: "M12 15V3",
@@ -11728,6 +11746,65 @@ var Download = createLucideIcon("download", [
 		key: "brsn70"
 	}]
 ]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var ExternalLink = createLucideIcon("external-link", [
+	["path", {
+		d: "M15 3h6v6",
+		key: "1q9fwt"
+	}],
+	["path", {
+		d: "M10 14 21 3",
+		key: "gplh6r"
+	}],
+	["path", {
+		d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
+		key: "a6xqqp"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var EyeOff = createLucideIcon("eye-off", [
+	["path", {
+		d: "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
+		key: "ct8e1f"
+	}],
+	["path", {
+		d: "M14.084 14.158a3 3 0 0 1-4.242-4.242",
+		key: "151rxh"
+	}],
+	["path", {
+		d: "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
+		key: "13bj9a"
+	}],
+	["path", {
+		d: "m2 2 20 20",
+		key: "1ooewy"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Eye = createLucideIcon("eye", [["path", {
+	d: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",
+	key: "1nclc0"
+}], ["circle", {
+	cx: "12",
+	cy: "12",
+	r: "3",
+	key: "1v7zrd"
+}]]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -11793,6 +11870,28 @@ var House = createLucideIcon("house", [["path", {
 	d: "M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
 	key: "r6nss1"
 }]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Info = createLucideIcon("info", [
+	["circle", {
+		cx: "12",
+		cy: "12",
+		r: "10",
+		key: "1mglay"
+	}],
+	["path", {
+		d: "M12 16v-4",
+		key: "1dtifu"
+	}],
+	["path", {
+		d: "M12 8h.01",
+		key: "e9boi3"
+	}]
+]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -11938,6 +12037,36 @@ var Mic = createLucideIcon("mic", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Monitor = createLucideIcon("monitor", [
+	["rect", {
+		width: "20",
+		height: "14",
+		x: "2",
+		y: "3",
+		rx: "2",
+		key: "48i651"
+	}],
+	["line", {
+		x1: "8",
+		x2: "16",
+		y1: "21",
+		y2: "21",
+		key: "1svkeh"
+	}],
+	["line", {
+		x1: "12",
+		x2: "12",
+		y1: "17",
+		y2: "21",
+		key: "vw1qmm"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Moon = createLucideIcon("moon", [["path", {
 	d: "M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401",
 	key: "kfwtm"
@@ -12071,6 +12200,34 @@ var Settings2 = createLucideIcon("settings-2", [
 		key: "dfmy0x"
 	}]
 ]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Settings = createLucideIcon("settings", [["path", {
+	d: "M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915",
+	key: "1i5ecw"
+}], ["circle", {
+	cx: "12",
+	cy: "12",
+	r: "3",
+	key: "1v7zrd"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var ShieldCheck = createLucideIcon("shield-check", [["path", {
+	d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+	key: "oel41y"
+}], ["path", {
+	d: "m9 12 2 2 4-4",
+	key: "dzmm74"
+}]]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -36345,7 +36502,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	});
 };
 // node_modules/@capacitor/filesystem/dist/esm/index.js
-var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-sFQQPOrd.js").then((m) => new m.FilesystemWeb()), []) });
+var Filesystem = registerPlugin("Filesystem", { web: () => __vitePreload(() => import("./web-Cm83flZ9.js").then((m) => new m.FilesystemWeb()), []) });
 f();
 // node_modules/@capacitor-community/file-opener/dist/esm/index.js
 var FileOpener = registerPlugin("FileOpener");
@@ -36922,7 +37079,7 @@ var Weekday;
 	Weekday[Weekday["Saturday"] = 7] = "Saturday";
 })(Weekday || (Weekday = {}));
 // node_modules/@capacitor/local-notifications/dist/esm/index.js
-var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-Bf1q0N8_.js").then((m) => new m.LocalNotificationsWeb()), []) });
+var LocalNotifications = registerPlugin("LocalNotifications", { web: () => __vitePreload(() => import("./web-Daz36XTs.js").then((m) => new m.LocalNotificationsWeb()), []) });
 // src/services/notifications.ts
 var URGENT_CHANNEL_ID = "betterkeep-urgent";
 var channelCreated = false;
@@ -37082,6 +37239,57 @@ function triggerWebNotification(note) {
 		});
 	} catch {}
 }
+async function sendTestNotification() {
+	try {
+		await ensureHighPriorityNotificationChannel();
+		const granted = await ensureNotificationPermissions();
+		if (Capacitor.isNativePlatform()) {
+			if (!granted) return {
+				ok: false,
+				message: "Notisbehörighet nekad. Aktivera aviseringar i telefonens appinställningar."
+			};
+			await LocalNotifications.schedule({ notifications: [{
+				id: 999001,
+				channelId: URGENT_CHANNEL_ID,
+				title: "Testnotis från BetterKeep",
+				body: "Högprioriterade popup-notiser och ljud fungerar som de ska!",
+				schedule: {
+					at: new Date(Date.now() + 400),
+					allowWhileIdle: true
+				}
+			}] });
+			return {
+				ok: true,
+				message: "Testnotis skickad på kanalen betterkeep-urgent!"
+			};
+		}
+		if (typeof window !== "undefined" && "Notification" in window) {
+			if (Notification.permission === "granted") {
+				new Notification("Testnotis från BetterKeep", {
+					body: "Notiser fungerar! I Android-appen används kanalen betterkeep-urgent.",
+					tag: "betterkeep-test-notif"
+				});
+				return {
+					ok: true,
+					message: "Testnotis visad i webbläsaren (använder betterkeep-urgent på Android)."
+				};
+			}
+			return {
+				ok: false,
+				message: "Webbläsaren blockerade notiser. Tillåt aviseringar för sidan."
+			};
+		}
+		return {
+			ok: false,
+			message: "Denna miljö stöder inte systemnotiser direkt i webbläsaren."
+		};
+	} catch {
+		return {
+			ok: false,
+			message: "Kunde inte skicka testnotis just nu."
+		};
+	}
+}
 function formatReminderDateTime(isoString) {
 	const date = new Date(isoString);
 	if (Number.isNaN(date.getTime())) return "Ogiltigt datum";
@@ -37116,9 +37324,10 @@ function computeSnoozeDate(preset) {
 	return tomorrow.toISOString();
 }
 // src/components/NoteCard.tsx
-function NoteCard({ note, onEdit, onTogglePin, onDelete, onToggleReminderComplete, onSnoozeReminder }) {
+function NoteCard({ note, isPrivate = false, onEdit, onTogglePin, onDelete, onToggleReminderComplete, onSnoozeReminder }) {
 	const [snoozeOpen, setSnoozeOpen] = (0, import_react.useState)(false);
 	const colorConfig = getColorConfig(note.color);
+	const noteIsPrivate = Boolean(note.isPrivate) || isPrivate;
 	const overdue = note.reminder ? isReminderOverdue(note.reminder.at, note.reminder.completed) : false;
 	const completed = note.reminder?.completed ?? false;
 	const formattedUpdated = new Date(note.updatedAt).toLocaleDateString("sv-SE", {
@@ -37135,6 +37344,10 @@ function NoteCard({ note, onEdit, onTogglePin, onDelete, onToggleReminderComplet
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex items-center gap-1.5 text-xs text-[#525E56] dark:text-[#9BA79F] min-w-0",
 					children: [
+						noteIsPrivate && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+							className: "w-3.5 h-3.5 text-[#6E4C8E] dark:text-[#C6A4EA] shrink-0",
+							"aria-label": "Privat anteckning"
+						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 							className: "font-medium truncate",
 							children: note.category
@@ -37292,6 +37505,7 @@ function NoteEditorModal({ isOpen, initialNote, defaultCategory, onClose, onSave
 	const [category, setCategory] = (0, import_react.useState)(defaultCategory);
 	const [color, setColor] = (0, import_react.useState)("default");
 	const [pinned, setPinned] = (0, import_react.useState)(false);
+	const [isPrivate, setIsPrivate] = (0, import_react.useState)(false);
 	const [reminderDate, setReminderDate] = (0, import_react.useState)("");
 	const [reminderTime, setReminderTime] = (0, import_react.useState)("09:00");
 	const [reminderCompleted, setReminderCompleted] = (0, import_react.useState)(false);
@@ -37303,6 +37517,7 @@ function NoteEditorModal({ isOpen, initialNote, defaultCategory, onClose, onSave
 			setCategory(initialNote.category);
 			setColor(initialNote.color);
 			setPinned(initialNote.pinned);
+			setIsPrivate(Boolean(initialNote.isPrivate));
 			if (initialNote.reminder) {
 				setReminderDate(toLocalDateInput(initialNote.reminder.at));
 				setReminderTime(toLocalTimeInput(initialNote.reminder.at));
@@ -37318,6 +37533,7 @@ function NoteEditorModal({ isOpen, initialNote, defaultCategory, onClose, onSave
 			setCategory(defaultCategory);
 			setColor("default");
 			setPinned(false);
+			setIsPrivate(false);
 			setReminderDate("");
 			setReminderTime("09:00");
 			setReminderCompleted(false);
@@ -37362,6 +37578,7 @@ function NoteEditorModal({ isOpen, initialNote, defaultCategory, onClose, onSave
 			category,
 			color,
 			pinned,
+			isPrivate,
 			reminder
 		});
 	};
@@ -37543,6 +37760,26 @@ function NoteEditorModal({ isOpen, initialNote, defaultCategory, onClose, onSave
 						})
 					]
 				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+					className: "flex items-center justify-between gap-3 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] px-4 py-3 cursor-pointer select-none",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2.5 text-sm font-medium",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+								className: `w-4 h-4 ${isPrivate ? "text-[#6E4C8E] dark:text-[#C6A4EA]" : "opacity-65"}`,
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Privat anteckning (syns bara för mig)" })]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							type: "checkbox",
+							role: "switch",
+							checked: isPrivate,
+							onChange: (e) => setIsPrivate(e.target.checked),
+							className: "sr-only peer"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-10 h-6 rounded-full bg-black/20 dark:bg-white/20 peer-checked:bg-[#6E4C8E] dark:peer-checked:bg-[#C6A4EA] relative transition-colors shrink-0 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" })
+					]
+				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex items-center justify-between gap-3 pt-1",
 					children: [initialNote && onDelete ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
@@ -37575,12 +37812,459 @@ function NoteEditorModal({ isOpen, initialNote, defaultCategory, onClose, onSave
 		})
 	});
 }
+// src/components/SettingsModal.tsx
+var GITHUB_RELEASES_URL = "https://github.com/ferrelicious/Better-keep/releases";
+function SettingsModal({ open, onClose, theme, onChangeTheme, userEmail, household, onOpenHouseholdModal, onPassphraseChanged, initialUpdateResult, onUpdateChecked }) {
+	const [testingNotif, setTestingNotif] = (0, import_react.useState)(false);
+	const [notifFeedback, setNotifFeedback] = (0, import_react.useState)(null);
+	const [showKey, setShowKey] = (0, import_react.useState)(false);
+	const [copiedKey, setCopiedKey] = (0, import_react.useState)(false);
+	const [passphrase, setPassphrase] = (0, import_react.useState)("");
+	const [passphraseSaved, setPassphraseSaved] = (0, import_react.useState)(false);
+	const [checkingUpdate, setCheckingUpdate] = (0, import_react.useState)(false);
+	const [updateResult, setUpdateResult] = (0, import_react.useState)(initialUpdateResult ?? null);
+	const [updateError, setUpdateError] = (0, import_react.useState)(null);
+	const [downloadingUpdate, setDownloadingUpdate] = (0, import_react.useState)(false);
+	const [downloadProgress, setDownloadProgress] = (0, import_react.useState)(null);
+	(0, import_react.useEffect)(() => {
+		if (!open) return;
+		setNotifFeedback(null);
+		setCopiedKey(false);
+		setPassphraseSaved(false);
+		setUpdateError(null);
+		if (initialUpdateResult) setUpdateResult(initialUpdateResult);
+		if (household?.id) setPassphrase(getHouseholdPassphrase(household.id));
+		else setPassphrase("");
+	}, [
+		open,
+		household?.id,
+		initialUpdateResult
+	]);
+	if (!open) return null;
+	const householdKey = household?.encryption_secret?.trim() || household?.id || "";
+	const handleSendTest = async () => {
+		setTestingNotif(true);
+		setNotifFeedback(null);
+		try {
+			const res = await sendTestNotification();
+			setNotifFeedback(res);
+		} finally {
+			setTestingNotif(false);
+		}
+	};
+	const handleCopyKey = async () => {
+		if (!householdKey) return;
+		try {
+			await navigator.clipboard.writeText(householdKey);
+			setCopiedKey(true);
+			window.setTimeout(() => setCopiedKey(false), 2500);
+		} catch {}
+	};
+	const handleSavePassphrase = (e) => {
+		e.preventDefault();
+		if (!household?.id) return;
+		setHouseholdPassphrase(household.id, passphrase);
+		setPassphraseSaved(true);
+		onPassphraseChanged();
+	};
+	const handleCheckUpdate = async () => {
+		setCheckingUpdate(true);
+		setUpdateError(null);
+		try {
+			const res = await checkForAppUpdate();
+			setUpdateResult(res);
+			onUpdateChecked?.(res);
+		} catch {
+			setUpdateError("Kunde inte nå GitHub för att söka efter uppdatering.");
+		} finally {
+			setCheckingUpdate(false);
+		}
+	};
+	const handleInstallApk = async () => {
+		if (!updateResult) return;
+		const url = updateResult.downloadUrl || updateResult.releaseUrl;
+		if (!url || downloadingUpdate) return;
+		setUpdateError(null);
+		setDownloadingUpdate(true);
+		setDownloadProgress(0);
+		try {
+			await downloadAndInstallApk(url, updateResult.assetName, (pct) => setDownloadProgress(pct));
+		} catch (err) {
+			setUpdateError(err instanceof Error ? err.message : "Kunde inte öppna installationsfilen.");
+		} finally {
+			setDownloadingUpdate(false);
+		}
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4",
+		onClick: onClose,
+		role: "dialog",
+		"aria-modal": "true",
+		"aria-labelledby": "settings-modal-title",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			onClick: (e) => e.stopPropagation(),
+			className: "w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#191D1A] border border-[#18221C]/12 dark:border-[#E3EAE5]/12 shadow-2xl p-5 sm:p-6 flex flex-col gap-6",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "sm:hidden w-10 h-1.5 rounded-full bg-current opacity-20 mx-auto -mt-1" }),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center justify-between gap-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "w-10 h-10 rounded-xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#2E6B4E] dark:text-[#8FD4AE] flex items-center justify-center shrink-0",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, {
+								className: "w-5 h-5",
+								"aria-hidden": "true"
+							})
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+							id: "settings-modal-title",
+							className: "font-display text-lg font-bold",
+							children: "Inställningar"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-[#525E56] dark:text-[#9BA79F]",
+							children: "Utseende, notiser, säkerhet och appversion"
+						})] })]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: onClose,
+						"aria-label": "Stäng inställningar",
+						className: "w-11 h-11 rounded-xl flex items-center justify-center hover:bg-[#ECEFE9] dark:hover:bg-[#212723] transition-colors cursor-pointer",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, {
+							className: "w-5 h-5",
+							"aria-hidden": "true"
+						})
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "flex flex-col gap-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+						className: "text-sm font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+						children: "Utseende"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						role: "radiogroup",
+						"aria-label": "Välj färgtema",
+						className: "grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723]",
+						children: [
+							{
+								id: "light",
+								label: "Ljust",
+								Icon: Sun
+							},
+							{
+								id: "dark",
+								label: "Mörkt",
+								Icon: Moon
+							},
+							{
+								id: "system",
+								label: "Systemet",
+								Icon: Monitor
+							}
+						].map(({ id, label, Icon }) => {
+							const active = theme === id;
+							return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								role: "radio",
+								"aria-checked": active,
+								onClick: () => onChangeTheme(id),
+								className: `min-h-[44px] px-3 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${active ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F] hover:text-[#171D19] dark:hover:text-[#E4EBE6]"}`,
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {
+									className: "w-4 h-4 shrink-0",
+									"aria-hidden": "true"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: label })]
+							}, id);
+						})
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("hr", { className: "border-[#18221C]/10 dark:border-[#E3EAE5]/10" }),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "flex flex-col gap-3",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-between gap-3",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+								className: "text-sm font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+								children: "Notiser & Ljud"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "text-xs text-[#525E56] dark:text-[#9BA79F]",
+								children: "Testa högprioriterade popup-notiser (kanal betterkeep-urgent)"
+							})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: handleSendTest,
+								disabled: testingNotif,
+								className: "inline-flex items-center gap-1.5 min-h-[42px] px-4 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold shrink-0 disabled:opacity-50 cursor-pointer whitespace-nowrap",
+								children: [testingNotif ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+									className: "w-4 h-4 animate-spin",
+									"aria-hidden": "true"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BellRing, {
+									className: "w-4 h-4",
+									"aria-hidden": "true"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Skicka testnotis" })]
+							})]
+						}),
+						notifFeedback && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: `text-xs font-medium px-3.5 py-2.5 rounded-xl ${notifFeedback.ok ? "bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9]" : "bg-red-500/10 text-red-700 dark:text-red-300"}`,
+							children: notifFeedback.message
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] p-3.5 text-xs text-[#525E56] dark:text-[#9BA79F] space-y-1.5 leading-relaxed",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+									children: "Snabbguide: Tillåt bakgrundsaktivitet på Android"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
+									"1. Öppna telefonens ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
+										className: "font-medium text-[#171D19] dark:text-[#E4EBE6]",
+										children: "Inställningar → Appar → BetterKeep"
+									}),
+									"."
+								] }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
+									"2. Under ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
+										className: "font-medium text-[#171D19] dark:text-[#E4EBE6]",
+										children: "Batteri"
+									}),
+									": välj ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
+										className: "font-medium text-[#171D19] dark:text-[#E4EBE6]",
+										children: "Obegränsad"
+									}),
+									" så att påminnelser och chatt inte pausas i viloläge."
+								] }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
+									"3. Under ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
+										className: "font-medium text-[#171D19] dark:text-[#E4EBE6]",
+										children: "Aviseringar"
+									}),
+									": kontrollera att kanalen ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "font-mono-tabular",
+										children: "Hushåll, Chatt & Kalender"
+									}),
+									" har ljud och popup aktiverat."
+								] })
+							]
+						})
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("hr", { className: "border-[#18221C]/10 dark:border-[#E3EAE5]/10" }),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "flex flex-col gap-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-between gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+							className: "text-sm font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+							children: "Säkerhet & Kryptering"
+						}), household ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "inline-flex items-center gap-1 text-xs font-semibold text-[#2E6B4E] dark:text-[#8FD4AE]",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldCheck, {
+								className: "w-4 h-4",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "E2E Aktiv (AES-GCM 256-bit)" })]
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "inline-flex items-center gap-1 text-xs font-medium text-[#525E56] dark:text-[#9BA79F]",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+								className: "w-3.5 h-3.5",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Ej kopplat hushåll" })]
+						})]
+					}), !userEmail || !household ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-between gap-3 rounded-2xl bg-[#F6F7F4] dark:bg-[#141816] p-3.5",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-[#525E56] dark:text-[#9BA79F]",
+							children: "Logga in och koppla ett hushåll för att visa och hantera hushållets krypteringsnyckel."
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => {
+								onClose();
+								onOpenHouseholdModal();
+							},
+							className: "min-h-[40px] px-3.5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold shrink-0 cursor-pointer whitespace-nowrap",
+							children: "Konto & Hushåll"
+						})]
+					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-col gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex flex-col gap-1.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "text-xs font-medium text-[#525E56] dark:text-[#9BA79F]",
+								children: [
+									"Hushållets delade krypteringsnyckel (",
+									household.name,
+									")"
+								]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "relative flex-1 min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+										type: showKey ? "text" : "password",
+										readOnly: true,
+										value: householdKey,
+										"aria-label": "Hushållets krypteringsnyckel",
+										className: "w-full h-11 pl-3.5 pr-10 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-xs font-mono-tabular text-[#171D19] dark:text-[#E4EBE6] focus:outline-none"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										onClick: () => setShowKey((s) => !s),
+										"aria-label": showKey ? "Dölj nyckel" : "Visa nyckel",
+										className: "absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-[#525E56] dark:text-[#9BA79F] hover:text-[#171D19] dark:hover:text-[#E4EBE6] cursor-pointer",
+										children: showKey ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EyeOff, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Eye, { className: "w-4 h-4" })
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: handleCopyKey,
+									className: "inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-xs font-semibold shrink-0 cursor-pointer whitespace-nowrap",
+									children: copiedKey ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, {
+										className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]",
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kopierad" })] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, {
+										className: "w-4 h-4",
+										"aria-hidden": "true"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Kopiera" })] })
+								})]
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+							onSubmit: handleSavePassphrase,
+							className: "flex flex-col gap-1.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "text-xs font-medium text-[#525E56] dark:text-[#9BA79F] flex items-center gap-1.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(KeyRound, {
+									className: "w-3.5 h-3.5 text-[#2E6B4E] dark:text-[#8FD4AE]",
+									"aria-hidden": "true"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Valfri personlig lösenfras (sparas lokalt)" })]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "password",
+									value: passphrase,
+									onChange: (e) => {
+										setPassphrase(e.target.value);
+										setPassphraseSaved(false);
+									},
+									placeholder: "Skriv egen lösenfras eller lämna tomt",
+									className: "flex-1 min-w-0 h-11 px-3.5 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-xs text-[#171D19] dark:text-[#E4EBE6] focus:outline-none focus:ring-2 focus:ring-[#2E6B4E]"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "submit",
+									className: "min-h-[44px] px-4 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold shrink-0 cursor-pointer whitespace-nowrap",
+									children: passphraseSaved ? "Sparad" : "Spara"
+								})]
+							})]
+						})]
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("hr", { className: "border-[#18221C]/10 dark:border-[#E3EAE5]/10" }),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+					className: "flex flex-col gap-3",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-between gap-3 flex-wrap",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Info, {
+									className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]",
+									"aria-hidden": "true"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+									className: "text-sm font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+									children: "Om appen & Uppdateringar"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "text-xs text-[#525E56] dark:text-[#9BA79F]",
+									children: [
+										"Nuvarande version:",
+										" ",
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "font-mono-tabular font-semibold text-[#171D19] dark:text-[#E4EBE6]",
+											children: formatVersionLabel(CURRENT_APP_VERSION)
+										}),
+										" · ",
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+											href: GITHUB_RELEASES_URL,
+											target: "_blank",
+											rel: "noopener noreferrer",
+											className: "inline-flex items-center gap-1 text-[#2E6B4E] dark:text-[#8FD4AE] hover:underline",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "GitHub Releases" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExternalLink, {
+												className: "w-3 h-3",
+												"aria-hidden": "true"
+											})]
+										})
+									]
+								})] })]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: handleCheckUpdate,
+								disabled: checkingUpdate || downloadingUpdate,
+								className: "inline-flex items-center gap-1.5 min-h-[42px] px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-xs font-semibold text-[#171D19] dark:text-[#E4EBE6] disabled:opacity-50 cursor-pointer whitespace-nowrap",
+								children: [checkingUpdate ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+									className: "w-4 h-4 animate-spin",
+									"aria-hidden": "true"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, {
+									className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]",
+									"aria-hidden": "true"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: checkingUpdate ? "Söker..." : "Sök efter uppdatering" })]
+							})]
+						}),
+						updateError && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-red-600 dark:text-red-400",
+							children: updateError
+						}),
+						updateResult && !updateError && (updateResult.updateAvailable ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "rounded-2xl bg-[#D3EBD9] dark:bg-[#1C4A34] text-[#0D3824] dark:text-[#CBEED9] p-3.5 flex items-center justify-between gap-3",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "text-xs font-semibold truncate",
+									children: [
+										"Ny uppdatering tillgänglig (",
+										formatVersionLabel(updateResult.latestVersion),
+										")"
+									]
+								}), downloadingUpdate && downloadProgress !== null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+									className: "text-[11px] font-mono-tabular opacity-85",
+									children: [
+										"Laddar ner APK... ",
+										downloadProgress,
+										"%"
+									]
+								})]
+							}), (updateResult.downloadUrl || updateResult.releaseUrl) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: handleInstallApk,
+								disabled: downloadingUpdate,
+								className: "inline-flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-xl bg-[#2E6B4E] dark:bg-[#8FD4AE] text-white dark:text-[#063822] text-xs font-semibold shrink-0 disabled:opacity-60 cursor-pointer whitespace-nowrap",
+								children: [downloadingUpdate ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, {
+									className: "w-3.5 h-3.5 animate-spin",
+									"aria-hidden": "true"
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, {
+									className: "w-3.5 h-3.5",
+									"aria-hidden": "true"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: downloadingUpdate ? "Hämtar..." : "Ladda ner & installera" })]
+							})]
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-1.5 text-xs text-[#2E6B4E] dark:text-[#8FD4AE] font-medium",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, {
+								className: "w-4 h-4 shrink-0",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+								"Du kör den senaste versionen (",
+								formatVersionLabel(updateResult.currentVersion),
+								")"
+							] })]
+						}))
+					]
+				})
+			]
+		})
+	});
+}
 // src/components/TopBar.tsx
-function TopBar({ searchQuery, onSearchChange, theme, onToggleTheme, onOpenNewNote, onOpenEmailImport }) {
+function TopBar({ searchQuery, onSearchChange, effectiveTheme, onToggleTheme, onOpenSettings, onOpenNewNote, onOpenEmailImport }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("header", {
 		className: "sticky top-0 z-30 pt-safe bg-[#F6F7F4]/90 dark:bg-[#111412]/90 backdrop-blur-md border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3 sm:gap-6",
+			className: "max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-6",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "flex items-center shrink-0",
@@ -37614,12 +38298,12 @@ function TopBar({ searchQuery, onSearchChange, theme, onToggleTheme, onOpenNewNo
 					]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-2 shrink-0",
+					className: "flex items-center gap-1.5 sm:gap-2 shrink-0",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 							type: "button",
 							onClick: onOpenEmailImport,
-							className: "inline-flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[40px] px-3 sm:px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] text-xs sm:text-sm font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer",
+							className: "inline-flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] sm:min-h-[40px] px-2.5 sm:px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] text-xs sm:text-sm font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MailPlus, {
 								className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]",
 								"aria-hidden": "true"
@@ -37628,14 +38312,25 @@ function TopBar({ searchQuery, onSearchChange, theme, onToggleTheme, onOpenNewNo
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 							type: "button",
 							onClick: onToggleTheme,
-							"aria-label": theme === "dark" ? "Byt till ljust tema" : "Byt till mörkt tema",
-							title: theme === "dark" ? "Ljust tema" : "Mörkt tema",
+							"aria-label": effectiveTheme === "dark" ? "Byt till ljust tema" : "Byt till mörkt tema",
+							title: effectiveTheme === "dark" ? "Ljust tema" : "Mörkt tema",
 							className: "inline-flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] transition-colors duration-150 shrink-0 cursor-pointer",
-							children: theme === "dark" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sun, {
+							children: effectiveTheme === "dark" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sun, {
 								className: "w-4 h-4 text-[#E7C67A]",
 								"aria-hidden": "true"
 							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Moon, {
 								className: "w-4 h-4 text-[#2E6B4E]",
+								"aria-hidden": "true"
+							})
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: onOpenSettings,
+							"aria-label": "Inställningar",
+							title: "Inställningar",
+							className: "inline-flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] transition-colors duration-150 shrink-0 cursor-pointer",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, {
+								className: "w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]",
 								"aria-hidden": "true"
 							})
 						}),
@@ -37778,10 +38473,9 @@ var LS_THEME_KEY = "betterkeep_theme";
 function getSavedTheme() {
 	try {
 		const saved = localStorage.getItem(LS_THEME_KEY);
-		if (saved === "light" || saved === "dark") return saved;
-		if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) return "dark";
+		if (saved === "light" || saved === "dark" || saved === "system") return saved;
 	} catch {}
-	return "light";
+	return "system";
 }
 function saveTheme(theme) {
 	try {
@@ -38050,11 +38744,20 @@ function App() {
 	const [showSplash, setShowSplash] = (0, import_react.useState)(true);
 	const [activeTab, setActiveTab] = (0, import_react.useState)("notes");
 	const [theme, setTheme] = (0, import_react.useState)(() => getSavedTheme());
+	const [systemDark, setSystemDark] = (0, import_react.useState)(() => {
+		try {
+			return Boolean(typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+		} catch {
+			return false;
+		}
+	});
 	const [activeCategory, setActiveCategory] = (0, import_react.useState)("Alla");
+	const [noteShareFilter, setNoteShareFilter] = (0, import_react.useState)("all");
 	const [onlyReminders, setOnlyReminders] = (0, import_react.useState)(false);
 	const [searchQuery, setSearchQuery] = (0, import_react.useState)("");
 	const [editorOpen, setEditorOpen] = (0, import_react.useState)(false);
 	const [editingNote, setEditingNote] = (0, import_react.useState)(null);
+	const [settingsModalOpen, setSettingsModalOpen] = (0, import_react.useState)(false);
 	const [emailModalOpen, setEmailModalOpen] = (0, import_react.useState)(false);
 	const [emailConfigs, setEmailConfigs] = (0, import_react.useState)(() => getDefaultEmailConfigs());
 	const [householdModalOpen, setHouseholdModalOpen] = (0, import_react.useState)(false);
@@ -38095,11 +38798,20 @@ function App() {
 		return () => window.clearTimeout(timer);
 	}, []);
 	(0, import_react.useEffect)(() => {
+		if (typeof window === "undefined" || !window.matchMedia) return;
+		const mq = window.matchMedia("(prefers-color-scheme: dark)");
+		const onChange = (e) => setSystemDark(e.matches);
+		setSystemDark(mq.matches);
+		mq.addEventListener("change", onChange);
+		return () => mq.removeEventListener("change", onChange);
+	}, []);
+	const effectiveTheme = theme === "system" ? systemDark ? "dark" : "light" : theme;
+	(0, import_react.useEffect)(() => {
 		const root = document.documentElement;
-		if (theme === "dark") root.classList.add("dark");
+		if (effectiveTheme === "dark") root.classList.add("dark");
 		else root.classList.remove("dark");
 		saveTheme(theme);
-	}, [theme]);
+	}, [theme, effectiveTheme]);
 	const fetchHouseholdEvents = (0, import_react.useCallback)(async (householdId, currentUserEmail) => {
 		const { data, error } = await supabase.from("household_events").select("*").eq("household_id", householdId).order("event_date", { ascending: true });
 		if (!error && data) {
@@ -38127,7 +38839,8 @@ function App() {
 			const localNotes = await loadAllNotes();
 			for (const ln of localNotes) mergedMap.set(ln.id, ln);
 			for (const rec of cloudRecords) {
-				if (rec.household_id) sharedIds.add(rec.id);
+				if (rec.data?.isPrivate && rec.owner_email.toLowerCase() !== email.toLowerCase()) continue;
+				if (rec.household_id && !rec.data?.isPrivate) sharedIds.add(rec.id);
 				const existing = mergedMap.get(rec.id);
 				const cloudTime = new Date(rec.data.updatedAt || rec.updated_at).getTime();
 				const localTime = existing ? new Date(existing.updatedAt).getTime() : 0;
@@ -38138,8 +38851,9 @@ function App() {
 				}
 			}
 			for (const ln of localNotes) if (!cloudRecords.some((r) => r.id === ln.id)) {
-				await upsertCloudNote(ln, email, hh?.id ?? null);
-				if (hh?.id) sharedIds.add(ln.id);
+				const hhToUse = ln.isPrivate ? null : hh?.id ?? null;
+				await upsertCloudNote(ln, email, hhToUse);
+				if (hhToUse) sharedIds.add(ln.id);
 			}
 			setSharedNoteIds(sharedIds);
 			setNotes(Array.from(mergedMap.values()));
@@ -38201,12 +38915,13 @@ function App() {
 			} else if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
 				const rec = payload.new;
 				if (!rec?.data) return;
+				if (rec.data.isPrivate && rec.owner_email.toLowerCase() !== userEmail.toLowerCase()) return;
 				setNotes((prev) => {
 					return prev.some((n) => n.id === rec.id) ? prev.map((n) => n.id === rec.id ? rec.data : n) : [rec.data, ...prev];
 				});
 				setSharedNoteIds((prev) => {
 					const next = new Set(prev);
-					if (rec.household_id) next.add(rec.id);
+					if (rec.household_id && !rec.data.isPrivate) next.add(rec.id);
 					else next.delete(rec.id);
 					return next;
 				});
@@ -38310,6 +39025,7 @@ function App() {
 				setEditorOpen(false);
 				setEmailModalOpen(false);
 				setHouseholdModalOpen(false);
+				setSettingsModalOpen(false);
 			}
 		};
 		window.addEventListener("keydown", onKeyDown);
@@ -38408,9 +39124,11 @@ function App() {
 			setHouseholdModalOpen(true);
 			return;
 		}
-		const nextHouseholdId = sharedNoteIds.has(note.id) ? null : household.id;
+		const nextIsShared = !sharedNoteIds.has(note.id);
+		const nextHouseholdId = nextIsShared ? household.id : null;
 		const updated = {
 			...note,
+			isPrivate: !nextIsShared,
 			updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 		};
 		setNotes((prev) => prev.map((n) => n.id === note.id ? updated : n));
@@ -38431,6 +39149,7 @@ function App() {
 			category: draft.category,
 			color: draft.color,
 			pinned: draft.pinned,
+			isPrivate: draft.isPrivate,
 			reminder: draft.reminder,
 			updatedAt: now
 		} : {
@@ -38440,6 +39159,7 @@ function App() {
 			category: draft.category,
 			color: draft.color,
 			pinned: draft.pinned,
+			isPrivate: draft.isPrivate,
 			reminder: draft.reminder,
 			createdAt: now,
 			updatedAt: now
@@ -38449,14 +39169,13 @@ function App() {
 		});
 		setEditorOpen(false);
 		setEditingNote(null);
-		const targetHhId = existing ? sharedNoteIds.has(existing.id) ? household?.id ?? null : null : household?.id ?? null;
+		const targetHhId = draft.isPrivate ? null : household?.id ?? null;
 		await persistNoteEverywhere(updatedNote, targetHhId);
 		if (updatedNote.reminder && !updatedNote.reminder.completed) await ensureHighPriorityNotificationChannel();
 		await syncNoteReminderNotification(updatedNote);
 	}, [
 		notes,
 		household,
-		sharedNoteIds,
 		persistNoteEverywhere
 	]);
 	const handleTogglePin = (0, import_react.useCallback)(async (noteId) => {
@@ -38468,7 +39187,7 @@ function App() {
 			updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 		};
 		setNotes((prev) => prev.map((n) => n.id === noteId ? updated : n));
-		await persistNoteEverywhere(updated, sharedNoteIds.has(noteId) ? household?.id ?? null : null);
+		await persistNoteEverywhere(updated, !target.isPrivate && sharedNoteIds.has(noteId) ? household?.id ?? null : null);
 	}, [
 		notes,
 		sharedNoteIds,
@@ -38499,7 +39218,7 @@ function App() {
 		setDeletedUndo(null);
 		if (undoTimerRef.current) window.clearTimeout(undoTimerRef.current);
 		setNotes((prev) => [restored, ...prev]);
-		await persistNoteEverywhere(restored, household?.id ?? null);
+		await persistNoteEverywhere(restored, restored.isPrivate ? null : household?.id ?? null);
 		await syncNoteReminderNotification(restored);
 	}, [
 		deletedUndo,
@@ -38519,7 +39238,7 @@ function App() {
 		};
 		setNotes((prev) => prev.map((n) => n.id === noteId ? updated : n));
 		if (dueBannerNote?.id === noteId) setDueBannerNote(null);
-		await persistNoteEverywhere(updated, sharedNoteIds.has(noteId) ? household?.id ?? null : null);
+		await persistNoteEverywhere(updated, !target.isPrivate && sharedNoteIds.has(noteId) ? household?.id ?? null : null);
 		await syncNoteReminderNotification(updated);
 	}, [
 		notes,
@@ -38543,7 +39262,7 @@ function App() {
 		};
 		setNotes((prev) => prev.map((n) => n.id === noteId ? updated : n));
 		if (dueBannerNote?.id === noteId) setDueBannerNote(null);
-		await persistNoteEverywhere(updated, sharedNoteIds.has(noteId) ? household?.id ?? null : null);
+		await persistNoteEverywhere(updated, !target.isPrivate && sharedNoteIds.has(noteId) ? household?.id ?? null : null);
 		await syncNoteReminderNotification(updated);
 	}, [
 		notes,
@@ -38580,9 +39299,20 @@ function App() {
 		return counts;
 	}, [notes]);
 	const activeRemindersCount = (0, import_react.useMemo)(() => notes.filter((n) => n.reminder && !n.reminder.completed).length, [notes]);
+	const isNotePrivate = (0, import_react.useCallback)((note) => {
+		if (note.isPrivate) return true;
+		if (userEmail && household && !sharedNoteIds.has(note.id)) return true;
+		return false;
+	}, [
+		userEmail,
+		household,
+		sharedNoteIds
+	]);
 	const filteredNotes = (0, import_react.useMemo)(() => {
 		const q = searchQuery.trim().toLowerCase();
 		return notes.filter((note) => {
+			if (noteShareFilter === "private" && !isNotePrivate(note)) return false;
+			if (noteShareFilter === "shared" && isNotePrivate(note)) return false;
 			if (activeCategory !== "Alla" && note.category !== activeCategory) return false;
 			if (onlyReminders && !note.reminder) return false;
 			if (!q) return true;
@@ -38591,6 +39321,8 @@ function App() {
 	}, [
 		notes,
 		activeCategory,
+		noteShareFilter,
+		isNotePrivate,
 		onlyReminders,
 		searchQuery
 	]);
@@ -38598,13 +39330,18 @@ function App() {
 	const otherNotes = (0, import_react.useMemo)(() => filteredNotes.filter((n) => !n.pinned), [filteredNotes]);
 	const defaultNewCategory = activeCategory === "Alla" ? "Arbete" : activeCategory;
 	const renderNoteItem = (note) => {
-		const isShared = sharedNoteIds.has(note.id);
+		const noteIsPrivate = isNotePrivate(note);
+		const isShared = !noteIsPrivate && sharedNoteIds.has(note.id);
 		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			className: "flex flex-col gap-1.5",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NoteCard, {
 				note,
+				isPrivate: noteIsPrivate,
 				onEdit: (n) => {
-					setEditingNote(n);
+					setEditingNote({
+						...n,
+						isPrivate: noteIsPrivate
+					});
 					setEditorOpen(true);
 				},
 				onTogglePin: handleTogglePin,
@@ -38642,8 +39379,9 @@ function App() {
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TopBar, {
 				searchQuery,
 				onSearchChange: setSearchQuery,
-				theme,
-				onToggleTheme: () => setTheme((prev) => prev === "dark" ? "light" : "dark"),
+				effectiveTheme,
+				onToggleTheme: () => setTheme(effectiveTheme === "dark" ? "light" : "dark"),
+				onOpenSettings: () => setSettingsModalOpen(true),
 				onOpenNewNote: () => {
 					setEditingNote(null);
 					setEditorOpen(true);
@@ -38884,6 +39622,48 @@ function App() {
 								]
 							})]
 						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex items-center justify-between gap-3 flex-wrap",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								role: "tablist",
+								"aria-label": "Filtrera privata eller delade anteckningar",
+								className: "inline-flex items-center gap-1 p-1 rounded-2xl bg-[#ECEFE9] dark:bg-[#212723]",
+								children: [
+									{
+										id: "all",
+										label: "Alla"
+									},
+									{
+										id: "shared",
+										label: "Delade"
+									},
+									{
+										id: "private",
+										label: "Privata"
+									}
+								].map((tab) => {
+									const active = noteShareFilter === tab.id;
+									return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										role: "tab",
+										"aria-selected": active,
+										type: "button",
+										onClick: () => setNoteShareFilter(tab.id),
+										className: `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${active ? "bg-white dark:bg-[#191D1A] text-[#171D19] dark:text-[#E4EBE6] shadow-xs" : "text-[#525E56] dark:text-[#9BA79F]"}`,
+										children: [
+											tab.id === "private" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
+												className: "w-3 h-3",
+												"aria-hidden": "true"
+											}),
+											tab.id === "shared" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, {
+												className: "w-3 h-3",
+												"aria-hidden": "true"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: tab.label })
+										]
+									}, tab.id);
+								})
+							})
+						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CategoryTabs, {
 							activeCategory,
 							onSelectCategory: setActiveCategory,
@@ -38926,20 +39706,21 @@ function App() {
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
 									className: "font-display text-lg font-semibold",
-									children: searchQuery || onlyReminders || activeCategory !== "Alla" ? "Inga matchande anteckningar" : "Inga anteckningar ännu"
+									children: searchQuery || onlyReminders || activeCategory !== "Alla" || noteShareFilter !== "all" ? "Inga matchande anteckningar" : "Inga anteckningar ännu"
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 									className: "text-sm text-[#525E56] dark:text-[#9BA79F]",
-									children: searchQuery || onlyReminders || activeCategory !== "Alla" ? "Prova att ändra sökord eller välj en annan kategori." : "Skapa din första anteckning med påminnelse eller importera ett mejl från Gmail eller Outlook."
+									children: searchQuery || onlyReminders || activeCategory !== "Alla" || noteShareFilter !== "all" ? "Prova att ändra sökord eller välj ett annat filter." : "Skapa din första anteckning med påminnelse eller importera ett mejl från Gmail eller Outlook."
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 									className: "flex items-center gap-2.5 pt-2 flex-wrap justify-center",
-									children: [(searchQuery || onlyReminders || activeCategory !== "Alla") && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									children: [(searchQuery || onlyReminders || activeCategory !== "Alla" || noteShareFilter !== "all") && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 										type: "button",
 										onClick: () => {
 											setSearchQuery("");
 											setOnlyReminders(false);
 											setActiveCategory(FILTER_TABS[0]);
+											setNoteShareFilter("all");
 										},
 										className: "min-h-[40px] px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] text-sm font-medium cursor-pointer",
 										children: "Visa alla"
@@ -39070,6 +39851,18 @@ function App() {
 					setPassphraseVersion((v) => v + 1);
 					if (userEmail) await syncFromCloud(userEmail);
 				},
+				onUpdateChecked: setLatestRelease
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SettingsModal, {
+				open: settingsModalOpen,
+				onClose: () => setSettingsModalOpen(false),
+				theme,
+				onChangeTheme: setTheme,
+				userEmail,
+				household,
+				onOpenHouseholdModal: () => setHouseholdModalOpen(true),
+				onPassphraseChanged: () => setPassphraseVersion((v) => v + 1),
+				initialUpdateResult: latestRelease,
 				onUpdateChecked: setLatestRelease
 			})
 		]

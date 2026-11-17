@@ -258,6 +258,68 @@ export function triggerWebNotification(note: Note): void {
   }
 }
 
+export async function sendTestNotification(): Promise<{
+  ok: boolean;
+  message: string;
+}> {
+  try {
+    await ensureHighPriorityNotificationChannel();
+    const granted = await ensureNotificationPermissions();
+
+    if (Capacitor.isNativePlatform()) {
+      if (!granted) {
+        return {
+          ok: false,
+          message:
+            'Notisbehörighet nekad. Aktivera aviseringar i telefonens appinställningar.',
+        };
+      }
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 999001,
+            channelId: URGENT_CHANNEL_ID,
+            title: 'Testnotis från BetterKeep',
+            body: 'Högprioriterade popup-notiser och ljud fungerar som de ska!',
+            schedule: { at: new Date(Date.now() + 400), allowWhileIdle: true },
+          },
+        ],
+      });
+      return {
+        ok: true,
+        message: 'Testnotis skickad på kanalen betterkeep-urgent!',
+      };
+    }
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification('Testnotis från BetterKeep', {
+          body: 'Notiser fungerar! I Android-appen används kanalen betterkeep-urgent.',
+          tag: 'betterkeep-test-notif',
+        });
+        return {
+          ok: true,
+          message: 'Testnotis visad i webbläsaren (använder betterkeep-urgent på Android).',
+        };
+      }
+      return {
+        ok: false,
+        message: 'Webbläsaren blockerade notiser. Tillåt aviseringar för sidan.',
+      };
+    }
+
+    return {
+      ok: false,
+      message: 'Denna miljö stöder inte systemnotiser direkt i webbläsaren.',
+    };
+  } catch {
+    return {
+      ok: false,
+      message: 'Kunde inte skicka testnotis just nu.',
+    };
+  }
+}
+
 export function formatReminderDateTime(isoString: string): string {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return 'Ogiltigt datum';

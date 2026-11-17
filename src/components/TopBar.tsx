@@ -1,11 +1,11 @@
-import { MailPlus, Moon, Plus, Search, Sun, X } from 'lucide-react';
-import { ThemeMode } from '../services/storage';
+import { MailPlus, Moon, Plus, Search, Settings, Sun, X } from 'lucide-react';
 
 interface TopBarProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  theme: ThemeMode;
+  effectiveTheme: 'light' | 'dark';
   onToggleTheme: () => void;
+  onOpenSettings: () => void;
   onOpenNewNote: () => void;
   onOpenEmailImport: () => void;
 }
@@ -13,14 +13,15 @@ interface TopBarProps {
 export function TopBar({
   searchQuery,
   onSearchChange,
-  theme,
+  effectiveTheme,
   onToggleTheme,
+  onOpenSettings,
   onOpenNewNote,
   onOpenEmailImport,
 }: TopBarProps) {
   return (
     <header className="sticky top-0 z-30 pt-safe bg-[#F6F7F4]/90 dark:bg-[#111412]/90 backdrop-blur-md border-b border-[#18221C]/10 dark:border-[#E3EAE5]/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3 sm:gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-6">
         {/* Brand Wordmark */}
         <div className="flex items-center shrink-0">
           <span className="font-display text-lg sm:text-xl font-bold tracking-tight text-[#171D19] dark:text-[#E4EBE6] whitespace-nowrap">
@@ -55,11 +56,11 @@ export function TopBar({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={onOpenEmailImport}
-            className="inline-flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[40px] px-3 sm:px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] text-xs sm:text-sm font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] sm:min-h-[40px] px-2.5 sm:px-4 rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] text-xs sm:text-sm font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer"
           >
             <MailPlus className="w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]" aria-hidden="true" />
             <span>Importera mejl</span>
@@ -68,15 +69,25 @@ export function TopBar({
           <button
             type="button"
             onClick={onToggleTheme}
-            aria-label={theme === 'dark' ? 'Byt till ljust tema' : 'Byt till mörkt tema'}
-            title={theme === 'dark' ? 'Ljust tema' : 'Mörkt tema'}
+            aria-label={effectiveTheme === 'dark' ? 'Byt till ljust tema' : 'Byt till mörkt tema'}
+            title={effectiveTheme === 'dark' ? 'Ljust tema' : 'Mörkt tema'}
             className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] transition-colors duration-150 shrink-0 cursor-pointer"
           >
-            {theme === 'dark' ? (
+            {effectiveTheme === 'dark' ? (
               <Sun className="w-4 h-4 text-[#E7C67A]" aria-hidden="true" />
             ) : (
               <Moon className="w-4 h-4 text-[#2E6B4E]" aria-hidden="true" />
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Inställningar"
+            title="Inställningar"
+            className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl bg-[#ECEFE9] dark:bg-[#212723] hover:bg-[#E2E7DF] dark:hover:bg-[#2A312D] text-[#171D19] dark:text-[#E4EBE6] transition-colors duration-150 shrink-0 cursor-pointer"
+          >
+            <Settings className="w-4 h-4 text-[#2E6B4E] dark:text-[#8FD4AE]" aria-hidden="true" />
           </button>
 
           <button

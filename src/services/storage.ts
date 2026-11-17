@@ -10,17 +10,28 @@ const LS_EMAIL_KEY = 'betterkeep_email_configs_v1';
 const LS_SEEDED_KEY = 'betterkeep_seeded_v1';
 const LS_THEME_KEY = 'betterkeep_theme';
 
-export type ThemeMode = 'light' | 'dark';
+export type ThemeMode = 'light' | 'dark' | 'system';
 
 export function getSavedTheme(): ThemeMode {
   try {
     const saved = localStorage.getItem(LS_THEME_KEY);
-    if (saved === 'light' || saved === 'dark') return saved;
+    if (saved === 'light' || saved === 'dark' || saved === 'system') {
+      return saved;
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+  return 'system';
+}
+
+export function resolveEffectiveTheme(mode: ThemeMode): 'light' | 'dark' {
+  if (mode === 'light' || mode === 'dark') return mode;
+  try {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
   } catch {
-    // Ignore storage access errors
+    // Ignore
   }
   return 'light';
 }

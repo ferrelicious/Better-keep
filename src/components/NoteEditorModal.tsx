@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { Bell, Check, Pin, Trash2, X } from 'lucide-react';
+import { Bell, Check, Lock, Pin, Trash2, X } from 'lucide-react';
 import {
   NOTE_CATEGORIES,
   NOTE_COLORS,
@@ -22,6 +22,7 @@ interface NoteEditorModalProps {
     category: NoteCategory;
     color: NoteColor;
     pinned: boolean;
+    isPrivate: boolean;
     reminder: { at: string; completed: boolean } | null;
   }) => void;
   onDelete?: (noteId: string) => void;
@@ -57,6 +58,7 @@ export function NoteEditorModal({
   const [category, setCategory] = useState<NoteCategory>(defaultCategory);
   const [color, setColor] = useState<NoteColor>('default');
   const [pinned, setPinned] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [reminderDate, setReminderDate] = useState('');
   const [reminderTime, setReminderTime] = useState('09:00');
   const [reminderCompleted, setReminderCompleted] = useState(false);
@@ -69,6 +71,7 @@ export function NoteEditorModal({
       setCategory(initialNote.category);
       setColor(initialNote.color);
       setPinned(initialNote.pinned);
+      setIsPrivate(Boolean(initialNote.isPrivate));
       if (initialNote.reminder) {
         setReminderDate(toLocalDateInput(initialNote.reminder.at));
         setReminderTime(toLocalTimeInput(initialNote.reminder.at));
@@ -84,6 +87,7 @@ export function NoteEditorModal({
       setCategory(defaultCategory);
       setColor('default');
       setPinned(false);
+      setIsPrivate(false);
       setReminderDate('');
       setReminderTime('09:00');
       setReminderCompleted(false);
@@ -134,6 +138,7 @@ export function NoteEditorModal({
       category,
       color,
       pinned,
+      isPrivate,
       reminder,
     });
   };
@@ -339,6 +344,29 @@ export function NoteEditorModal({
             )}
           </div>
         </div>
+
+        {/* Private Note Toggle */}
+        <label className="flex items-center justify-between gap-3 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] px-4 py-3 cursor-pointer select-none">
+          <div className="flex items-center gap-2.5 text-sm font-medium">
+            <Lock
+              className={`w-4 h-4 ${
+                isPrivate
+                  ? 'text-[#6E4C8E] dark:text-[#C6A4EA]'
+                  : 'opacity-65'
+              }`}
+              aria-hidden="true"
+            />
+            <span>Privat anteckning (syns bara för mig)</span>
+          </div>
+          <input
+            type="checkbox"
+            role="switch"
+            checked={isPrivate}
+            onChange={(e) => setIsPrivate(e.target.checked)}
+            className="sr-only peer"
+          />
+          <span className="w-10 h-6 rounded-full bg-black/20 dark:bg-white/20 peer-checked:bg-[#6E4C8E] dark:peer-checked:bg-[#C6A4EA] relative transition-colors shrink-0 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
+        </label>
 
         {/* Footer Buttons */}
         <div className="flex items-center justify-between gap-3 pt-1">

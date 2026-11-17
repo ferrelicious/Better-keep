@@ -23,6 +23,8 @@ export interface EmailSourceMeta {
   receivedAt?: string;
 }
 
+export type NoteShareFilter = 'all' | 'shared' | 'private';
+
 export interface Note {
   id: string;
   title: string;
@@ -30,6 +32,7 @@ export interface Note {
   category: NoteCategory;
   color: NoteColor;
   pinned: boolean;
+  isPrivate?: boolean;
   reminder: ReminderInfo | null;
   sourceMeta?: EmailSourceMeta;
   createdAt: string;
